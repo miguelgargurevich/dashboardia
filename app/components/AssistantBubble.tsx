@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot } from "react-icons/fa";
 import { usePathname } from 'next/navigation';
 
+type MessageContent = string | { type: 'cancel', text: string };
+type Message = { role: string; content: MessageContent };
+
 export default function AssistantBubble() {
   const pathname = usePathname();
   // Cierra el chat IA si recibe el evento personalizado 'close-assistant-bubble'
@@ -26,12 +29,17 @@ export default function AssistantBubble() {
     : `¡Hola! Soy tu asistente IA para el Dashboard de Soporte Técnico.\nPuedo ayudarte con:\n- Registrar y clasificar tickets, recursos, KBs y eventos\n- Sugerir artículos y soluciones\n- Buscar información por texto, tags, tipo, fecha\n- Relacionar elementos entre sí\n- Responder preguntas técnicas y de productividad\n- Crear eventos y notas\n¡Escríbeme lo que necesitas!`;
   const [open, setOpen] = useState(false);
   // Eliminado: const [closing, setClosing] = useState(false);
-  const [messages, setMessages] = useState([
-    { role: 'system', content: initialPrompt }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([
+  { role: 'system', content: initialPrompt }
+]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
+  // Estado para adjuntos
+  const [attachedFile, setAttachedFile] = useState<File|null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  // Solo permitir adjuntar si NO está en login (usuario logueado)
+  const canAttach = pathname !== '/login';
 
   useEffect(() => {
     if (open && chatRef.current) {
@@ -47,8 +55,32 @@ export default function AssistantBubble() {
   async function sendMessage(e: any) {
     e.preventDefault();
     const value = e.target?.value || input;
-    if (!value.trim()) { setLoading(false); return; }
+    if (!value.trim() && !attachedFile) { setLoading(false); return; }
     setLoading(true);
+    // Si hay archivo adjunto y está logueado, subir primero
+    if (attachedFile && canAttach) {
+      setMessages(msgs => [...msgs, { role: 'user', content: `Adjuntando archivo: ${attachedFile.name}` }]);
+      try {
+        const formData = new FormData();
+        formData.append('file', attachedFile);
+        formData.append('topic', value || 'Sin tema');
+        const res = await fetch('http://localhost:4000/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al subir el archivo.' }]);
+        } else {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Archivo adjuntado correctamente.' }]);
+        }
+      } catch (err) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al subir el archivo.' }]);
+      }
+      setAttachedFile(null);
+      setInput('');
+      setLoading(false);
+      return;
+    }
 
     // Flujo especial para registro guiado SOLO en login
     if (isLoginPage) {
@@ -132,11 +164,15 @@ export default function AssistantBubble() {
           setLoading(false);
           return;
         } else if (/^n[o]?$/i.test(value.trim()) || value === 'No') {
-          setMessages(msgs => [...msgs, { role: 'user', content: 'No' }, { role: 'assistant', content: 'Registro cancelado. Si quieres intentarlo de nuevo, escribe "registrarme".' }]);
-          setSignupStep('none');
-          setInput('');
-          setLoading(false);
-          return;
+        setMessages(msgs => [
+          ...msgs,
+          { role: 'user', content: 'No' },
+          { role: 'assistant', content: { type: 'cancel', text: 'Registro cancelado.' } }
+        ]);
+        setSignupStep('none');
+        setInput('');
+        setLoading(false);
+        return;
         }
       }
       // Paso 3: reenviar clave si usuario ya existe
@@ -249,7 +285,19 @@ export default function AssistantBubble() {
               </button>
             </div>
             {/* Mensajes y entrada */}
-            <div className="flex-1 flex flex-col justify-end p-4 overflow-y-auto" ref={chatRef}>
+            <div
+              className={`flex-1 flex flex-col justify-end p-4 overflow-y-auto ${canAttach ? 'border-dashed border-accent' : ''}`}
+              ref={chatRef}
+              onDragOver={canAttach ? (e) => { e.preventDefault(); setDragActive(true); } : undefined}
+              onDragLeave={canAttach ? () => setDragActive(false) : undefined}
+              onDrop={canAttach ? (e) => {
+                e.preventDefault();
+                setDragActive(false);
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                  setAttachedFile(e.dataTransfer.files[0]);
+                }
+              } : undefined}
+            >
             {/* Mensajes del chat IA */}
               {messages.map((msg, i) => (
                 <div key={i} className={`mb-2 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -279,8 +327,21 @@ export default function AssistantBubble() {
                         </div>
                         <div className="mt-2 text-xs text-gray-300">También puedes preguntar sobre las capacidades del dashboard.</div>
                       </>
+                    ) : typeof msg.content === 'object' && 'type' in msg.content && msg.content.type === 'cancel' ? (
+                      <>
+                        <div>{msg.content.text}</div>
+                        <button
+                          className="mt-2 px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
+                          onClick={() => {
+                            setLoading(true);
+                            sendMessage({ preventDefault: () => {}, target: { value: 'registrarme' } } as any);
+                          }}
+                        >
+                          Registrarme
+                        </button>
+                      </>
                     ) : (
-                      msg.content
+                      typeof msg.content === 'string' ? msg.content : null
                     )}
                   </div>
                 </div>
@@ -290,6 +351,33 @@ export default function AssistantBubble() {
                   <div className="rounded-lg p-3 text-sm font-inter bg-accent/10 text-white animate-pulse">Pensando...</div>
                 </div>
               )}
+            {/* Adjuntos: solo si está logueado */}
+            {canAttach && (
+              <div className="flex items-center gap-2 mb-2 mt-4">
+                <label htmlFor="file-upload" className="cursor-pointer flex items-center gap-2 text-accent hover:text-[#f7b787]">
+                  <svg width="24" height="24" fill="currentColor" className="inline-block"><path d="M16.5 6.5a5 5 0 0 0-7.07 0l-5.66 5.66a5 5 0 0 0 7.07 7.07l6.36-6.36a3 3 0 0 0-4.24-4.24l-5.66 5.66a1 1 0 0 0 1.41 1.41l5.66-5.66a1 1 0 0 1 1.41 1.41l-6.36 6.36a3 3 0 0 1-4.24-4.24l5.66-5.66a5 5 0 0 1 7.07 7.07l-6.36 6.36a7 7 0 0 1-9.9-9.9l5.66-5.66a7 7 0 0 1 9.9 9.9l-6.36 6.36a9 9 0 0 1-12.73-12.73l5.66-5.66a9 9 0 0 1 12.73 12.73l-6.36 6.36a11 11 0 0 1-15.56-15.56l5.66-5.66a11 11 0 0 1 15.56 15.56l-6.36 6.36a13 13 0 0 1-18.39-18.39l5.66-5.66a13 13 0 0 1 18.39 18.39l-6.36 6.36"/>
+                  </svg>
+                  Adjuntar archivo
+                </label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  onChange={e => {
+                    if (e.target.files && e.target.files[0]) {
+                      setAttachedFile(e.target.files[0]);
+                    }
+                  }}
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.avi,.mov,.jpg,.png,.jpeg"
+                />
+                {attachedFile && (
+                  <span className="text-xs text-accent">{attachedFile.name}</span>
+                )}
+                {dragActive && (
+                  <span className="text-xs text-accent">Suelta el archivo aquí...</span>
+                )}
+              </div>
+            )}
             </div>
             {/* Formulario adaptativo para el wizard */}
             {isLoginPage && signupStep === 'email' ? (
