@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("user")
+  tickets   Ticket[]
+  createdAt DateTime @default(now())
+}
+
+model Ticket {
+  id          String   @id @default(cuid())
+  tipo        String   // Incidente o Requerimiento
+  estado      String
+  sistema     String?
+  descripcion String
+  solucion    String?
+  archivos    String[]
+  user        User?     @relation(fields: [userId], references: [id])
+  userId      String?
+  createdAt   DateTime @default(now())
+  closedAt    DateTime?
+  kbs         TicketToKBArticle[]
+  resources   ResourceToTicket[]
+  events      EventToTicket[]
+}
+
+model KBArticle {
+  id          String   @id @default(cuid())
+  titulo      String
+  tipo        String   // Procedimiento, Manual, etc.
+  categoria   String?
+  descripcion String?
+  contenido   String
+  archivos    String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tickets     TicketToKBArticle[]
+  resources   ResourceToKBArticle[]
+  events      EventToKBArticle[]
+}
+
+model Resource {
+  id           String   @id @default(cuid())
+  tipo         String   // enlace, archivo, nota, video
+  titulo       String
+  descripcion  String?
+  url          String?
+  filePath     String?
+  tags         String[]
+  categoria    String?
+  fechaCarga   DateTime @default(now())
+  tickets      ResourceToTicket[]
+  kbs          ResourceToKBArticle[]
+  events       ResourceToEvent[]
+}
+
+model Event {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  startDate     DateTime
+  endDate       DateTime
+  location      String?
+  createdAt     DateTime @default(now())
+  tickets       EventToTicket[]
+  kbs           EventToKBArticle[]
+  resources     ResourceToEvent[]
+}
+
+
+// Tablas intermedias para relaciones N:N
+model TicketToKBArticle {
+  ticket   Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId String
+  kb       KBArticle @relation(fields: [kbId], references: [id])
+  kbId     String
+  @@id([ticketId, kbId])
+}
+
+model ResourceToTicket {
+  resource Resource @relation(fields: [resourceId], references: [id])
+  resourceId String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  ticketId  String
+  @@id([resourceId, ticketId])
+}
+
+model ResourceToKBArticle {
+  resource Resource @relation(fields: [resourceId], references: [id])
+  resourceId String
+  kb        KBArticle @relation(fields: [kbId], references: [id])
+  kbId      String
+  @@id([resourceId, kbId])
+}
+
+model ResourceToEvent {
+  resource Resource @relation(fields: [resourceId], references: [id])
+  resourceId String
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
+  @@id([resourceId, eventId])
+}
+
+model EventToTicket {
+  event   Event   @relation(fields: [eventId], references: [id])
+  eventId String
+  ticket  Ticket  @relation(fields: [ticketId], references: [id])
+  ticketId String
+  @@id([eventId, ticketId])
+}
+
+model EventToKBArticle {
+  event   Event     @relation(fields: [eventId], references: [id])
+  eventId String
+  kb      KBArticle @relation(fields: [kbId], references: [id])
+  kbId    String
+  @@id([eventId, kbId])
+}
