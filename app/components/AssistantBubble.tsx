@@ -2,16 +2,22 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot } from "react-icons/fa";
+import { usePathname } from 'next/navigation';
 
 export default function AssistantBubble() {
+  const pathname = usePathname();
+  // Cierra el chat IA si recibe el evento personalizado 'close-assistant-bubble'
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const handler = () => {
-        setOpen(true);
-      };
-      window.addEventListener('open-assistant-bubble', handler);
-      return () => window.removeEventListener('open-assistant-bubble', handler);
-    }
+    const handler = () => setOpen(false);
+    window.addEventListener('close-assistant-bubble', handler);
+    return () => window.removeEventListener('close-assistant-bubble', handler);
+  }, []);
+  useEffect(() => {
+    const handler = () => {
+      setOpen((prev) => prev ? true : true);
+    };
+    window.addEventListener('open-assistant-bubble', handler);
+    return () => window.removeEventListener('open-assistant-bubble', handler);
   }, []);
   // Detecta si está en la página de login
   const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
@@ -212,7 +218,7 @@ export default function AssistantBubble() {
   return (
     <>
       {/* Burbuja flotante solo si NO está en login */}
-      {!isLoginPage && (
+      {pathname !== '/login' && (
         <button
           className="fixed bottom-8 right-8 z-50 bg-accent text-primary rounded-full shadow-lg w-16 h-16 flex items-center justify-center hover:bg-[#f7b787] transition-colors"
           onClick={() => setOpen(true)}
