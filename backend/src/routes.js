@@ -1,0 +1,123 @@
+const express = require('express');
+const router = express.Router();
+const { PrismaClient } = require('@prisma/client');
+const { requireAuth } = require('./auth');
+const prisma = new PrismaClient();
+
+// Proteger todos los endpoints del dashboard
+router.use(requireAuth);
+
+// Endpoint: Estadísticas de tickets agrupadas
+// GET /api/tickets/stats?groupBy=tipo|estado|sistema|fecha
+router.get('/api/tickets/stats', async (req, res) => {
+  const groupBy = req.query.groupBy || 'tipo';
+  let groupField;
+  switch (groupBy) {
+    case 'estado': groupField = 'estado'; break;
+    case 'sistema': groupField = 'sistema'; break;
+    case 'fecha': groupField = 'createdAt'; break;
+    default: groupField = 'tipo';
+  }
+  try {
+    const stats = await prisma.ticket.groupBy({
+      by: [groupField],
+      _count: { id: true }
+    });
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo estadísticas', details: err.message });
+  }
+});
+
+// Recursos recientes (archivos, notas, videos)
+// GET /api/resources/recent?limit=10&skip=0
+router.get('/api/resources/recent', async (req, res) => {
+  const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 10, 50));
+  const skip = Math.max(0, parseInt(req.query.skip) || 0);
+  try {
+    const resources = await prisma.resource.findMany({
+      orderBy: { fechaCarga: 'desc' },
+      take: limit,
+      skip
+    });
+    res.json(resources);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo recursos recientes', details: err.message });
+  }
+});
+
+// Recursos por tipo
+// GET /api/resources?tipo=video|nota|archivo&limit=10&skip=0
+router.get('/api/resources', async (req, res) => {
+  const tipo = req.query.tipo;
+  const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 10, 50));
+  const skip = Math.max(0, parseInt(req.query.skip) || 0);
+  try {
+    const where = tipo ? { tipo } : {};
+    const resources = await prisma.resource.findMany({ where, take: limit, skip });
+    res.json(resources);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo recursos', details: err.message });
+  }
+});
+
+// Próximos eventos
+// GET /api/events/upcoming?limit=5&skip=0
+router.get('/api/events/upcoming', async (req, res) => {
+  const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 5, 50));
+  const skip = Math.max(0, parseInt(req.query.skip) || 0);
+  const now = new Date();
+  try {
+    const events = await prisma.event.findMany({
+      where: { startDate: { gte: now } },
+      orderBy: { startDate: 'asc' },
+      take: limit,
+      skip
+    });
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo próximos eventos', details: err.message });
+  }
+});
+
+// Eventos para calendario
+// GET /api/events/calendar?month=YYYY-MM
+router.get('/api/events/calendar', async (req, res) => {
+  const month = req.query.month;
+  try {
+    let start, end;
+    if (month) {
+      start = new Date(month + '-01T00:00:00');
+      end = new Date(start);
+      end.setMonth(end.getMonth() + 1);
+    } else {
+      start = new Date();
+      end = new Date();
+      end.setMonth(end.getMonth() + 1);
+    }
+    const events = await prisma.event.findMany({
+      where: {
+        startDate: { gte: start, lt: end }
+      },
+      orderBy: { startDate: 'asc' }
+    });
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo eventos para calendario', details: err.message });
+  }
+});
+
+// Detalles de evento
+// GET /api/events/:id
+router.get('/api/events/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
+    res.json(event);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo detalles de evento', details: err.message });
+  }
+});
+
+module.exports = router;

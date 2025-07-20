@@ -1,4 +1,3 @@
-
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -11,12 +10,24 @@ async function main() {
     { name: 'Admin', email: 'admin@soporte.com', password: await bcrypt.hash('admin123', 10), role: 'admin' },
     { name: 'Usuario', email: 'usuario@soporte.com', password: await bcrypt.hash('user123', 10), role: 'user' },
     { name: 'Miguel', email: 'miguel@soporte.com', password: await bcrypt.hash('miguel123', 10), role: 'user' },
+    { name: 'Miguel Gargurevich', email: 'miguel.gargurevich@gmail.com', password: await bcrypt.hash('miguel123', 10), role: 'user' },
     { name: 'Sofia', email: 'sofia@soporte.com', password: await bcrypt.hash('sofia456', 10), role: 'user' },
     { name: 'Carlos', email: 'carlos@soporte.com', password: await bcrypt.hash('carlos789', 10), role: 'user' }
   ];
   for (const u of users) {
     const exists = await prisma.user.findUnique({ where: { email: u.email } });
-    if (!exists) await prisma.user.create({ data: u });
+    if (!exists) {
+      await prisma.user.create({ data: u });
+    } else {
+      await prisma.user.update({
+        where: { email: u.email },
+        data: {
+          name: u.name,
+          password: u.password,
+          role: u.role
+        }
+      });
+    }
   }
 
   // KB
@@ -59,17 +70,36 @@ async function main() {
   }
 
   // Eventos
+  const now = new Date();
   const events = [
-    { title: 'Reunión semanal', startDate: new Date(), endDate: new Date(), location: 'Teams' },
-    { title: 'Capacitación Azure', startDate: new Date(), endDate: new Date(), location: 'Online' },
-    { title: 'Demo producto', startDate: new Date(), endDate: new Date(), location: 'Oficina' },
-    { title: 'Revisión de tickets', startDate: new Date(), endDate: new Date(), location: 'Oficina' },
-    { title: 'Onboarding nuevo usuario', startDate: new Date(), endDate: new Date(), location: 'Online' }
+    // Mes actual
+    { title: 'Mantenimiento programado', description: 'Corte de red', startDate: new Date(now.getFullYear(), now.getMonth(), 10, 10, 0), endDate: new Date(now.getFullYear(), now.getMonth(), 10, 12, 0), location: 'Sala de servidores' },
+    { title: 'Capacitación', description: 'Curso de soporte', startDate: new Date(now.getFullYear(), now.getMonth(), 15, 9, 0), endDate: new Date(now.getFullYear(), now.getMonth(), 15, 11, 0), location: 'Aula virtual' },
+    // Mes siguiente
+    { title: 'Reunión de equipo', description: 'Planificación mensual', startDate: new Date(now.getFullYear(), now.getMonth() + 1, 5, 14, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 1, 5, 15, 0), location: 'Sala de reuniones' },
+    { title: 'Webinar IA', description: 'Novedades IA', startDate: new Date(now.getFullYear(), now.getMonth() + 1, 20, 16, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 1, 20, 18, 0), location: 'Online' },
+    // Mes anterior
+    { title: 'Revisión de tickets', description: 'Análisis de tickets', startDate: new Date(now.getFullYear(), now.getMonth() - 1, 22, 11, 0), endDate: new Date(now.getFullYear(), now.getMonth() - 1, 22, 12, 0), location: 'Oficina' },
+    { title: 'Demo producto', description: 'Presentación nueva herramienta', startDate: new Date(now.getFullYear(), now.getMonth() - 1, 8, 15, 0), endDate: new Date(now.getFullYear(), now.getMonth() - 1, 8, 16, 0), location: 'Sala demo' },
+    // Meses futuros
+    { title: 'Evento futuro 2m', description: 'Evento en dos meses', startDate: new Date(now.getFullYear(), now.getMonth() + 2, 12, 10, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 2, 12, 12, 0), location: 'Auditorio' },
+    { title: 'Evento futuro 3m', description: 'Evento en tres meses', startDate: new Date(now.getFullYear(), now.getMonth() + 3, 7, 9, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 3, 7, 11, 0), location: 'Online' },
+    { title: 'Evento futuro 6m', description: 'Evento en seis meses', startDate: new Date(now.getFullYear(), now.getMonth() + 6, 25, 15, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 6, 25, 17, 0), location: 'Sala grande' }
   ];
   for (const e of events) {
     const exists = await prisma.event.findMany({ where: { title: e.title }, take: 1 });
     if (exists.length === 0) await prisma.event.create({ data: e });
   }
+
+  // Recursos con fechas recientes
+  await prisma.resource.createMany({
+    data: [
+      { tipo: 'archivo', titulo: 'Manual de usuario', descripcion: 'PDF de ayuda', filePath: '/files/manual.pdf', url: '', tags: ['manual'], categoria: 'Documentación', fechaCarga: new Date(now.getTime() - 3600000) },
+      { tipo: 'video', titulo: 'Tutorial de red', descripcion: 'Video explicativo', filePath: '', url: 'https://youtu.be/tutorial', tags: ['tutorial'], categoria: 'Video', fechaCarga: new Date(now.getTime() - 7200000) },
+      { tipo: 'nota', titulo: 'Nota interna', descripcion: 'Recordatorio de soporte', filePath: '', url: '', tags: ['nota'], categoria: 'Notas', fechaCarga: new Date(now.getTime() - 10800000) }
+    ],
+    skipDuplicates: true
+  });
 }
 
 main()

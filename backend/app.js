@@ -13,8 +13,64 @@ const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args)
 
 // Endpoint para el asistente IA (Gemini)
 
+
 app.use(express.json());
 app.use(cors());
+
+// Rutas avanzadas del dashboard (protegidas y agrupadas)
+const dashboardRoutes = require('./src/routes');
+// Endpoints de autenticación deben ir antes de las rutas avanzadas
+app.post('/api/login', async (req, res) => {
+  console.log('Body recibido en login:', req.body);
+  const { email, password } = req.body;
+  console.log('Login intento:', { email, password });
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    console.log('Usuario no encontrado:', email);
+    return res.status(401).json({ error: 'Usuario no encontrado' });
+  }
+  console.log('Hash en BD:', user.password);
+  const valid = await bcrypt.compare(password, user.password);
+  console.log('Resultado bcrypt.compare:', valid);
+  if (!valid) {
+    console.log('Contraseña incorrecta para:', email);
+    return res.status(401).json({ error: 'Contraseña incorrecta' });
+  }
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+});
+
+app.post('/api/signup', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
+  try {
+    // Verifica si el usuario ya existe
+    const existing = await prisma.user.findUnique({ where: { email } });
+    const hashed = await bcrypt.hash(password, 10);
+    if (existing) {
+      // Si existe, actualiza la clave y mantiene el resto de datos
+      const user = await prisma.user.update({
+        where: { email },
+        data: { password: hashed }
+      });
+      return res.json({ user, updated: true });
+    }
+    // Si no existe, crea el usuario
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: hashed,
+        name: email.split('@')[0],
+        role: 'user',
+      }
+    });
+    res.json({ user, created: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.use(dashboardRoutes);
 
 app.post('/api/assistant', async (req, res) => {
   try {
@@ -50,11 +106,21 @@ app.get('/', (req, res) => {
 
 // Login API
 app.post('/api/login', async (req, res) => {
+  console.log('Body recibido en login:', req.body);
   const { email, password } = req.body;
+  console.log('Login intento:', { email, password });
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(401).json({ error: 'Usuario no encontrado' });
+  if (!user) {
+    console.log('Usuario no encontrado:', email);
+    return res.status(401).json({ error: 'Usuario no encontrado' });
+  }
+  console.log('Hash en BD:', user.password);
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Contraseña incorrecta' });
+  console.log('Resultado bcrypt.compare:', valid);
+  if (!valid) {
+    console.log('Contraseña incorrecta para:', email);
+    return res.status(401).json({ error: 'Contraseña incorrecta' });
+  }
   const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });

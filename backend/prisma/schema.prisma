@@ -13,116 +13,120 @@ model User {
   email     String   @unique
   password  String
   role      String   @default("user")
-  tickets   Ticket[]
   createdAt DateTime @default(now())
+  tickets   Ticket[]
 }
 
 model Ticket {
-  id          String   @id @default(cuid())
-  tipo        String   // Incidente o Requerimiento
+  id          String              @id @default(cuid())
+  tipo        String
   estado      String
   sistema     String?
   descripcion String
   solucion    String?
   archivos    String[]
-  user        User?     @relation(fields: [userId], references: [id])
   userId      String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime            @default(now())
   closedAt    DateTime?
-  kbs         TicketToKBArticle[]
-  resources   ResourceToTicket[]
   events      EventToTicket[]
+  resources   ResourceToTicket[]
+  user        User?               @relation(fields: [userId], references: [id])
+  kbs         TicketToKBArticle[]
 }
 
 model KBArticle {
-  id          String   @id @default(cuid())
+  id          String                @id @default(cuid())
   titulo      String
-  tipo        String   // Procedimiento, Manual, etc.
+  tipo        String
   categoria   String?
   descripcion String?
   contenido   String
   archivos    String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  tickets     TicketToKBArticle[]
-  resources   ResourceToKBArticle[]
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
   events      EventToKBArticle[]
+  resources   ResourceToKBArticle[]
+  tickets     TicketToKBArticle[]
 }
 
 model Resource {
-  id           String   @id @default(cuid())
-  tipo         String   // enlace, archivo, nota, video
-  titulo       String
-  descripcion  String?
-  url          String?
-  filePath     String?
-  tags         String[]
-  categoria    String?
-  fechaCarga   DateTime @default(now())
-  tickets      ResourceToTicket[]
-  kbs          ResourceToKBArticle[]
-  events       ResourceToEvent[]
+  id          String                @id @default(cuid())
+  tipo        String
+  titulo      String
+  descripcion String?
+  url         String?
+  filePath    String?
+  tags        String[]
+  categoria   String?
+  fechaCarga  DateTime              @default(now())
+  events      ResourceToEvent[]
+  kbs         ResourceToKBArticle[]
+  tickets     ResourceToTicket[]
 }
 
 model Event {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  startDate     DateTime
-  endDate       DateTime
-  location      String?
-  createdAt     DateTime @default(now())
-  tickets       EventToTicket[]
-  kbs           EventToKBArticle[]
-  resources     ResourceToEvent[]
+  id          String             @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String?
+  createdAt   DateTime           @default(now())
+  kbs         EventToKBArticle[]
+  tickets     EventToTicket[]
+  resources   ResourceToEvent[]
 }
 
-
-// Tablas intermedias para relaciones N:N
 model TicketToKBArticle {
-  ticket   Ticket   @relation(fields: [ticketId], references: [id])
   ticketId String
-  kb       KBArticle @relation(fields: [kbId], references: [id])
   kbId     String
+  kb       KBArticle @relation(fields: [kbId], references: [id])
+  ticket   Ticket    @relation(fields: [ticketId], references: [id])
+
   @@id([ticketId, kbId])
 }
 
 model ResourceToTicket {
-  resource Resource @relation(fields: [resourceId], references: [id])
   resourceId String
-  ticket    Ticket   @relation(fields: [ticketId], references: [id])
-  ticketId  String
+  ticketId   String
+  resource   Resource @relation(fields: [resourceId], references: [id])
+  ticket     Ticket   @relation(fields: [ticketId], references: [id])
+
   @@id([resourceId, ticketId])
 }
 
 model ResourceToKBArticle {
-  resource Resource @relation(fields: [resourceId], references: [id])
   resourceId String
-  kb        KBArticle @relation(fields: [kbId], references: [id])
-  kbId      String
+  kbId       String
+  kb         KBArticle @relation(fields: [kbId], references: [id])
+  resource   Resource  @relation(fields: [resourceId], references: [id])
+
   @@id([resourceId, kbId])
 }
 
 model ResourceToEvent {
-  resource Resource @relation(fields: [resourceId], references: [id])
   resourceId String
-  event     Event    @relation(fields: [eventId], references: [id])
-  eventId   String
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id])
+  resource   Resource @relation(fields: [resourceId], references: [id])
+
   @@id([resourceId, eventId])
 }
 
 model EventToTicket {
-  event   Event   @relation(fields: [eventId], references: [id])
-  eventId String
-  ticket  Ticket  @relation(fields: [ticketId], references: [id])
+  eventId  String
   ticketId String
+  event    Event  @relation(fields: [eventId], references: [id])
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+
   @@id([eventId, ticketId])
 }
 
 model EventToKBArticle {
-  event   Event     @relation(fields: [eventId], references: [id])
   eventId String
-  kb      KBArticle @relation(fields: [kbId], references: [id])
   kbId    String
+  event   Event     @relation(fields: [eventId], references: [id])
+  kb      KBArticle @relation(fields: [kbId], references: [id])
+
   @@id([eventId, kbId])
 }
