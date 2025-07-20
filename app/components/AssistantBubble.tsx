@@ -49,7 +49,9 @@ export default function AssistantBubble() {
 
   // Estado para registro guiado
   // Registro guiado: nombre, email, rol/departamento
-  const [signupStep, setSignupStep] = useState<'none'|'email'|'confirm'|'done'|'confirm-resend'>('none');
+  const [signupStep, setSignupStep] = useState<'none'|'email'|'confirm'|'done'|'confirm-resend'|'login'>('none');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   async function sendMessage(e: any) {
@@ -94,6 +96,73 @@ export default function AssistantBubble() {
           { role: 'assistant', content: '¡Excelente! Para crear tu cuenta, ingresa tu correo electrónico.' }
         ]);
         setSignupStep('email');
+        setInput('');
+        setLoading(false);
+        return;
+      }
+      // Paso inicial: usuario pide login
+      if (signupStep === 'none' && value.toLowerCase().includes('login')) {
+        setMessages(msgs => [
+          ...msgs,
+          { role: 'user', content: value },
+          { role: 'assistant', content: 'Por favor, ingresa tu correo electrónico para iniciar sesión.' }
+        ]);
+        setSignupStep('login');
+        setInput('');
+        setLoading(false);
+        return;
+      }
+      // Paso login: pedir correo
+      if (signupStep === 'login' && !loginEmail) {
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+          setMessages(msgs => [...msgs, { role: 'user', content: value }, { role: 'assistant', content: 'El correo no es válido. Intenta de nuevo.' }]);
+          setInput('');
+          setLoading(false);
+          return;
+        }
+        setLoginEmail(value.trim());
+        setMessages(msgs => [
+          ...msgs,
+          { role: 'user', content: value },
+          { role: 'assistant', content: 'Ahora ingresa tu clave.' }
+        ]);
+        setInput('');
+        setLoading(false);
+        return;
+      }
+      // Paso login: pedir clave y validar
+      if (signupStep === 'login' && loginEmail && !loginPassword) {
+        setLoginPassword(value.trim());
+        setMessages(msgs => [
+          ...msgs,
+          { role: 'user', content: '••••••••' },
+          { role: 'assistant', content: 'Validando credenciales...' }
+        ]);
+        try {
+          const res = await fetch('http://localhost:4000/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: loginEmail, password: value.trim() })
+          });
+          const data = await res.json();
+          if (res.ok && data.token) {
+            setMessages(msgs => [...msgs, { role: 'assistant', content: '¡Login exitoso! Bienvenido al dashboard.' }]);
+            // Guardar el token en localStorage
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('token', data.token);
+            }
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1200);
+          } else {
+            setMessages(msgs => [...msgs, { role: 'assistant', content: 'Credenciales incorrectas. Intenta de nuevo.' }]);
+          }
+        } catch (err) {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el backend.' }]);
+        }
+        setSignupStep('none');
+        setLoginEmail('');
+        setLoginPassword('');
         setInput('');
         setLoading(false);
         return;
@@ -467,5 +536,5 @@ export default function AssistantBubble() {
       </AnimatePresence>
     </>
   );
-      // ...existing code...
+     
 }
