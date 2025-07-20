@@ -4,7 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot } from "react-icons/fa";
 import { usePathname } from 'next/navigation';
 
-type MessageContent = string | { type: 'cancel', text: string };
+type MessageContent =
+  | string
+  | { type: 'cancel', text: string }
+  | { type: 'login-options', text: string };
 type Message = { role: string; content: MessageContent };
 
 export default function AssistantBubble() {
@@ -155,7 +158,11 @@ export default function AssistantBubble() {
               window.location.href = '/dashboard';
             }, 1200);
           } else {
-            setMessages(msgs => [...msgs, { role: 'assistant', content: 'Credenciales incorrectas. Intenta de nuevo.' }]);
+            setMessages(msgs => [
+              ...msgs,
+              { role: 'assistant', content: 'Credenciales incorrectas. Intenta de nuevo.' },
+              { role: 'assistant', content: { type: 'login-options', text: '¿Qué deseas hacer ahora?' } }
+            ]);
           }
         } catch (err) {
           setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el backend.' }]);
@@ -410,6 +417,30 @@ export default function AssistantBubble() {
                         >
                           Registrarme
                         </button>
+                      </>
+                    ) : typeof msg.content === 'object' && 'type' in msg.content && msg.content.type === 'login-options' ? (
+                      <>
+                        <div>{msg.content.text}</div>
+                        <div className="flex gap-4 mt-2">
+                          <button
+                            className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
+                            onClick={() => {
+                              setLoading(true);
+                              sendMessage({ preventDefault: () => {}, target: { value: 'registrarme' } } as any);
+                            }}
+                          >
+                            Registrarme
+                          </button>
+                          <button
+                            className="px-6 py-3 rounded-lg bg-gray-500 text-white font-bold font-poppins hover:bg-gray-400 transition-colors shadow-md"
+                            onClick={() => {
+                              setLoading(true);
+                              sendMessage({ preventDefault: () => {}, target: { value: 'login' } } as any);
+                            }}
+                          >
+                            Login
+                          </button>
+                        </div>
                       </>
                     ) : (
                       typeof msg.content === 'string' ? msg.content : null
