@@ -1,4 +1,3 @@
-
 # Dashboard IA Soporte - Frontend
 
 Frontend moderno construido con **Next.js 15**, **React 18**, **TypeScript** y **Tailwind CSS**.
@@ -46,6 +45,14 @@ Frontend moderno construido con **Next.js 15**, **React 18**, **TypeScript** y *
 
 - Los colores y fuentes se configuran en `tailwind.config.js`.
 - El layout global y los estilos base están en `app/layout.tsx` y `app/globals.css`.
+
+## Asistente IA (Chatbot)
+
+- Flotante en el dashboard, solo visible si el usuario está logueado.
+- Permite consultas técnicas, registro guiado y ayuda sobre el sistema.
+- Soporta adjuntar **múltiples archivos** (PDF, Word, Excel, videos, imágenes, texto) por drag & drop o selector, asociados a un tema.
+- Los archivos se envían al backend por el endpoint `/api/upload`.
+- El asistente guía el registro y puede enviar credenciales por correo.
 
 ## Estructura recomendada
 

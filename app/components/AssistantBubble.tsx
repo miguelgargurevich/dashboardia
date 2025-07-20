@@ -35,8 +35,8 @@ export default function AssistantBubble() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
-  // Estado para adjuntos
-  const [attachedFile, setAttachedFile] = useState<File|null>(null);
+  // Estado para adjuntos (múltiples archivos)
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   // Solo permitir adjuntar si NO está en login (usuario logueado)
   const canAttach = pathname !== '/login';
@@ -55,28 +55,30 @@ export default function AssistantBubble() {
   async function sendMessage(e: any) {
     e.preventDefault();
     const value = e.target?.value || input;
-    if (!value.trim() && !attachedFile) { setLoading(false); return; }
+    if (!value.trim() && attachedFiles.length === 0) { setLoading(false); return; }
     setLoading(true);
-    // Si hay archivo adjunto y está logueado, subir primero
-    if (attachedFile && canAttach) {
-      setMessages(msgs => [...msgs, { role: 'user', content: `Adjuntando archivo: ${attachedFile.name}` }]);
+    // Si hay archivos adjuntos y está logueado, subir primero
+    if (attachedFiles.length > 0 && canAttach) {
+      setMessages(msgs => [...msgs, { role: 'user', content: `Adjuntando archivos: ${attachedFiles.map(f => f.name).join(', ')}` }]);
       try {
-        const formData = new FormData();
-        formData.append('file', attachedFile);
-        formData.append('topic', value || 'Sin tema');
-        const res = await fetch('http://localhost:4000/api/upload', {
-          method: 'POST',
-          body: formData
-        });
-        if (!res.ok) {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al subir el archivo.' }]);
-        } else {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Archivo adjuntado correctamente.' }]);
+        for (const file of attachedFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('topic', value || 'Sin tema');
+          const res = await fetch('http://localhost:4000/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+          if (!res.ok) {
+            setMessages(msgs => [...msgs, { role: 'assistant', content: `Error al subir el archivo: ${file.name}` }]);
+          } else {
+            setMessages(msgs => [...msgs, { role: 'assistant', content: `Archivo adjuntado correctamente: ${file.name}` }]);
+          }
         }
       } catch (err) {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al subir el archivo.' }]);
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al subir los archivos.' }]);
       }
-      setAttachedFile(null);
+      setAttachedFiles([]);
       setInput('');
       setLoading(false);
       return;
@@ -294,7 +296,7 @@ export default function AssistantBubble() {
                 e.preventDefault();
                 setDragActive(false);
                 if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                  setAttachedFile(e.dataTransfer.files[0]);
+                  setAttachedFiles(Array.from(e.dataTransfer.files));
                 }
               } : undefined}
             >
@@ -362,16 +364,19 @@ export default function AssistantBubble() {
                 <input
                   id="file-upload"
                   type="file"
+                  multiple
                   className="hidden"
                   onChange={e => {
-                    if (e.target.files && e.target.files[0]) {
-                      setAttachedFile(e.target.files[0]);
+                    if (e.target.files && e.target.files.length > 0) {
+                      setAttachedFiles(Array.from(e.target.files));
                     }
                   }}
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.avi,.mov,.jpg,.png,.jpeg"
                 />
-                {attachedFile && (
-                  <span className="text-xs text-accent">{attachedFile.name}</span>
+                {attachedFiles.length > 0 && (
+                  <span className="text-xs text-accent">
+                    {attachedFiles.map(f => f.name).join(', ')}
+                  </span>
                 )}
                 {dragActive && (
                   <span className="text-xs text-accent">Suelta el archivo aquí...</span>
