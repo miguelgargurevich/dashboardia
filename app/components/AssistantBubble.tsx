@@ -1,5 +1,38 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+// Simple Markdown a HTML (bold, listas, saltos de línea, tablas)
+function markdownToHtml(text: string): string {
+  if (!text) return '';
+  let html = text;
+  // Negritas **texto** o __texto__
+  html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/__(.*?)__/g, '<b>$1</b>');
+  // Saltos de línea
+  html = html.replace(/\n/g, '<br/>');
+  // Listas con - o *
+  html = html.replace(/(^|<br\/>)[\s]*[-*][ ](.*?)(?=<br\/>|$)/g, '$1<li>$2</li>');
+  // Agrupar <li> en <ul>
+  html = html.replace(/(<li>.*?<\/li>)+/gs, m => `<ul>${m}</ul>`);
+  // Tablas simples: |col1|col2|\n|---|---|\n|val1|val2|
+  if (/\|.*\|/.test(html)) {
+    const lines = html.split(/<br\/>/);
+    let table = '';
+    let inTable = false;
+    for (let line of lines) {
+      if (/^\|(.+)\|$/.test(line.trim())) {
+        const cells = line.trim().split('|').filter(Boolean);
+        if (!inTable) { table += '<table><tr>' + cells.map(c => `<th>${c}</th>`).join('') + '</tr>'; inTable = true; }
+        else { table += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>'; }
+      } else {
+        if (inTable) { table += '</table>'; inTable = false; }
+        table += line + '<br/>';
+      }
+    }
+    if (inTable) table += '</table>';
+    html = table;
+  }
+  return html;
+}
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot } from "react-icons/fa";
 import { usePathname } from 'next/navigation';
@@ -29,7 +62,37 @@ export default function AssistantBubble() {
   const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
   const initialPrompt = isLoginPage
     ? `¡Hola! Soy tu asistente IA para el Dashboard de Soporte Técnico.\n¿Quieres crear una cuenta nueva, iniciar sesión o saber más sobre el dashboard?`
-    : `¡Hola! Soy tu asistente IA para el Dashboard de Soporte Técnico.\nPuedo ayudarte con:\n- Registrar y clasificar tickets, recursos, KBs y eventos\n- Sugerir artículos y soluciones\n- Buscar información por texto, tags, tipo, fecha\n- Relacionar elementos entre sí\n- Responder preguntas técnicas y de productividad\n- Crear eventos y notas\n¡Escríbeme lo que necesitas!`;
+    : `<div style='font-family:Poppins,sans-serif;'>
+        <h2 style='font-size:1.15em;font-weight:bold;color:#f7b787;margin-bottom:0.3em;'>¡Hola! Soy tu asistente IA para el Dashboard de Soporte Técnico.</h2>
+        <div style='font-size:0.98em;color:#fff;margin-bottom:0.4em;'>Puedo ayudarte con:</div>
+        <ul style='margin-left:1.2em;margin-bottom:0.5em;color:#fff;line-height:1.3;'>
+          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
+            <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M3 3h12v2H3V3zm0 4h12v2H3V7zm0 4h8v2H3v-2z'/></svg>
+            <span style='display:block;'>Registrar y clasificar tickets, recursos, KBs y eventos</span>
+          </li>
+          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
+            <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M9 2a7 7 0 1 1 0 14A7 7 0 0 1 9 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 9 4zm1 2v4l3 2-1 1-4-2V6h2z'/></svg>
+            <span style='display:block;'>Sugerir artículos y soluciones</span>
+          </li>
+          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
+            <svg width='18' height='18' fill='#f7b787' style='display:block;'><circle cx='9' cy='9' r='7'/><rect x='8' y='4' width='2' height='6' fill='#fff'/><rect x='8' y='10' width='2' height='4' fill='#fff'/></svg>
+            <span style='display:block;'>Buscar información por texto, tags, tipo, fecha</span>
+          </li>
+          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
+            <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M4 9h10v2H4V9zm0-4h10v2H4V5zm0 8h6v2H4v-2z'/></svg>
+            <span style='display:block;'>Relacionar elementos entre sí</span>
+          </li>
+          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
+            <svg width='18' height='18' fill='#f7b787' style='display:block;'><circle cx='9' cy='9' r='7'/><text x='9' y='13' text-anchor='middle' font-size='8' fill='#fff'>?</text></svg>
+            <span style='display:block;'>Responder preguntas técnicas y de productividad</span>
+          </li>
+          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
+            <svg width='18' height='18' fill='#f7b787' style='display:block;'><rect x='3' y='3' width='12' height='12' rx='2'/><rect x='6' y='6' width='6' height='6' fill='#fff'/></svg>
+            <span style='display:block;'>Crear eventos y notas</span>
+          </li>
+        </ul>
+        <div style='font-size:0.98em;color:#f7b787;font-weight:bold;'>¡Escríbeme lo que necesitas!</div>
+      </div>`;
   const [open, setOpen] = useState(false);
   // Eliminado: const [closing, setClosing] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -382,7 +445,7 @@ export default function AssistantBubble() {
                   <div className={`rounded-lg p-3 text-sm font-inter max-w-[80%] ${msg.role === 'user' ? 'bg-accent text-primary' : 'bg-accent/10 text-white'}`}>
                     {msg.role === 'system' && isLoginPage ? (
                       <>
-                        <div>{initialPrompt}</div>
+                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(initialPrompt) }} />
                         <div className="flex gap-4 mt-4">
                           <button
                             className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
@@ -443,7 +506,9 @@ export default function AssistantBubble() {
                         </div>
                       </>
                     ) : (
-                      typeof msg.content === 'string' ? msg.content : null
+                      typeof msg.content === 'string'
+                        ? <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
+                        : null
                     )}
                   </div>
                 </div>
