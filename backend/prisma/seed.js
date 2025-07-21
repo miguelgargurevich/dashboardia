@@ -37,7 +37,8 @@ async function main() {
         }
       });
     }
-    if (u.role === 'soporte') {
+    // Solo agregar usuarios con rol 'soporte'
+    if (userRecord.role === 'soporte') {
       soporteUsers.push(userRecord);
     }
   }
@@ -80,7 +81,7 @@ async function main() {
   // Configuración de tickets por mes específico
   // Lógicas de distribución
   const mesesEspecificos = [0, 3, 6, 9]; // Enero, Abril, Julio, Octubre
-  const cantidadPorMes = 15;
+  const cantidadPorMes = 25; // Aumentar la cantidad
   const feriados = [1, 25]; // Ejemplo: 1 y 25 de cada mes (menos tickets)
   for (const mes of mesesEspecificos) {
     for (let i = 0; i < cantidadPorMes; i++) {
@@ -99,8 +100,8 @@ async function main() {
       const template = (dia % 7 === 1) ? ticketTemplates[3] : ticketTemplates[(i + mes) % ticketTemplates.length];
       const descripcion = template.descripcion + ` [${year}-${mes+1}-${dia}] #${i}`;
       const exists = await prisma.ticket.findMany({ where: { descripcion }, take: 1 });
-      // Asignar usuario de soporte aleatorio
-      const soporteUser = soporteUsers[Math.floor(Math.random() * soporteUsers.length)];
+      // Asignar usuario de soporte aleatorio, pero distribuir equitativamente
+      const soporteUser = soporteUsers[i % soporteUsers.length];
       if (exists.length === 0) await prisma.ticket.create({ data: { ...template, descripcion, createdAt: fechaBase, userId: soporteUser.id } });
       // Tendencia creciente: agregar más tickets en meses posteriores
       if (mes > 0 && i < mes * 2) {
@@ -109,7 +110,7 @@ async function main() {
         fechaExtra.setMinutes(Math.floor(Math.random() * 59));
         const descripcionExtra = template.descripcion + ` [${year}-${mes+1}-${dia}] extra#${i}`;
         const existsExtra = await prisma.ticket.findMany({ where: { descripcion: descripcionExtra }, take: 1 });
-        const soporteUserExtra = soporteUsers[Math.floor(Math.random() * soporteUsers.length)];
+        const soporteUserExtra = soporteUsers[(i + mes) % soporteUsers.length];
         if (existsExtra.length === 0) await prisma.ticket.create({ data: { ...template, descripcion: descripcionExtra, createdAt: fechaExtra, userId: soporteUserExtra.id } });
       }
     }
