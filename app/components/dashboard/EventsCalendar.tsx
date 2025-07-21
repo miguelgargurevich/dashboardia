@@ -93,14 +93,14 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-accent">{monthLabel}</h3>
         <div className="flex items-center gap-2">
-          <button className="px-2 py-1 rounded bg-accent text-primary font-bold flex items-center" onClick={() => changeMonth(-1)}>
-            <FaAngleLeft />
+          <button className="px-2 py-1 rounded text-accent font-bold flex items-center hover:bg-accent/10 transition-colors" onClick={() => changeMonth(-1)}>
+            <FaAngleLeft className="text-accent" />
           </button>
-          <button className="px-2 py-1 rounded bg-accent text-primary font-bold flex items-center" onClick={goToToday}>
-            <FaRegCalendarAlt className="mr-1" /> Hoy
+          <button className="px-2 py-1 rounded text-accent font-bold flex items-center hover:bg-accent/10 transition-colors" onClick={goToToday}>
+            <FaRegCalendarAlt className="mr-1 text-accent" /> Hoy
           </button>
-          <button className="px-2 py-1 rounded bg-accent text-primary font-bold flex items-center" onClick={() => changeMonth(1)}>
-            <FaAngleRight />
+          <button className="px-2 py-1 rounded text-accent font-bold flex items-center hover:bg-accent/10 transition-colors" onClick={() => changeMonth(1)}>
+            <FaAngleRight className="text-accent" />
           </button>
         </div>
       </div>
