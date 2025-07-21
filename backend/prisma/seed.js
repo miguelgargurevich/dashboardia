@@ -5,23 +5,30 @@ const prisma = new PrismaClient();
 
 
 async function main() {
+  // Eliminar todos los eventos existentes (de prueba)
+  await prisma.event.deleteMany({});
   // Variable global para fechas
   const now = new Date();
   // Usuarios
   const users = [
     { name: 'Admin', email: 'admin@soporte.com', password: await bcrypt.hash('admin123', 10), role: 'admin' },
     { name: 'Usuario', email: 'usuario@soporte.com', password: await bcrypt.hash('user123', 10), role: 'user' },
-    { name: 'Miguel', email: 'miguel@soporte.com', password: await bcrypt.hash('miguel123', 10), role: 'user' },
+    { name: 'Miguel Fernandez', email: 'miguel@soporte.com', password: await bcrypt.hash('miguel123', 10), role: 'soporte' },
     { name: 'Miguel Gargurevich', email: 'miguel.gargurevich@gmail.com', password: await bcrypt.hash('miguel123', 10), role: 'user' },
-    { name: 'Sofia', email: 'sofia@soporte.com', password: await bcrypt.hash('sofia456', 10), role: 'user' },
-    { name: 'Carlos', email: 'carlos@soporte.com', password: await bcrypt.hash('carlos789', 10), role: 'user' }
+    { name: 'Sofia Lyz', email: 'sofia@soporte.com', password: await bcrypt.hash('sofia123', 10), role: 'user' },
+    { name: 'Carlos Fernando', email: 'carlos@soporte.com', password: await bcrypt.hash('carlos123', 10), role: 'user' },
+    { name: 'Juan Pérez', email: 'juan.perez@soporte.com', password: await bcrypt.hash('juan123', 10), role: 'soporte' },
+    { name: 'Ana Torres', email: 'ana.torres@soporte.com', password: await bcrypt.hash('ana123', 10), role: 'soporte' },
+    { name: 'Luis Gómez', email: 'luis.gomez@soporte.com', password: await bcrypt.hash('luis123', 10), role: 'soporte' }
   ];
+  let soporteUsers = [];
   for (const u of users) {
     const exists = await prisma.user.findUnique({ where: { email: u.email } });
+    let userRecord;
     if (!exists) {
-      await prisma.user.create({ data: u });
+      userRecord = await prisma.user.create({ data: u });
     } else {
-      await prisma.user.update({
+      userRecord = await prisma.user.update({
         where: { email: u.email },
         data: {
           name: u.name,
@@ -29,6 +36,9 @@ async function main() {
           role: u.role
         }
       });
+    }
+    if (u.role === 'soporte') {
+      soporteUsers.push(userRecord);
     }
   }
 
@@ -89,7 +99,9 @@ async function main() {
       const template = (dia % 7 === 1) ? ticketTemplates[3] : ticketTemplates[(i + mes) % ticketTemplates.length];
       const descripcion = template.descripcion + ` [${year}-${mes+1}-${dia}] #${i}`;
       const exists = await prisma.ticket.findMany({ where: { descripcion }, take: 1 });
-      if (exists.length === 0) await prisma.ticket.create({ data: { ...template, descripcion, createdAt: fechaBase } });
+      // Asignar usuario de soporte aleatorio
+      const soporteUser = soporteUsers[Math.floor(Math.random() * soporteUsers.length)];
+      if (exists.length === 0) await prisma.ticket.create({ data: { ...template, descripcion, createdAt: fechaBase, userId: soporteUser.id } });
       // Tendencia creciente: agregar más tickets en meses posteriores
       if (mes > 0 && i < mes * 2) {
         let fechaExtra = new Date(year, mes, dia);
@@ -97,30 +109,179 @@ async function main() {
         fechaExtra.setMinutes(Math.floor(Math.random() * 59));
         const descripcionExtra = template.descripcion + ` [${year}-${mes+1}-${dia}] extra#${i}`;
         const existsExtra = await prisma.ticket.findMany({ where: { descripcion: descripcionExtra }, take: 1 });
-        if (existsExtra.length === 0) await prisma.ticket.create({ data: { ...template, descripcion: descripcionExtra, createdAt: fechaExtra } });
+        const soporteUserExtra = soporteUsers[Math.floor(Math.random() * soporteUsers.length)];
+        if (existsExtra.length === 0) await prisma.ticket.create({ data: { ...template, descripcion: descripcionExtra, createdAt: fechaExtra, userId: soporteUserExtra.id } });
       }
     }
   }
 
-  // Eventos
-  const events = [
-    // Mes actual
-    { title: 'Mantenimiento programado', description: 'Corte de red', startDate: new Date(now.getFullYear(), now.getMonth(), 10, 10, 0), endDate: new Date(now.getFullYear(), now.getMonth(), 10, 12, 0), location: 'Sala de servidores' },
-    { title: 'Capacitación', description: 'Curso de soporte', startDate: new Date(now.getFullYear(), now.getMonth(), 15, 9, 0), endDate: new Date(now.getFullYear(), now.getMonth(), 15, 11, 0), location: 'Aula virtual' },
-    // Mes siguiente
-    { title: 'Reunión de equipo', description: 'Planificación mensual', startDate: new Date(now.getFullYear(), now.getMonth() + 1, 5, 14, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 1, 5, 15, 0), location: 'Sala de reuniones' },
-    { title: 'Webinar IA', description: 'Novedades IA', startDate: new Date(now.getFullYear(), now.getMonth() + 1, 20, 16, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 1, 20, 18, 0), location: 'Online' },
-    // Mes anterior
-    { title: 'Revisión de tickets', description: 'Análisis de tickets', startDate: new Date(now.getFullYear(), now.getMonth() - 1, 22, 11, 0), endDate: new Date(now.getFullYear(), now.getMonth() - 1, 22, 12, 0), location: 'Oficina' },
-    { title: 'Demo producto', description: 'Presentación nueva herramienta', startDate: new Date(now.getFullYear(), now.getMonth() - 1, 8, 15, 0), endDate: new Date(now.getFullYear(), now.getMonth() - 1, 8, 16, 0), location: 'Sala demo' },
-    // Meses futuros
-    { title: 'Evento futuro 2m', description: 'Evento en dos meses', startDate: new Date(now.getFullYear(), now.getMonth() + 2, 12, 10, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 2, 12, 12, 0), location: 'Auditorio' },
-    { title: 'Evento futuro 3m', description: 'Evento en tres meses', startDate: new Date(now.getFullYear(), now.getMonth() + 3, 7, 9, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 3, 7, 11, 0), location: 'Online' },
-    { title: 'Evento futuro 6m', description: 'Evento en seis meses', startDate: new Date(now.getFullYear(), now.getMonth() + 6, 25, 15, 0), endDate: new Date(now.getFullYear(), now.getMonth() + 6, 25, 17, 0), location: 'Sala grande' }
+  // Eventos de negocio
+  const businessEvents = [
+    {
+      validador: "Jose Arce",
+      modo: "Manual",
+      codigoDana: "17",
+      nombreNotificacion: "INCLUSION ACUMULADA (CLIENTE)",
+      diaEnvio: "7 DE CADA MES",
+      query: "BBB Envio Liquidacion Inclusion Acumulada VG - Cliente - 9006 programacion",
+      title: "Validar si se cae - Jose Arce",
+      description: "Validar si se cae - Jose Arce - INCLUSION ACUMULADA (CLIENTE)",
+      location: "",
+      // Se generarán fechas para cada mes en el ciclo de abajo
+      recurrentDay: 7
+    },
+    {
+      validador: "Jose Arce",
+      modo: "Manual",
+      codigoDana: "18",
+      nombreNotificacion: "INCLUSION ACUMULADA (BROKER)",
+      diaEnvio: "6 DE CADA MES",
+      query: "AAA Envío Liquidacion Inclusion Acumulada VG - Broker - 9007 programacion",
+      title: "Validar si se cae - Jose Arce",
+      description: "Validar si se cae - Jose Arce - INCLUSION ACUMULADA (BROKER)",
+      location: "",
+      recurrentDay: 6
+    },
+    {
+      validador: "Jose Arce",
+      modo: "Manual",
+      codigoDana: "26",
+      nombreNotificacion: "VG Cobranzas Borker  - 20.06 5pm",
+      diaEnvio: "20 DE CADA MES",
+      query: "VIDA GRUPO Cobranza Broker - 107 programacion",
+      title: "Jose Arce",
+      description: "VG Cobranzas Borker  - 20.06 5pm",
+      location: "",
+      recurrentDay: 20
+    },
+    {
+      validador: "Jose Arce",
+      modo: "Manual",
+      codigoDana: "27",
+      nombreNotificacion: "VG Cobranzas Cliente - 19.06 5pm",
+      diaEnvio: "19 DE CADA MES",
+      query: "VIDA GRUPO Cobranza Cliente - 108 programacion",
+      title: "Jose Arce",
+      description: "VG Cobranzas Cliente - 19.06 5pm",
+      location: "",
+      recurrentDay: 19
+    },
+    {
+      validador: "",
+      modo: "Automatico",
+      codigoDana: "13",
+      nombreNotificacion: "Notificación Poliza Suspendiad 1º Envio",
+      diaEnvio: "2 DE CADA MES",
+      query: "CCC Notificación Aviso Suspensión programacion",
+      title: "Notificación Poliza Suspendiad 1º Envio",
+      description: "Notificación Poliza Suspendiad 1º Envio",
+      location: "",
+      recurrentDay: 2
+    },
+    {
+      validador: "",
+      modo: "Automatico",
+      codigoDana: "13",
+      nombreNotificacion: "Notificación Poliza Suspendiad 2º Envio",
+      diaEnvio: "21 DE CADA MES",
+      query: "CCC Notificación Aviso Suspensión programacion",
+      title: "Notificación Poliza Suspendiad 2º Envio",
+      description: "Notificación Poliza Suspendiad 2º Envio",
+      location: "",
+      recurrentDay: 21
+    },
+    {
+      validador: "",
+      modo: "Automatico",
+      codigoDana: "1",
+      nombreNotificacion: "Posible suspension de Cobertura",
+      diaEnvio: "22 DE CADA MES",
+      query: "Sin query",
+      title: "Posible suspension de Cobertura",
+      description: "Posible suspension de Cobertura",
+      location: "",
+      recurrentDay: 22
+    },
+    {
+      validador: "",
+      modo: "Manual",
+      codigoDana: "19",
+      nombreNotificacion: "Mailling",
+      diaEnvio: "Las 1ras SEMANA DE CADA MES",
+      query: "",
+      title: "Mailling",
+      description: "Mailling",
+      location: "",
+      recurrentDay: 2
+    },
+    {
+      validador: "TASKAGENT",
+      modo: "Manual",
+      codigoDana: "19",
+      nombreNotificacion: "WSM Mailing Liquidaciones Pendiendtes de pago",
+      diaEnvio: "22 DE CADA MES / CUANDO LO SOLICITE BENNY X CORREO",
+      query: "envio liquidaciones WSM programacion",
+      title: "WSM Mailing Liquidaciones Pendiendtes de pago",
+      description: "WSM Mailing Liquidaciones Pendiendtes de pago",
+      location: "",
+      recurrentDay: 22
+    },
+    {
+      validador: "Anthony Mederos",
+      modo: "Manual",
+      codigoDana: "25",
+      nombreNotificacion: "LIQUIDACIONES WSM",
+      diaEnvio: "1er VIERNES  DE CADA MES",
+      query: "envio liquidaciones WSM programacion",
+      title: "LIQUIDACIONES WSM",
+      description: "LIQUIDACIONES WSM",
+      location: "",
+      recurrentDay: 7
+    },
+    {
+      validador: "Si se cae- Fernando debe avisar",
+      modo: "Manual",
+      codigoDana: "23",
+      nombreNotificacion: "Vida Ley ex empleados",
+      diaEnvio: "9 de cada mes",
+      query: "XXX Envío de Renovaciones VL Ex-Empleados",
+      title: "Vida Ley ex empleados",
+      description: "Vida Ley ex empleados",
+      location: "",
+      recurrentDay: 9
+    },
+    {
+      validador: "",
+      modo: "Manual",
+      codigoDana: "",
+      nombreNotificacion: "Reportes integrales de agencia",
+      diaEnvio: "A DEMANDA (1 vez al mes)",
+      query: "C:\\Users\\D3896536\\Desktop\\CSHICA\\SSCC - Gestion Documental\\Listo - 13 - Reportes Sucave - Trimestral\\Listo - 11 - Reportes Integrales\\04 AGENCIAS",
+      title: "Reportes integrales de agencia",
+      description: "Reportes integrales de agencia",
+      location: "",
+      recurrentDay: 1
+    }
   ];
-  for (const e of events) {
-    const exists = await prisma.event.findMany({ where: { title: e.title }, take: 1 });
-    if (exists.length === 0) await prisma.event.create({ data: e });
+  for (const e of businessEvents) {
+    // Crear el evento para cada mes del año actual
+    for (let mes = 0; mes < 12; mes++) {
+      const year = now.getFullYear();
+      // Si el día es válido para el mes
+      let day = e.recurrentDay;
+      // Si el mes no tiene ese día, usar el último día del mes
+      const daysInMonth = new Date(year, mes + 1, 0).getDate();
+      if (day > daysInMonth) day = daysInMonth;
+      const startDate = new Date(year, mes, day, 9, 0, 0); // 9:00 AM
+      const endDate = new Date(year, mes, day, 10, 0, 0); // 10:00 AM
+      const eventData = {
+        ...e,
+        startDate,
+        endDate
+      };
+      delete eventData.recurrentDay;
+      await prisma.event.create({ data: eventData });
+    }
   }
 
   // Recursos con fechas recientes

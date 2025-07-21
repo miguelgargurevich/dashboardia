@@ -65,16 +65,22 @@ model Resource {
 }
 
 model Event {
-  id          String             @id @default(cuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime
-  location    String?
-  createdAt   DateTime           @default(now())
-  kbs         EventToKBArticle[]
-  tickets     EventToTicket[]
-  resources   ResourceToEvent[]
+  id                  String   @id @default(cuid())
+  title               String
+  description         String?
+  startDate           DateTime
+  endDate             DateTime
+  location            String?
+  createdAt           DateTime @default(now())
+  validador           String?
+  modo                String?
+  codigoDana          String?
+  nombreNotificacion  String?
+  diaEnvio            String?
+  query               String?
+  kbs                 EventToKBArticle[]
+  tickets             EventToTicket[]
+  resources           ResourceToEvent[]
 }
 
 model TicketToKBArticle {

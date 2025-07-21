@@ -4,8 +4,8 @@ const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('./auth');
 const prisma = new PrismaClient();
 
-// Proteger todos los endpoints del dashboard
-router.use(requireAuth);
+// Proteger solo rutas privadas, NO /api/assistant
+// router.use(requireAuth); // Comentado para proteger solo rutas privadas
 
 // Endpoint: Estadísticas de tickets agrupadas
 // GET /api/tickets/stats?groupBy=tipo|estado|sistema|fecha
