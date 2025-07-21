@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // router.use(requireAuth); // Comentado para proteger solo rutas privadas
 
 // Endpoint: Estadísticas de tickets agrupadas
-// GET /api/tickets/stats?groupBy=tipo|estado|sistema|fecha
+// GET /api/tickets/stats?groupBy=tipo|estado|sistema|fecha|usuario
 router.get('/api/tickets/stats', async (req, res) => {
   const groupBy = req.query.groupBy || 'tipo';
   let groupField;
@@ -16,6 +16,7 @@ router.get('/api/tickets/stats', async (req, res) => {
     case 'estado': groupField = 'estado'; break;
     case 'sistema': groupField = 'sistema'; break;
     case 'fecha': groupField = 'createdAt'; break;
+    case 'usuario': groupField = 'userId'; break;
     default: groupField = 'tipo';
   }
   try {
@@ -29,6 +30,31 @@ router.get('/api/tickets/stats', async (req, res) => {
       }
       const stats = Object.entries(counts).map(([createdAt, count]) => ({ createdAt, _count: { id: count } }));
       res.json(stats);
+    } else if (groupBy === 'usuario') {
+      // Para usuarios, necesitamos obtener nombres desde la tabla User
+      const stats = await prisma.ticket.groupBy({
+        by: ['userId'],
+        _count: { id: true }
+      });
+      
+      // Obtener nombres de usuarios
+      const userIds = stats.map(s => s.userId).filter(Boolean);
+      const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true }
+      });
+      
+      const userMap = {};
+      users.forEach(user => {
+        userMap[user.id] = user.name;
+      });
+      
+      const formattedStats = stats.map(stat => ({
+        usuario: stat.userId ? userMap[stat.userId] || 'Usuario desconocido' : 'Sin asignar',
+        _count: stat._count
+      }));
+      
+      res.json(formattedStats);
     } else {
       const stats = await prisma.ticket.groupBy({
         by: [groupField],

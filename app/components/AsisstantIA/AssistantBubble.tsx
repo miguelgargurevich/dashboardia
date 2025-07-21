@@ -384,19 +384,20 @@ export default function AssistantBubble() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages.filter(m => m.role !== 'system'), { role: 'user', content: value }] })
       });
-      const data = await res.json();
-      setMessages(msgs => [...msgs, { role: 'assistant', content: data.reply }]);
+      if (res.status === 401) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'No tienes acceso a esa función. Por favor inicia sesión para continuar.' }]);
+      } else {
+        const data = await res.json();
+        setMessages(msgs => [...msgs, { role: 'assistant', content: data.reply }]);
+      }
     } catch (err) {
       setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el asistente IA.' }]);
     }
     setInput('');
     setLoading(false);
-    // No return aquí, la función termina y el componente sigue
-
-    // ...existing code...
-    // No return aquí, la función termina y el componente sigue
+    
   }
-  // ...existing code...
+
   return (
     <>
       {/* Burbuja flotante solo si NO está en login */}
@@ -417,10 +418,10 @@ export default function AssistantBubble() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 right-0 h-full w-1/2 min-w-0 max-w-none bg-primary text-white shadow-2xl z-50 flex flex-col"
+            className="fixed top-0 right-0 h-full w-1/2 min-w-0 max-w-none bg-primary text-white shadow-2xl z-[70] flex flex-col"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-accent">
+            {/* Header ajustado para altura igual a header y sidebar (56px) */}
+            <div className="flex items-center justify-between h-14 px-6 border-b border-accent" style={{height:'56px'}}>
               <span className="font-poppins text-xl font-bold text-accent">Asistente IA</span>
               <button
                 className="text-accent hover:text-[#f7b787] text-2xl font-bold"

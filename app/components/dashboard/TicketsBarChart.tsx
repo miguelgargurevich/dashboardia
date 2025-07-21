@@ -5,7 +5,7 @@ import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from '
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 interface Stat {
-  createdAt?: string;
+  usuario?: string;
   _count: { id: number };
 }
 
@@ -21,7 +21,8 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
     async function fetchStats() {
       setLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/tickets/stats?groupBy=fecha`, {
+      // Consulta al backend para agrupar por usuario de soporte
+      const res = await fetch(`${apiUrl}/tickets/stats?groupBy=usuario`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const result = await res.json();
@@ -31,12 +32,11 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
     fetchStats();
   }, [token]);
 
-  const labels = stats.map(s => s.createdAt ? s.createdAt.slice(0, 10) : 'Sin fecha');
+  const labels = stats.map(s => s.usuario || 'Sin usuario');
   const values = stats.map(s => s._count.id);
 
   const colorPalette = [
     'rgba(41,121,255,0.7)', // Azul intenso
-    'rgba(255,61,0,0.7)',  // Rojo intenso
     'rgba(0,200,83,0.7)',  // Verde brillante
     'rgba(255,213,0,0.7)', // Amarillo intenso
     'rgba(255,0,255,0.7)', // Magenta
@@ -44,7 +44,8 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
     'rgba(255,87,34,0.7)', // Naranja fuerte
     'rgba(156,39,176,0.7)',// Violeta
     'rgba(0,150,136,0.7)', // Verde azulado
-    'rgba(233,30,99,0.7)', // Rosa
+    'rgba(233,30,99,0.7)', // Rosa,
+    'rgba(255,61,0,0.7)'  // Rojo intenso
   ];
   const backgroundColors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
 
@@ -52,7 +53,7 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
     labels,
     datasets: [
       {
-        label: 'Tickets por fecha',
+        label: 'Tickets por persona',
         data: values,
         backgroundColor: backgroundColors,
         borderColor: backgroundColors,
@@ -63,7 +64,7 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
 
   return (
     <div className="bg-primary rounded-lg p-4 shadow-md">
-      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por fecha</h3>
+      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por persona</h3>
       {loading ? <div>Cargando...</div> : <Bar data={chartData} />}
     </div>
   );

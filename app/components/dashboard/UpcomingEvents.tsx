@@ -7,8 +7,14 @@ interface Event {
   title: string;
   description?: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;
   location?: string;
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  diaEnvio?: string;
+  query?: string;
 }
 
 interface Props {
@@ -44,9 +50,17 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 4 }) => {
                 <FaRegCalendarAlt className="text-accent" size={20} />
                 {event.title}
               </span>
-              <span className="text-sm text-gray-300">{event.description}</span>
-              <span className="text-xs text-gray-400">{new Date(event.startDate).toLocaleString()} - {new Date(event.endDate).toLocaleString()}</span>
-              {event.location && <span className="text-xs text-blue-400">{event.location}</span>}
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-300 mt-2">
+                <div><span className="font-bold text-accent">Validador:</span> {event.validador || '-'}</div>
+                <div><span className="font-bold text-accent">Modo:</span> {event.modo || '-'}</div>
+                <div><span className="font-bold text-accent">Código DANA:</span> {event.codigoDana || '-'}</div>
+                <div><span className="font-bold text-accent">Notificación:</span> {event.nombreNotificacion || '-'}</div>
+                <div><span className="font-bold text-accent">Día envío:</span> {event.diaEnvio || '-'}</div>
+                <div><span className="font-bold text-accent">Query:</span> {event.query || '-'}</div>
+                <div><span className="font-bold text-accent">Descripción:</span> {event.description || '-'}</div>
+                <div><span className="font-bold text-accent">Ubicación:</span> {event.location || '-'}</div>
+              </div>
+              <span className="text-xs text-gray-400">{event.startDate ? new Date(event.startDate).toLocaleString() : '-'} - {event.endDate ? new Date(event.endDate).toLocaleString() : '-'}</span>
             </div>
           ))}
         </div>

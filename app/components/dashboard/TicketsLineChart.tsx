@@ -50,7 +50,7 @@ const TicketsLineChart: React.FC<Props> = ({ token, data }) => {
         {
           label: 'Tickets por fecha',
           data: values,
-          borderColor: 'rgba(255,0,0,1)', // Rojo puro
+          borderColor: 'rgba(255,61,0,0.7)',  // Rojo intenso
           backgroundColor: 'rgba(255,0,0,0.2)', // Rojo traslúcido
           fill: true,
         },

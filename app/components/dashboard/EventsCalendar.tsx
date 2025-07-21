@@ -6,6 +6,15 @@ interface Event {
   id: string;
   title: string;
   startDate: string;
+  endDate?: string;
+  location?: string;
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  diaEnvio?: string;
+  query?: string;
+  description?: string;
 }
 
 interface Props {
@@ -23,7 +32,8 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
   const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  // Siempre mostrar el panel del día actual
+  const [selectedDate, setSelectedDate] = useState<string>(todayDay.toString());
   // Estado para el mes visible SIEMPRE inicia en el mes actual
   const jsDate = new Date();
   const [visibleMonth, setVisibleMonth] = useState<string>(jsDate.toISOString().slice(0,7));
@@ -81,11 +91,11 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
     }
     const nuevoMes = `${year}-${String(month + 1).padStart(2, '0')}`;
     setVisibleMonth(nuevoMes);
-    setSelectedDate(null);
+    setSelectedDate('1');
   }
   function goToToday() {
     setVisibleMonth(new Date().toISOString().slice(0,7));
-    setSelectedDate(null);
+    setSelectedDate(todayDay.toString());
   }
 
   return (
@@ -129,27 +139,41 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
           ))}
         </div>
       )}
-      {/* Detalles de eventos del día seleccionado */}
-      {selectedDate && eventsByDay[parseInt(selectedDate)] && (
-        <div className="mt-2">
-          <h4 className="text-accent font-bold mb-2">Eventos el día {selectedDate}</h4>
-          {eventsByDay[parseInt(selectedDate)].map(ev => (
-            <div key={ev.id} className="bg-accent/10 rounded-lg p-2 mb-6 flex items-center gap-2">
-              {/* Icono según el tipo/título del evento */}
-              {ev.title.toLowerCase().includes('mantenimiento') && <FaTools className="text-accent" />}
-              {ev.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher className="text-accent" />}
-              {ev.title.toLowerCase().includes('reunión') && <FaUsers className="text-accent" />}
-              {ev.title.toLowerCase().includes('webinar') && <FaRobot className="text-accent" />}
-              {ev.title.toLowerCase().includes('revisión') && <FaClipboardList className="text-accent" />}
-              {ev.title.toLowerCase().includes('demo') && <FaLaptop className="text-accent" />}
-              {/* Icono genérico si no coincide */}
-              {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => ev.title.toLowerCase().includes(t)) && <FaCalendarAlt className="text-accent" />}
-              <span className="font-semibold">{ev.title}</span>
-              <span className="ml-2 text-xs text-gray-400">{new Date(ev.startDate).toLocaleString()}</span>
+      {/* Panel de eventos del día actual siempre visible */}
+      <div className="mt-2">
+        <h4 className="text-accent font-bold mb-2">Eventos el día {selectedDate}</h4>
+        {eventsByDay[parseInt(selectedDate)] && eventsByDay[parseInt(selectedDate)].length > 0 ? (
+          eventsByDay[parseInt(selectedDate)].map(ev => (
+            <div key={ev.id} className="bg-accent/10 rounded-lg p-2 mb-6 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                {/* Icono según el tipo/título del evento */}
+                {ev.title.toLowerCase().includes('mantenimiento') && <FaTools className="text-accent" />}
+                {ev.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher className="text-accent" />}
+                {ev.title.toLowerCase().includes('reunión') && <FaUsers className="text-accent" />}
+                {ev.title.toLowerCase().includes('webinar') && <FaRobot className="text-accent" />}
+                {ev.title.toLowerCase().includes('revisión') && <FaClipboardList className="text-accent" />}
+                {ev.title.toLowerCase().includes('demo') && <FaLaptop className="text-accent" />}
+                {/* Icono genérico si no coincide */}
+                {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => ev.title.toLowerCase().includes(t)) && <FaCalendarAlt className="text-accent" />}
+                <span className="font-semibold">{ev.title}</span>
+                <span className="ml-2 text-xs text-gray-400">{ev.startDate ? new Date(ev.startDate).toLocaleString() : '-'}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-300 mt-2">
+                <div><span className="font-bold text-accent">Validador:</span> {ev.validador || '-'}</div>
+                <div><span className="font-bold text-accent">Modo:</span> {ev.modo || '-'}</div>
+                <div><span className="font-bold text-accent">Código DANA:</span> {ev.codigoDana || '-'}</div>
+                <div><span className="font-bold text-accent">Notificación:</span> {ev.nombreNotificacion || '-'}</div>
+                <div><span className="font-bold text-accent">Día envío:</span> {ev.diaEnvio || '-'}</div>
+                <div><span className="font-bold text-accent">Query:</span> {ev.query || '-'}</div>
+                <div><span className="font-bold text-accent">Descripción:</span> {ev.description || '-'}</div>
+                <div><span className="font-bold text-accent">Ubicación:</span> {ev.location || '-'}</div>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        ) : (
+          <div className="bg-accent/10 rounded-lg p-4 text-center text-accent font-bold">No hay eventos para hoy</div>
+        )}
+      </div>
     </div>
   );
 };

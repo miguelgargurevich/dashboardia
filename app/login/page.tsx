@@ -1,5 +1,5 @@
 "use client";
-import AssistantBubble from '../components/AssistantBubble';
+import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 declare global {
   interface Window {
     openAssistantBubble?: () => void;

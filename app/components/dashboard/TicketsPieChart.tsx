@@ -44,13 +44,13 @@ const TicketsPieChart: React.FC<Props> = ({ groupBy = 'tipo', token }) => {
         label: `Tickets por ${groupBy}`,
         data: values,
         backgroundColor: [
-          'rgba(0,200,83,0.7)',    // Verde brillante
+          'rgba(0,150,136,0.7)',    // Verde azulado
+          'rgba(255,87,34,0.7)',    // Naranja fuerte
           'rgba(255,61,0,0.7)',    // Rojo intenso
           'rgba(255,213,0,0.7)',   // Amarillo intenso
           'rgba(41,121,255,0.7)',  // Azul intenso
           'rgba(255,0,255,0.7)',   // Magenta
-          'rgba(0,229,255,0.7)',   // Celeste
-          'rgba(255,87,34,0.7)'    // Naranja fuerte
+          'rgba(0,229,255,0.7)'   // Celeste
         ],
       },
     ],
