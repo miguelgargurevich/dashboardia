@@ -1,23 +1,19 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
-import { Chart, Filler, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-Chart.register(Filler, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 interface Stat {
-  tipo?: string;
-  estado?: string;
-  sistema?: string;
   createdAt?: string;
   _count: { id: number };
 }
 
 interface Props {
-  groupBy?: 'tipo' | 'estado' | 'sistema' | 'fecha';
-  token: string;
+  token?: string;
 }
 
-const TicketsBarChart: React.FC<Props> = ({ groupBy = 'estado', token }) => {
+const TicketsBarChart: React.FC<Props> = ({ token }) => {
   const [stats, setStats] = useState<Stat[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,47 +21,49 @@ const TicketsBarChart: React.FC<Props> = ({ groupBy = 'estado', token }) => {
     async function fetchStats() {
       setLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      const res = await fetch(`${apiUrl}/tickets/stats?groupBy=${groupBy}`, {
+      const res = await fetch(`${apiUrl}/tickets/stats?groupBy=fecha`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await res.json();
-      setStats(data);
+      const result = await res.json();
+      setStats(result);
       setLoading(false);
     }
     fetchStats();
-  }, [groupBy, token]);
+  }, [token]);
 
-  const labels = stats.map(s => {
-    if (groupBy === 'fecha') {
-      // Usar createdAt y formatear como YYYY-MM-DD
-      return s.createdAt ? s.createdAt.slice(0, 10) : 'Sin fecha';
-    }
-    return s[groupBy as keyof Stat] || 'Sin dato';
-  });
+  const labels = stats.map(s => s.createdAt ? s.createdAt.slice(0, 10) : 'Sin fecha');
   const values = stats.map(s => s._count.id);
+
+  const colorPalette = [
+    'rgba(41,121,255,0.7)', // Azul intenso
+    'rgba(255,61,0,0.7)',  // Rojo intenso
+    'rgba(0,200,83,0.7)',  // Verde brillante
+    'rgba(255,213,0,0.7)', // Amarillo intenso
+    'rgba(255,0,255,0.7)', // Magenta
+    'rgba(0,229,255,0.7)', // Celeste
+    'rgba(255,87,34,0.7)', // Naranja fuerte
+    'rgba(156,39,176,0.7)',// Violeta
+    'rgba(0,150,136,0.7)', // Verde azulado
+    'rgba(233,30,99,0.7)', // Rosa
+  ];
+  const backgroundColors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
 
   const chartData = {
     labels,
     datasets: [
       {
-        label: `Tickets por ${groupBy}`,
+        label: 'Tickets por fecha',
         data: values,
-        backgroundColor: [
-          'rgba(255,0,0,0.7)',     // Rojo puro
-          'rgba(0,255,0,0.7)',     // Verde puro
-          'rgba(0,0,255,0.7)',     // Azul puro
-          'rgba(255,255,0,0.7)',   // Amarillo puro
-          'rgba(255,0,255,0.7)',   // Magenta
-          'rgba(0,255,255,0.7)',   // Cyan
-          'rgba(255,140,0,0.7)'    // Naranja fuerte
-        ],
+        backgroundColor: backgroundColors,
+        borderColor: backgroundColors,
+        borderWidth: 1,
       },
     ],
   };
 
   return (
     <div className="bg-primary rounded-lg p-4 shadow-md">
-      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por {groupBy}</h3>
+      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por fecha</h3>
       {loading ? <div>Cargando...</div> : <Bar data={chartData} />}
     </div>
   );

@@ -5,6 +5,8 @@ const prisma = new PrismaClient();
 
 
 async function main() {
+  // Variable global para fechas
+  const now = new Date();
   // Usuarios
   const users = [
     { name: 'Admin', email: 'admin@soporte.com', password: await bcrypt.hash('admin123', 10), role: 'admin' },
@@ -57,20 +59,50 @@ async function main() {
   }
 
   // Tickets
-  const tickets = [
+  // Tickets variados: diferentes meses, años y picos diarios
+  const ticketTemplates = [
     { tipo: 'Incidente', estado: 'Abierto', descripcion: 'Error en SharePoint', sistema: 'SharePoint' },
     { tipo: 'Requerimiento', estado: 'Cerrado', descripcion: 'Solicitar acceso a Teams', sistema: 'Teams' },
     { tipo: 'Incidente', estado: 'En Proceso', descripcion: 'Problema con Outlook', sistema: 'Outlook' },
     { tipo: 'Incidente', estado: 'Abierto', descripcion: 'VPN no conecta', sistema: 'VPN' },
     { tipo: 'Requerimiento', estado: 'Abierto', descripcion: 'Solicitar acceso a carpeta compartida', sistema: 'FileServer' }
   ];
-  for (const t of tickets) {
-    const exists = await prisma.ticket.findMany({ where: { descripcion: t.descripcion }, take: 1 });
-    if (exists.length === 0) await prisma.ticket.create({ data: t });
+  // Configuración de tickets por mes específico
+  // Lógicas de distribución
+  const mesesEspecificos = [0, 3, 6, 9]; // Enero, Abril, Julio, Octubre
+  const cantidadPorMes = 15;
+  const feriados = [1, 25]; // Ejemplo: 1 y 25 de cada mes (menos tickets)
+  for (const mes of mesesEspecificos) {
+    for (let i = 0; i < cantidadPorMes; i++) {
+      // Pico semanal: más tickets los lunes
+      const dia = (i % 7 === 0) ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 28) + 1;
+      // Menos tickets en feriados
+      if (feriados.includes(dia) && i % 3 !== 0) continue;
+      // Tendencia creciente: más tickets en meses posteriores
+      const ticketsEsteMes = cantidadPorMes + mes * 2;
+      // Año alterno para variedad
+      const year = (i % 2 === 0) ? now.getFullYear() : now.getFullYear() - 1;
+      let fechaBase = new Date(year, mes, dia);
+      fechaBase.setHours(Math.floor(Math.random() * 23));
+      fechaBase.setMinutes(Math.floor(Math.random() * 59));
+      // Tickets recurrentes: cada lunes, mismo problema
+      const template = (dia % 7 === 1) ? ticketTemplates[3] : ticketTemplates[(i + mes) % ticketTemplates.length];
+      const descripcion = template.descripcion + ` [${year}-${mes+1}-${dia}] #${i}`;
+      const exists = await prisma.ticket.findMany({ where: { descripcion }, take: 1 });
+      if (exists.length === 0) await prisma.ticket.create({ data: { ...template, descripcion, createdAt: fechaBase } });
+      // Tendencia creciente: agregar más tickets en meses posteriores
+      if (mes > 0 && i < mes * 2) {
+        let fechaExtra = new Date(year, mes, dia);
+        fechaExtra.setHours(Math.floor(Math.random() * 23));
+        fechaExtra.setMinutes(Math.floor(Math.random() * 59));
+        const descripcionExtra = template.descripcion + ` [${year}-${mes+1}-${dia}] extra#${i}`;
+        const existsExtra = await prisma.ticket.findMany({ where: { descripcion: descripcionExtra }, take: 1 });
+        if (existsExtra.length === 0) await prisma.ticket.create({ data: { ...template, descripcion: descripcionExtra, createdAt: fechaExtra } });
+      }
+    }
   }
 
   // Eventos
-  const now = new Date();
   const events = [
     // Mes actual
     { title: 'Mantenimiento programado', description: 'Corte de red', startDate: new Date(now.getFullYear(), now.getMonth(), 10, 10, 0), endDate: new Date(now.getFullYear(), now.getMonth(), 10, 12, 0), location: 'Sala de servidores' },

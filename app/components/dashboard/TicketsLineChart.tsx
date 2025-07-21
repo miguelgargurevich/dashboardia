@@ -12,49 +12,57 @@ interface Stat {
 }
 
 interface Props {
-  token: string;
+  token?: string;
+  data?: any;
 }
 
-const TicketsLineChart: React.FC<Props> = ({ token }) => {
+const TicketsLineChart: React.FC<Props> = ({ token, data }) => {
   const [stats, setStats] = useState<Stat[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (data) {
+      setLoading(false);
+      return;
+    }
     async function fetchStats() {
       setLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
       const res = await fetch(`${apiUrl}/tickets/stats?groupBy=fecha`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await res.json();
-      setStats(data);
+      const result = await res.json();
+      setStats(result);
       setLoading(false);
     }
     fetchStats();
-  }, [token]);
+  }, [token, data]);
 
-  // Agrupar por fecha (YYYY-MM-DD)
-  const labels = stats.map(s => s.createdAt ? s.createdAt.slice(0, 10) : 'Sin fecha');
-  const values = stats.map(s => s._count.id);
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: 'Tickets por fecha',
-        data: values,
+  let chartData;
+  if (data) {
+    chartData = data;
+  } else {
+    const labels = stats.map(s => s.createdAt ? s.createdAt.slice(0, 10) : 'Sin fecha');
+    const values = stats.map(s => s._count.id);
+    chartData = {
+      labels,
+      datasets: [
+        {
+          label: 'Tickets por fecha',
+          data: values,
           borderColor: 'rgba(255,0,0,1)', // Rojo puro
           backgroundColor: 'rgba(255,0,0,0.2)', // Rojo traslúcido
           fill: true,
-      },
-    ],
-  };
+        },
+      ],
+    };
+  }
 
   return (
-       <div className="bg-primary rounded-lg p-4 shadow-md">
-         <h3 className="text-lg font-bold mb-2 text-accent">Tickets por fecha</h3>
-         {loading ? <div>Cargando...</div> : <Line data={chartData} />}
-       </div>
+    <div className="bg-primary rounded-lg p-4 shadow-md">
+      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por fecha</h3>
+      {loading ? <div>Cargando...</div> : <Line data={chartData} />}
+    </div>
   );
 };
 

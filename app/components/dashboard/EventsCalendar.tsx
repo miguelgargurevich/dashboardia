@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
 
 interface Event {
   id: string;
@@ -92,9 +93,15 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-accent">{monthLabel}</h3>
         <div className="flex items-center gap-2">
-          <button className="px-2 py-1 rounded bg-accent text-primary font-bold" onClick={() => changeMonth(-1)}>{'<'}</button>
-          <button className="px-2 py-1 rounded bg-accent text-primary font-bold" onClick={goToToday}>Hoy</button>
-          <button className="px-2 py-1 rounded bg-accent text-primary font-bold" onClick={() => changeMonth(1)}>{'>'}</button>
+          <button className="px-2 py-1 rounded bg-accent text-primary font-bold flex items-center" onClick={() => changeMonth(-1)}>
+            <FaAngleLeft />
+          </button>
+          <button className="px-2 py-1 rounded bg-accent text-primary font-bold flex items-center" onClick={goToToday}>
+            <FaRegCalendarAlt className="mr-1" /> Hoy
+          </button>
+          <button className="px-2 py-1 rounded bg-accent text-primary font-bold flex items-center" onClick={() => changeMonth(1)}>
+            <FaAngleRight />
+          </button>
         </div>
       </div>
       {loading ? <div>Cargando...</div> : (
@@ -127,7 +134,16 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
         <div className="mt-2">
           <h4 className="text-accent font-bold mb-2">Eventos el día {selectedDate}</h4>
           {eventsByDay[parseInt(selectedDate)].map(ev => (
-            <div key={ev.id} className="bg-accent/10 rounded-lg p-2 mb-6">
+            <div key={ev.id} className="bg-accent/10 rounded-lg p-2 mb-6 flex items-center gap-2">
+              {/* Icono según el tipo/título del evento */}
+              {ev.title.toLowerCase().includes('mantenimiento') && <FaTools className="text-accent" />}
+              {ev.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher className="text-accent" />}
+              {ev.title.toLowerCase().includes('reunión') && <FaUsers className="text-accent" />}
+              {ev.title.toLowerCase().includes('webinar') && <FaRobot className="text-accent" />}
+              {ev.title.toLowerCase().includes('revisión') && <FaClipboardList className="text-accent" />}
+              {ev.title.toLowerCase().includes('demo') && <FaLaptop className="text-accent" />}
+              {/* Icono genérico si no coincide */}
+              {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => ev.title.toLowerCase().includes(t)) && <FaCalendarAlt className="text-accent" />}
               <span className="font-semibold">{ev.title}</span>
               <span className="ml-2 text-xs text-gray-400">{new Date(ev.startDate).toLocaleString()}</span>
             </div>

@@ -19,11 +19,23 @@ router.get('/api/tickets/stats', async (req, res) => {
     default: groupField = 'tipo';
   }
   try {
-    const stats = await prisma.ticket.groupBy({
-      by: [groupField],
-      _count: { id: true }
-    });
-    res.json(stats);
+    if (groupBy === 'fecha') {
+      // Agrupar por día (YYYY-MM-DD)
+      const tickets = await prisma.ticket.findMany({ select: { createdAt: true } });
+      const counts = {};
+      for (const t of tickets) {
+        const fecha = t.createdAt.toISOString().slice(0, 10);
+        counts[fecha] = (counts[fecha] || 0) + 1;
+      }
+      const stats = Object.entries(counts).map(([createdAt, count]) => ({ createdAt, _count: { id: count } }));
+      res.json(stats);
+    } else {
+      const stats = await prisma.ticket.groupBy({
+        by: [groupField],
+        _count: { id: true }
+      });
+      res.json(stats);
+    }
   } catch (err) {
     res.status(500).json({ error: 'Error obteniendo estadísticas', details: err.message });
   }
