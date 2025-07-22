@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { callGeminiAPI, GeminiConfigs, cleanAIGeneratedText } from '../../lib/gemini';
 
 interface GenerarNotaRequest {
   titulo: string;
@@ -71,14 +72,16 @@ export async function POST(request: NextRequest) {
 
 async function generarContenidoConIA(datos: GenerarNotaRequest): Promise<string> {
   try {
-    // Construir prompt para IA (para futuras integraciones)
-    // const prompt = construirPrompt(datos);
+    // Usar la API de Gemini para generar contenido real
+    const prompt = construirPrompt(datos);
+    const contenidoIA = await callGeminiAPI(prompt, GeminiConfigs.creative);
     
-    // Aquí podrías integrar con OpenAI, Claude, o cualquier otro servicio de IA
-    // Por ahora, genero un contenido estructurado basado en la información proporcionada
-    
-    const contenidoGenerado = generarContenidoEstructurado(datos);
-    return contenidoGenerado;
+    if (contenidoIA) {
+      return cleanAIGeneratedText(contenidoIA);
+    } else {
+      console.warn('No se pudo generar contenido con IA, usando fallback');
+      return generarContenidoEstructurado(datos);
+    }
 
   } catch (error) {
     console.error('Error en generación con IA:', error);
@@ -87,43 +90,122 @@ async function generarContenidoConIA(datos: GenerarNotaRequest): Promise<string>
   }
 }
 
-// Función para futuras integraciones con IA
-/* function construirPrompt(datos: GenerarNotaRequest): string {
-  const { titulo, tema, descripcion, tipo, puntosClave, contexto } = datos;
+function construirPrompt(datos: GenerarNotaRequest): string {
+  const { titulo, tema, descripcion, tipo, puntosClave, contexto, etiquetas } = datos;
   
-  let prompt = `Genera un documento markdown completo y profesional para el tema "${tema}" con el siguiente título: "${titulo}".
+  let prompt = `Eres un experto en documentación técnica y soporte de sistemas. Genera un documento markdown completo, profesional y detallado para un equipo de soporte técnico.
 
-Descripción: ${descripcion}
-
-Tipo de documento: ${tipo}
-
-`;
+**INFORMACIÓN DEL DOCUMENTO:**
+- Título: "${titulo}"
+- Tema: "${tema}"
+- Tipo: "${tipo}"
+- Descripción: ${descripcion}`;
 
   if (puntosClave && puntosClave.length > 0) {
-    prompt += `Puntos clave a incluir:
-${puntosClave.map(punto => `- ${punto}`).join('\n')}
-
-`;
+    prompt += `
+- Puntos clave a incluir:
+${puntosClave.map(punto => `  • ${punto}`).join('\n')}`;
   }
 
   if (contexto) {
-    prompt += `Contexto adicional: ${contexto}
-
-`;
+    prompt += `
+- Contexto adicional: ${contexto}`;
   }
 
-  prompt += `El documento debe:
-1. Estar bien estructurado con títulos y subtítulos
-2. Incluir información práctica y aplicable
-3. Ser específico para el contexto de soporte técnico
-4. Incluir ejemplos cuando sea relevante
-5. Tener un formato markdown profesional
-6. Incluir secciones como: Objetivo, Procedimiento, Consideraciones importantes, etc.
+  if (etiquetas && etiquetas.length > 0) {
+    prompt += `
+- Etiquetas: ${etiquetas.join(', ')}`;
+  }
 
-Genera el contenido completo en formato markdown:`;
+  prompt += `
+
+**INSTRUCCIONES ESPECÍFICAS:**
+
+1. **Estructura del documento:**
+   - Título principal con emoji apropiado
+   - Sección de información general con metadatos
+   - Objetivo claro y conciso
+   - Contenido principal estructurado según el tipo
+   - Consideraciones importantes
+   - Recursos relacionados
+
+2. **Formato y estilo:**
+   - Usar markdown profesional con títulos jerárquicos
+   - Incluir emojis apropiados en títulos (📋, 🎯, 📝, ⚠️, etc.)
+   - Usar listas, tablas y formato de código cuando sea apropiado
+   - Texto claro, directo y profesional
+   - Incluir ejemplos prácticos cuando sea relevante
+
+3. **Contenido específico según tipo:**`;
+
+  switch (tipo) {
+    case 'procedimiento':
+      prompt += `
+   - Crear un procedimiento paso a paso detallado
+   - Incluir prerequisitos y preparación
+   - Detallar cada paso con claridad
+   - Agregar puntos de verificación
+   - Incluir qué hacer en caso de errores`;
+      break;
+
+    case 'manual':
+      prompt += `
+   - Crear un manual completo de uso
+   - Incluir introducción y requisitos
+   - Explicar conceptos fundamentales
+   - Proporcionar instrucciones detalladas
+   - Agregar ejemplos y casos de uso`;
+      break;
+
+    case 'guia':
+      prompt += `
+   - Crear una guía práctica y orientativa
+   - Incluir cuándo y cómo usar la información
+   - Proporcionar mejores prácticas
+   - Agregar consejos y recomendaciones
+   - Incluir escenarios comunes`;
+      break;
+
+    case 'checklist':
+      prompt += `
+   - Crear una lista de verificación clara
+   - Organizar en fases: antes, durante, después
+   - Usar formato de checkbox markdown
+   - Incluir criterios de validación
+   - Agregar puntos de control críticos`;
+      break;
+
+    case 'nota':
+      prompt += `
+   - Crear una nota informativa completa
+   - Incluir información clave y relevante
+   - Proporcionar contexto y explicaciones
+   - Agregar referencias y enlaces conceptuales
+   - Incluir consejos útiles`;
+      break;
+  }
+
+  prompt += `
+
+4. **Contexto del equipo de soporte:**
+   - El documento será usado por técnicos de soporte
+   - Debe ser práctico y aplicable en situaciones reales
+   - Incluir consideraciones de seguridad cuando sea relevante
+   - Agregar información sobre escalamiento si es necesario
+   - Considerar la urgencia y criticidad de las situaciones
+
+5. **Metadatos a incluir:**
+   - Fecha de creación actual
+   - Etiquetas proporcionadas
+   - Nivel de prioridad si es relevante
+   - Información de actualización
+
+**GENERA EL DOCUMENTO COMPLETO EN MARKDOWN:**
+
+Comienza directamente con el contenido markdown, sin explicaciones adicionales. El documento debe ser completo, profesional y listo para usar por el equipo de soporte.`;
 
   return prompt;
-} */
+}
 
 function generarContenidoEstructurado(datos: GenerarNotaRequest): string {
   const { titulo, tema, descripcion, tipo, puntosClave, etiquetas, contexto } = datos;

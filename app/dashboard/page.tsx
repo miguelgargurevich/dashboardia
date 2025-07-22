@@ -15,7 +15,6 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -24,11 +23,6 @@ export default function Dashboard() {
     setToken(t);
     if (!t) {
       router.push('/login');
-    } else {
-      // Simular tiempo de carga del dashboard
-      setTimeout(() => {
-        setCargando(false);
-      }, 1500);
     }
   }, [router]);
 
@@ -36,23 +30,16 @@ export default function Dashboard() {
     return null; // Espera a montar y verificar
   }
 
-  if (cargando) {
-    return (
-      <div className="min-h-screen bg-primary text-white flex flex-col items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-accent mx-auto mb-4"></div>
-          <h2 className="text-2xl font-bold text-accent mb-2">Cargando</h2>
-          <p className="text-gray-400">Preparando la información...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="min-h-screen bg-primary text-white flex flex-col items-center px-2 py-8">
-        <h1 className="text-4xl font-bold mb-8 text-accent">Dashboard Soporte</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-7xl">
+      <div className="min-h-screen bg-primary text-white p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-accent mb-2">Dashboard Soporte</h1>
+            <p className="text-gray-400">Resumen de actividades y métricas del equipo de soporte</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Columna Izquierda: Eventos y Recursos recientes */}
           <div className="flex flex-col gap-6">
             <div className="bg-secondary rounded-xl shadow-lg p-4 flex flex-col h-full">
@@ -93,6 +80,7 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>

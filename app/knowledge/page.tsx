@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaCheck, FaEyeSlash } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaCheck, FaEyeSlash, FaBrain } from 'react-icons/fa';
+import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 interface NotasMD {
   nombre: string;
@@ -60,6 +61,9 @@ const KnowledgePage: React.FC = () => {
   // Estados para crear nueva nota
   const [mostrarFormularioNota, setMostrarFormularioNota] = useState(false);
   const [cargandoGeneracion, setCargandoGeneracion] = useState(false);
+  
+  // Estados para IA en URLs
+  const [cargandoGeneracionUrl, setCargandoGeneracionUrl] = useState(false);
 
   // Definición de temas basados en las actividades de soporte
   const temas: Tema[] = [
@@ -97,6 +101,13 @@ const KnowledgePage: React.FC = () => {
       descripcion: 'Acciones para situaciones críticas y resolución de problemas',
       icono: <FaExclamationTriangle className="text-xl" />,
       color: 'bg-red-500/20 text-red-400 border-red-400/30'
+    },
+    {
+      id: 'kb-conocidos',
+      nombre: 'KB Conocidos',
+      descripcion: 'Base de conocimiento de problemas conocidos y soluciones documentadas',
+      icono: <FaBrain className="text-xl" />,
+      color: 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30'
     }
   ];
 
@@ -130,39 +141,37 @@ const KnowledgePage: React.FC = () => {
     setCargando(true);
     
     try {
-      // Estructura de archivos por tema
-      const archivosPorTema = {
-        'notificaciones': [
-          'Notas - Envio de notificaciones.md',
-          'Notas - Programacion de notificaciones VG Cobrazas.md'
-        ],
-        'polizas': [
-          'Notas - COPIA DE POLIZA TIPO INSURIX.md'
-        ],
-        'tickets': [
-          'Manual-Gestion-Tickets.md'
-        ],
-        'actividades-diarias': [
-          'Rutina-Diaria-Christian-Soporte.md'
-        ],
-        'emergencias': [
-          'Procedimientos-Emergencia.md'
-        ]
-      };
-
+      // Obtener archivos dinámicamente del nuevo endpoint
+      const response = await fetch('/api/notas-md');
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener la lista de archivos');
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Error desconocido al obtener archivos');
+      }
+      
       const notasCargadas: NotasMD[] = [];
+      const { archivosPorTema } = data;
 
       // Cargar archivos de cada tema
       for (const [tema, archivos] of Object.entries(archivosPorTema)) {
-        for (const archivo of archivos) {
+        const archivosArray = archivos as any[];
+        
+        for (const archivoInfo of archivosArray) {
           try {
-            const response = await fetch(`/notas-md/${tema}/${archivo}`);
+            const response = await fetch(`/${archivoInfo.rutaRelativa}`);
             if (response.ok) {
               const contenido = await response.text();
               
               // Determinar tipo basado en el nombre del archivo
               let tipo: 'nota' | 'documento' | 'video' = 'nota';
-              if (archivo.includes('Manual') || archivo.includes('Rutina') || archivo.includes('Procedimientos')) {
+              if (archivoInfo.nombre.includes('Manual') || 
+                  archivoInfo.nombre.includes('Rutina') || 
+                  archivoInfo.nombre.includes('Procedimientos')) {
                 tipo = 'documento';
               }
 
@@ -179,7 +188,7 @@ const KnowledgePage: React.FC = () => {
               };
 
               notasCargadas.push({
-                nombre: archivo.replace('.md', '').replace(/-/g, ' '),
+                nombre: archivoInfo.nombreSinExtension,
                 tema: tema,
                 tipo: tipo,
                 contenido: contenido,
@@ -187,14 +196,25 @@ const KnowledgePage: React.FC = () => {
               });
             }
           } catch (error) {
-            console.error(`Error cargando ${archivo}:`, error);
+            console.error(`Error cargando ${archivoInfo.nombre}:`, error);
           }
         }
       }
 
       setNotasMD(notasCargadas);
+      console.log('Archivos cargados dinámicamente:', {
+        totalArchivos: notasCargadas.length,
+        archivosPorTema: Object.fromEntries(
+          Object.entries(archivosPorTema).map(([tema, archivos]) => 
+            [tema, (archivos as any[]).length]
+          )
+        )
+      });
+      
     } catch (error) {
       console.error('Error cargando contenido:', error);
+      // Mensaje más informativo para el usuario
+      alert('Error al cargar el contenido. Por favor, recarga la página.');
     } finally {
       setCargando(false);
     }
@@ -344,6 +364,30 @@ const KnowledgePage: React.FC = () => {
       throw error;
     } finally {
       setCargandoGeneracion(false);
+    }
+  };
+
+  const procesarUrlConIA = async (url: string, tema: string) => {
+    setCargandoGeneracionUrl(true);
+    try {
+      const response = await fetch('/api/procesar-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, tema })
+      });
+      
+      if (response.ok) {
+        const resultado = await response.json();
+        return resultado;
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Error procesando URL');
+      }
+    } catch (error) {
+      console.error('Error procesando URL con IA:', error);
+      throw error;
+    } finally {
+      setCargandoGeneracionUrl(false);
     }
   };
 
@@ -662,6 +706,32 @@ const KnowledgePage: React.FC = () => {
       comentarios: urlEditando?.comentarios || ''
     });
 
+    const [modoManual, setModoManual] = useState(!!urlEditando);
+
+    const handleGenerarConIA = async () => {
+      if (!formData.url) {
+        alert('Por favor ingresa una URL válida primero');
+        return;
+      }
+
+      try {
+        const resultado = await procesarUrlConIA(formData.url, formData.tema);
+        
+        setFormData(prev => ({
+          ...prev,
+          titulo: resultado.titulo,
+          descripcion: resultado.descripcion,
+          tipoContenido: resultado.tipoContenido,
+          etiquetas: resultado.etiquetas.join(', ')
+        }));
+        
+        setModoManual(true); // Cambiar a modo manual para permitir ediciones
+      } catch (error) {
+        console.error('Error generando con IA:', error);
+        alert('Error al procesar la URL con IA. Puedes continuar rellenando manualmente.');
+      }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
@@ -685,12 +755,14 @@ const KnowledgePage: React.FC = () => {
         <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
           <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
             <h3 className="text-xl font-bold text-accent">
-              {urlEditando ? 'Editar URL' : 'Agregar Nueva URL'}
+              {urlEditando ? 'Editar URL' : 'Agregar Nueva URL con IA'}
             </h3>
             <p className="text-sm text-gray-400 mt-2">
               {urlEditando 
                 ? 'Modifica la información del enlace y guarda los cambios'
-                : 'Añade un nuevo enlace a tu base de conocimiento para futuras referencias'
+                : modoManual 
+                  ? 'Edita los campos generados automáticamente o continúa llenando manualmente'
+                  : 'Ingresa la URL y la IA generará automáticamente el título, descripción y etiquetas'
               }
             </p>
           </div>
@@ -698,7 +770,9 @@ const KnowledgePage: React.FC = () => {
           <div className="p-6 overflow-y-auto flex-1">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Título * {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Generado por IA)</span>}
+                </label>
                 <input
                   type="text"
                   value={formData.titulo}
@@ -711,18 +785,48 @@ const KnowledgePage: React.FC = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">URL *</label>
-                <input
-                  type="url"
-                  value={formData.url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  placeholder="https://ejemplo.com"
-                  required
-                />
+                <div className="space-y-3">
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                    placeholder="https://ejemplo.com"
+                    required
+                  />
+                  {!urlEditando && !modoManual && formData.url && (
+                    <button
+                      type="button"
+                      onClick={handleGenerarConIA}
+                      disabled={cargandoGeneracionUrl}
+                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-4 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {cargandoGeneracionUrl ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                          Procesando con IA...
+                        </span>
+                      ) : (
+                        '🤖 Generar información con IA'
+                      )}
+                    </button>
+                  )}
+                  {!urlEditando && modoManual && (
+                    <button
+                      type="button"
+                      onClick={() => setModoManual(false)}
+                      className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 text-sm"
+                    >
+                      ↻ Generar nuevamente con IA
+                    </button>
+                  )}
+                </div>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Descripción {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Generada por IA)</span>}
+                </label>
                 <textarea
                   value={formData.descripcion}
                   onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
@@ -748,7 +852,9 @@ const KnowledgePage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Contenido *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Tipo de Contenido * {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Detectado por IA)</span>}
+                  </label>
                   <select
                     value={formData.tipoContenido}
                     onChange={(e) => setFormData(prev => ({ ...prev, tipoContenido: e.target.value }))}
@@ -765,7 +871,9 @@ const KnowledgePage: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Etiquetas {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Generadas por IA)</span>}
+                </label>
                 <input
                   type="text"
                   value={formData.etiquetas}
@@ -791,7 +899,7 @@ const KnowledgePage: React.FC = () => {
                   type="submit"
                   className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
                 >
-                  {urlEditando ? 'Actualizar' : 'Crear'}
+                  {urlEditando ? 'Actualizar' : modoManual ? 'Crear con IA' : 'Crear'}
                 </button>
                 <button
                   type="button"
@@ -833,7 +941,7 @@ const KnowledgePage: React.FC = () => {
             Por Temas
           </button>
           <button
-            onClick={() => setSeccionActiva('todos')}
+            onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               seccionActiva === 'todos' 
                 ? 'bg-accent text-secondary' 
@@ -844,7 +952,7 @@ const KnowledgePage: React.FC = () => {
             Todos los Documentos
           </button>
           <button
-            onClick={() => setSeccionActiva('urls')}
+            onClick={() => { setSeccionActiva('urls'); setTemaSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               seccionActiva === 'urls' 
                 ? 'bg-accent text-secondary' 
@@ -865,7 +973,7 @@ const KnowledgePage: React.FC = () => {
                 <button
                   key={tema.id}
                   onClick={() => setTemaSeleccionado(tema.id)}
-                  className={`text-left p-6 rounded-lg border transition-all hover:scale-105 ${tema.color}`}
+                  className={`text-left p-6 rounded-lg border transition-all duration-300 hover:shadow-xl hover:shadow-current/20 hover:brightness-110 hover:-translate-y-1 ${tema.color}`}
                 >
                   <div className="flex items-center gap-4 mb-3">
                     {tema.icono}
@@ -884,25 +992,31 @@ const KnowledgePage: React.FC = () => {
         {/* Vista de documentos por tema */}
         {seccionActiva === 'temas' && temaSeleccionado && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
+            {/* Header del tema con colores */}
+            <div className={`rounded-lg p-4 mb-6 border ${temas.find(t => t.id === temaSeleccionado)?.color}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setTemaSeleccionado(null)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    ← Volver a temas
+                  </button>
+                  <div className="flex items-center gap-3">
+                    {temas.find(t => t.id === temaSeleccionado)?.icono}
+                    <h2 className="text-xl font-bold">
+                      {temas.find(t => t.id === temaSeleccionado)?.nombre}
+                    </h2>
+                  </div>
+                </div>
                 <button
-                  onClick={() => setTemaSeleccionado(null)}
-                  className="text-accent hover:text-white transition-colors"
+                  onClick={() => setMostrarFormularioNota(true)}
+                  className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
-                  ← Volver a temas
+                  <FaPlus />
+                  Crear Nueva Nota
                 </button>
-                <h2 className="text-xl font-bold text-accent">
-                  {temas.find(t => t.id === temaSeleccionado)?.nombre}
-                </h2>
               </div>
-              <button
-                onClick={() => setMostrarFormularioNota(true)}
-                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-              >
-                <FaPlus />
-                Crear Nueva Nota
-              </button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Lista de documentos del tema */}
@@ -915,19 +1029,31 @@ const KnowledgePage: React.FC = () => {
                         onClick={() => setNotaSeleccionada(nota)}
                         className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] ${
                           notaSeleccionada?.nombre === nota.nombre
-                            ? 'bg-gradient-to-r from-accent/20 to-accent/10 border border-accent shadow-lg shadow-accent/20'
+                            ? `border-2 ${temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[2] || 'border-accent'} ${temas.find(t => t.id === temaSeleccionado)?.color || 'bg-accent/20 text-accent'} shadow-lg`
                             : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                         }`}
                       >
                         <div className="flex items-start gap-3">
                           <div className={`p-2 rounded-lg ${
                             notaSeleccionada?.nombre === nota.nombre 
-                              ? 'bg-accent/30' 
+                              ? `${temas.find(t => t.id === temaSeleccionado)?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0] || 'bg-accent/30'}`
                               : 'bg-accent/20'
                           }`}>
-                            {nota.tipo === 'nota' ? <FaFileAlt className="text-accent text-sm" /> : 
-                             nota.tipo === 'documento' ? <FaBook className="text-accent text-sm" /> :
-                             <FaVideo className="text-accent text-sm" />}
+                            {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-accent'
+                            }`} /> : 
+                             nota.tipo === 'documento' ? <FaBook className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-accent'
+                            }`} /> :
+                             <FaVideo className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-accent'
+                            }`} />}
                           </div>
                           <div className="flex-1">
                             <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
@@ -948,7 +1074,14 @@ const KnowledgePage: React.FC = () => {
                   {notaSeleccionada ? (
                     <div>
                       <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-accent">{notaSeleccionada.nombre}</h2>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${temas.find(t => t.id === temaSeleccionado)?.color?.replace('border-', 'bg-').replace('/30', '/20')}`}>
+                            {temas.find(t => t.id === temaSeleccionado)?.icono}
+                          </div>
+                          <h2 className={`text-xl font-bold ${temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'}`}>
+                            {notaSeleccionada.nombre}
+                          </h2>
+                        </div>
                         <button 
                           onClick={() => descargarNota(notaSeleccionada)}
                           className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
@@ -1027,53 +1160,70 @@ const KnowledgePage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {notasFiltradas.map((nota, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setNotaSeleccionada(nota)}
-                        className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] ${
-                          notaSeleccionada?.nombre === nota.nombre
-                            ? 'bg-gradient-to-r from-accent/20 to-accent/10 border border-accent shadow-lg shadow-accent/20'
-                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            notaSeleccionada?.nombre === nota.nombre 
-                              ? 'bg-accent/30' 
-                              : 'bg-accent/20'
-                          }`}>
-                            {nota.tipo === 'nota' ? <FaFileAlt className="text-accent text-sm" /> : 
-                             nota.tipo === 'documento' ? <FaBook className="text-accent text-sm" /> :
-                             <FaVideo className="text-accent text-sm" />}
+                    {notasFiltradas.map((nota, index) => {
+                      const temaInfo = temas.find(t => t.id === nota.tema);
+                      const isSelected = notaSeleccionada?.nombre === nota.nombre;
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => setNotaSeleccionada(nota)}
+                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
+                            isSelected
+                              ? `${temaInfo?.color} shadow-lg shadow-current/20`
+                              : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo?.color?.replace('text-', 'from-').replace('border-', 'from-').split(' ')[1]?.replace('400', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg ${
+                              isSelected 
+                                ? `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/30') || 'bg-accent/30'}`
+                                : `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'}`
+                            }`}>
+                              {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${
+                                temaInfo?.color?.split(' ')[1] || 'text-accent'
+                              }`} /> : 
+                               nota.tipo === 'documento' ? <FaBook className={`text-sm ${
+                                temaInfo?.color?.split(' ')[1] || 'text-accent'
+                              }`} /> :
+                               <FaVideo className={`text-sm ${
+                                temaInfo?.color?.split(' ')[1] || 'text-accent'
+                              }`} />}
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
+                              <p className={`text-xs mb-1 font-medium ${
+                                temaInfo?.color?.split(' ')[1] || 'text-accent'
+                              }`}>
+                                {temaInfo?.nombre}
+                              </p>
+                              {nota.etiquetas && nota.etiquetas.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                  {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
+                                    <span
+                                      key={etIndex}
+                                      className={`px-1.5 py-0.5 rounded text-xs ${
+                                        temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'
+                                      } ${
+                                        temaInfo?.color?.split(' ')[1] || 'text-accent'
+                                      }`}
+                                    >
+                                      {etiqueta}
+                                    </span>
+                                  ))}
+                                  {nota.etiquetas.length > 3 && (
+                                    <span className="text-xs text-gray-400">+{nota.etiquetas.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
+                              <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                                {nota.contenido.slice(0, 100)}...
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
-                            <p className="text-xs text-accent mb-1 font-medium">
-                              {temas.find(t => t.id === nota.tema)?.nombre}
-                            </p>
-                            {nota.etiquetas && nota.etiquetas.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mb-1">
-                                {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
-                                  <span
-                                    key={etIndex}
-                                    className="px-1.5 py-0.5 bg-accent/20 text-accent rounded text-xs"
-                                  >
-                                    {etiqueta}
-                                  </span>
-                                ))}
-                                {nota.etiquetas.length > 3 && (
-                                  <span className="text-xs text-gray-400">+{nota.etiquetas.length - 3}</span>
-                                )}
-                              </div>
-                            )}
-                            <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                              {nota.contenido.slice(0, 100)}...
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1368,6 +1518,9 @@ const KnowledgePage: React.FC = () => {
         {mostrarFormularioNota && <FormularioNuevaNota />}
         {mostrarFormularioUrl && <FormularioUrl />}
       </div>
+      
+      {/* Chat de IA flotante */}
+      <AssistantBubble />
     </div>
   );
 };
