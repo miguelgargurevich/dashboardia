@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       return createUnauthorizedResponse();
     }
 
-    const response = await fetch(`${process.env.BACKEND_URL}/api/resources`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/resources`, {
       headers: createAuthHeaders(request)
     });
     
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Enviar al backend
-    const response = await fetch(`${process.env.BACKEND_URL}/api/resources`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/resources`, {
       method: 'POST',
       headers: createAuthHeaders(request),
       body: JSON.stringify(datosRecurso)

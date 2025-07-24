@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import { 
   FaCalendarAlt, 
@@ -16,8 +17,7 @@ import {
   FaSearch,
   FaFilter,
   FaExclamationTriangle,
-  FaCog,
-  FaTools
+  FaCog
 } from "react-icons/fa";
 
 // Interfaces
@@ -46,6 +46,7 @@ interface Event {
   diaEnvio?: string;
   query?: string;
   description?: string;
+  relatedResources?: string[];
 }
 
 interface DayStats {
@@ -54,6 +55,8 @@ interface DayStats {
 }
 
 const Calendar: React.FC = () => {
+  const searchParams = useSearchParams();
+  
   // Verificar autenticación al cargar el componente
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -69,8 +72,15 @@ const Calendar: React.FC = () => {
   const todayMonth = today.getMonth();
   const todayYear = today.getFullYear();
   
-  const [visibleMonth, setVisibleMonth] = useState<string>(today.toISOString().slice(0,7));
-  const [selectedDate, setSelectedDate] = useState<string>(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
+  // Leer parámetros de URL para configuración inicial
+  const urlDate = searchParams.get('date');
+  const urlTab = searchParams.get('tab');
+  
+  const initialDate = urlDate || `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const initialTab = (urlTab === 'events' ? 'events' : 'notes') as 'notes' | 'events';
+  
+  const [visibleMonth, setVisibleMonth] = useState<string>(initialDate.slice(0,7));
+  const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [dailyNotes, setDailyNotes] = useState<DailyNote[]>([]);
   const [dayStats, setDayStats] = useState<{ [key: string]: DayStats }>({});
   const [loading, setLoading] = useState(false);
@@ -92,7 +102,8 @@ const Calendar: React.FC = () => {
     nombreNotificacion: '',
     diaEnvio: '',
     query: '',
-    description: ''
+    description: '',
+    relatedResources: []
   });
   
   // Estados del formulario para notas
@@ -110,10 +121,27 @@ const Calendar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   
+  // Estados de filtros y búsqueda para eventos
+  const [eventSearchTerm, setEventSearchTerm] = useState('');
+  const [eventFilterType, setEventFilterType] = useState<string>('all');
+  
   // Estados de vista
   const [showFilters, setShowFilters] = useState(false);
+  const [eventShowFilters, setEventShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  const [activeTab, setActiveTab] = useState<'notes' | 'events'>('notes');
+  const [eventViewMode, setEventViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [activeTab, setActiveTab] = useState<'notes' | 'events'>(initialTab);
+  const [isNavigatedFromHome, setIsNavigatedFromHome] = useState<boolean>(false);
+
+  // Efecto para detectar navegación desde home
+  useEffect(() => {
+    if (urlDate && urlTab === 'events') {
+      setIsNavigatedFromHome(true);
+      // Limpiar el estado después de 3 segundos
+      const timer = setTimeout(() => setIsNavigatedFromHome(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [urlDate, urlTab]);
 
   const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -137,7 +165,7 @@ const Calendar: React.FC = () => {
 
   // Crear objeto para eventos por día (para mostrar en el calendario)
   const eventsByDay: { [key: string]: Event[] } = {};
-  if (showRecurringEvents) {
+  if (showRecurringEvents || activeTab === 'events') {
     events.forEach(event => {
       const eventDate = new Date(event.startDate);
       const dayKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
@@ -145,11 +173,25 @@ const Calendar: React.FC = () => {
       eventsByDay[dayKey].push(event);
     });
   }
+
+  // Obtener eventos del día seleccionado o todos los eventos dependiendo del modo de vista
+  const selectedDayEvents = eventViewMode === 'calendar' 
+    ? eventsByDay[selectedDate] || []
+    : events; // En vista de lista, mostrar todos los eventos
     
   const filteredNotes = selectedDayNotes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          note.content.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'all' || note.type === filterType;
+    
+    return matchesSearch && matchesType;
+  });
+
+  const filteredEvents = selectedDayEvents.filter(event => {
+    const matchesSearch = event.title.toLowerCase().includes(eventSearchTerm.toLowerCase()) || 
+                         (event.description && event.description.toLowerCase().includes(eventSearchTerm.toLowerCase())) ||
+                         (event.validador && event.validador.toLowerCase().includes(eventSearchTerm.toLowerCase()));
+    const matchesType = eventFilterType === 'all' || event.modo === eventFilterType;
     
     return matchesSearch && matchesType;
   });
@@ -181,7 +223,7 @@ const Calendar: React.FC = () => {
     setLoading(true);
     try {
       const queryParam = month ? `month=${month}` : '';
-      const response = await fetch(`/api/daily-notes?${queryParam}`, {
+      const response = await fetch(`/api/calendar/notes?${queryParam}`, {
         headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json',
@@ -208,7 +250,7 @@ const Calendar: React.FC = () => {
   const fetchAllNotes = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/daily-notes', {
+      const response = await fetch('/api/calendar/notes', {
         headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json',
@@ -235,7 +277,7 @@ const Calendar: React.FC = () => {
   const fetchStats = async (month?: string) => {
     try {
       const queryParam = month ? `month=${month}` : '';
-      const response = await fetch(`/api/daily-notes/stats?${queryParam}`, {
+      const response = await fetch(`/api/calendar/notes/stats?${queryParam}`, {
         headers: {
           'Authorization': `Bearer ${getToken()}`,
           'Content-Type': 'application/json',
@@ -336,7 +378,7 @@ const Calendar: React.FC = () => {
 
       if (editingNote) {
         // Actualizar nota existente
-        const response = await fetch(`/api/daily-notes/${editingNote}`, {
+        const response = await fetch(`/api/calendar/notes/${editingNote}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${getToken()}`,
@@ -353,7 +395,7 @@ const Calendar: React.FC = () => {
         }
       } else {
         // Crear nueva nota
-        const response = await fetch('/api/daily-notes', {
+        const response = await fetch('/api/calendar/notes', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${getToken()}`,
@@ -382,7 +424,7 @@ const Calendar: React.FC = () => {
   const deleteNote = async (id: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/daily-notes/${id}`, {
+      const response = await fetch(`/api/calendar/notes/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${getToken()}`,
@@ -680,6 +722,33 @@ const Calendar: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {activeTab === 'events' && (
+              <div className="flex items-center gap-2 bg-secondary border border-accent/20 rounded-xl shadow-lg p-1">
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                    eventViewMode === 'calendar' 
+                      ? 'bg-accent text-white shadow-md' 
+                      : 'text-accent hover:bg-accent/10'
+                  }`}
+                  onClick={() => setEventViewMode('calendar')}
+                >
+                  <FaCalendarAlt />
+                  Calendario
+                </button>
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                    eventViewMode === 'list' 
+                      ? 'bg-accent text-white shadow-md' 
+                      : 'text-accent hover:bg-accent/10'
+                  }`}
+                  onClick={() => setEventViewMode('list')}
+                >
+                  <FaFileAlt />
+                  Lista
+                </button>
+              </div>
+            )}
             
             <div className="flex items-center gap-3">
               {activeTab === 'notes' ? (
@@ -716,13 +785,38 @@ const Calendar: React.FC = () => {
                   </button>
                 </>
               ) : (
-                <button
-                  className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl hover:bg-accent/80 transition-colors shadow-lg font-medium"
-                  onClick={() => setIsCreatingEvent(true)}
-                >
-                  <FaPlus />
-                  Nuevo Evento
-                </button>
+                <>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl hover:bg-accent/80 transition-colors shadow-lg font-medium"
+                    onClick={() => setIsCreatingEvent(true)}
+                  >
+                    <FaPlus />
+                    Nuevo Evento
+                  </button>
+                  <button
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors shadow-lg font-medium ${
+                      eventShowFilters 
+                        ? 'bg-accent text-white'
+                        : 'bg-secondary/50 text-accent hover:bg-accent/10'
+                    }`}
+                    onClick={() => setEventShowFilters(!eventShowFilters)}
+                  >
+                    <FaFilter />
+                    Filtros
+                  </button>
+                  
+                  <button
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors shadow-lg font-medium ${
+                      showRecurringEvents 
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-secondary/50 text-yellow-400 hover:bg-yellow-400/10'
+                    }`}
+                    onClick={() => setShowRecurringEvents(!showRecurringEvents)}
+                  >
+                    <FaCalendarAlt />
+                    {showRecurringEvents ? 'Ocultar Notas' : 'Mostrar Notas'}
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -758,6 +852,39 @@ const Calendar: React.FC = () => {
               <option value="reunion">Reunión</option>
               <option value="capacitacion">Capacitación</option>
               <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+        {/* Filtros para Eventos */}
+        {eventShowFilters && activeTab === 'events' && (
+          <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Buscar</label>
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                value={eventSearchTerm}
+                onChange={(e) => setEventSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 bg-primary border border-accent/30 rounded-lg focus:outline-none focus:border-accent text-white h-10"
+                placeholder="Buscar eventos..."
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Modo</label>
+            <select
+              value={eventFilterType}
+              onChange={(e) => setEventFilterType(e.target.value)}
+              className="w-full px-3 py-2 bg-primary border border-accent/30 rounded-lg focus:outline-none focus:border-accent text-white h-10"
+            >
+              <option value="all">Todos</option>
+              <option value="presencial">Presencial</option>
+              <option value="virtual">Virtual</option>
+              <option value="hibrido">Híbrido</option>
             </select>
           </div>
         </div>
@@ -919,7 +1046,7 @@ const Calendar: React.FC = () => {
                             </div>
                             
                             {/* Información adicional del evento */}
-                            {(event.validador || event.codigoDana || event.nombreNotificacion) && (
+                            {(event.validador || event.codigoDana || event.nombreNotificacion || event.relatedResources?.length) && (
                               <div className="mt-2 pt-2 border-t border-yellow-400/20">
                                 <div className="flex flex-wrap gap-2 text-xs">
                                   {event.validador && (
@@ -937,7 +1064,21 @@ const Calendar: React.FC = () => {
                                       🔔 {event.nombreNotificacion}
                                     </span>
                                   )}
+                                  {event.relatedResources && event.relatedResources.length > 0 && (
+                                    <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">
+                                      📎 {event.relatedResources.length} recursos
+                                    </span>
+                                  )}
                                 </div>
+                                {event.relatedResources && event.relatedResources.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {event.relatedResources.map((resource, idx) => (
+                                      <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded">
+                                        📄 {resource}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -1162,76 +1303,447 @@ const Calendar: React.FC = () => {
         </div>
         ) : (
           /* Contenido de eventos recurrentes */
-          <div className="space-y-6">
-            {/* Panel de eventos */}
-            <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-accent">Eventos Recurrentes</h2>
-                <div className="text-sm text-gray-400">
-                  {events.length} evento{events.length !== 1 ? 's' : ''} registrado{events.length !== 1 ? 's' : ''}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Vista de Calendario para Eventos */}
+            {eventViewMode === 'calendar' ? (
+            <>
+              {/* Columna del Calendario y Notas */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Calendario para Eventos */}
+                <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
+                {/* Navegación del calendario */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-accent">
+                    {monthNames[mon]} {year}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="p-2 rounded text-accent hover:bg-accent/10 transition-colors"
+                      onClick={() => changeMonth(-1)}
+                    >
+                      <FaAngleLeft />
+                    </button>
+                    <button
+                      className="px-3 py-2 rounded text-accent font-bold flex items-center hover:bg-accent/10 transition-colors"
+                      onClick={goToToday}
+                    >
+                      <FaRegCalendarAlt className="mr-2" />
+                      Hoy
+                    </button>
+                    <button
+                      className="p-2 rounded text-accent hover:bg-accent/10 transition-colors"
+                      onClick={() => changeMonth(1)}
+                    >
+                      <FaAngleRight />
+                    </button>
+                  </div>
                 </div>
-              </div>
-              
-              {eventsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-                </div>
-              ) : events.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {events.map((event) => (
-                    <div key={event.id} className="bg-primary border border-accent/20 rounded-lg p-4 hover:border-accent/40 transition-colors">
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-semibold text-white text-sm leading-tight">{event.title}</h3>
-                        <div className="flex items-center gap-1 ml-2">
-                          <button
-                            onClick={() => editEvent(event)}
-                            className="p-1 text-gray-400 hover:text-accent transition-colors"
-                          >
-                            <FaEdit size={12} />
-                          </button>
-                          <button
-                            onClick={() => deleteEvent(event.id)}
-                            className="p-1 text-gray-400 hover:text-red-400 transition-colors"
-                          >
-                            <FaTrash size={12} />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-xs text-gray-300">
-                        <div className="flex items-center gap-2">
-                          <FaCalendarAlt className="text-accent" />
-                          <span>{new Date(event.startDate).toLocaleDateString()}</span>
-                        </div>
-                        {event.validador && (
-                          <div className="flex items-center gap-2">
-                            <FaUser className="text-accent" />
-                            <span>{event.validador}</span>
-                          </div>
-                        )}
-                        {event.modo && (
-                          <div className="flex items-center gap-2">
-                            <FaTools className="text-accent" />
-                            <span className="capitalize">{event.modo}</span>
-                          </div>
-                        )}
-                      </div>
+
+                {/* Grid del calendario para eventos */}
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Cabecera días de la semana */}
+                  {weekDays.map((day) => (
+                    <div key={day} className="text-xs font-bold text-accent text-center pb-2">
+                      {day}
                     </div>
                   ))}
+                  
+                  {/* Espacios vacíos */}
+                  {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
+                    <div key={`empty-${idx}`}></div>
+                  ))}
+                  
+                  {/* Días del mes para eventos */}
+                  {days.map(day => {
+                    const dayKey = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayEvents = eventsByDay[dayKey] || [];
+                    const dayData = dayStats[dayKey];
+                    const isSelected = selectedDate === dayKey;
+                    const isToday = day === todayDay && mon === todayMonth && year === todayYear;
+                    const isNavigatedDay = isNavigatedFromHome && isSelected;
+                    
+                    return (
+                      <div
+                        key={day}
+                        className={`relative rounded-lg p-2 text-center cursor-pointer border transition-all duration-200 min-h-[60px] flex flex-col justify-between
+                          ${isSelected ? 'ring-2 ring-accent bg-accent/20' : 'border-accent/30 hover:border-accent/60'}
+                          ${isToday ? 'border-2 border-blue-400' : ''}
+                          ${isNavigatedDay ? 'ring-4 ring-yellow-400 bg-yellow-400/20 animate-pulse' : ''}
+                          ${(dayEvents.length > 0 || (showRecurringEvents && dayData?.totalNotes > 0)) ? 'bg-accent/10' : 'bg-primary/40'}
+                        `}
+                        onClick={() => setSelectedDate(dayKey)}
+                      >
+                        <span className={`text-sm font-medium ${(dayEvents.length > 0 || (showRecurringEvents && dayData?.totalNotes > 0)) ? 'text-accent' : 'text-white'}`}>
+                          {day}
+                        </span>
+                        
+                        {/* Indicadores de actividad */}
+                        <div className="flex flex-col gap-1">
+                          {/* Indicadores de eventos */}
+                          {dayEvents.length > 0 && (
+                            <>
+                              {dayEvents.some(e => e.modo === 'presencial') && (
+                                <div className="w-full h-1 bg-green-400 rounded-full"></div>
+                              )}
+                              {dayEvents.some(e => e.modo === 'virtual') && (
+                                <div className="w-full h-1 bg-blue-400 rounded-full"></div>
+                              )}
+                              {dayEvents.some(e => e.modo === 'hibrido') && (
+                                <div className="w-full h-1 bg-purple-400 rounded-full"></div>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Indicador de notas diarias */}
+                          {showRecurringEvents && dayData?.totalNotes > 0 && (
+                            <div className="w-full h-1 bg-yellow-400 rounded-full"></div>
+                          )}
+                          
+                          {/* Contador total */}
+                          {(dayEvents.length > 0 || (showRecurringEvents && dayData?.totalNotes > 0)) && (
+                            <div className="text-xs text-accent font-bold flex gap-1">
+                              {dayEvents.length > 0 && <span>{dayEvents.length}E</span>}
+                              {showRecurringEvents && dayData?.totalNotes > 0 && <span>{dayData.totalNotes}N</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FaCalendarAlt className="mx-auto text-4xl text-gray-400 mb-4" />
-                  <p className="text-gray-400 mb-4">No hay eventos registrados</p>
-                  <button
-                    onClick={() => setIsCreatingEvent(true)}
-                    className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors"
-                  >
-                    Crear primer evento
-                  </button>
+              </div>
+                
+                {/* Notas Diarias del Día */}
+                {showRecurringEvents && (
+                  <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-bold text-yellow-400">
+                        Notas Diarias ({dayStats[selectedDate]?.totalNotes || 0})
+                      </h2>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {dailyNotes.filter(note => note.date === selectedDate).length > 0 ? (
+                        dailyNotes.filter(note => note.date === selectedDate).map((note) => (
+                          <div key={note.id} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-yellow-400">
+                                  <FaFileAlt />
+                                </span>
+                                <h5 className="font-semibold text-white text-sm">{note.title}</h5>
+                              </div>
+                              <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
+                                {note.type}
+                              </span>
+                            </div>
+                            
+                            <p className="text-gray-300 text-xs mb-2 line-clamp-2">{note.content}</p>
+                            
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400">
+                                  {new Date(note.createdAt).toLocaleTimeString('es-ES', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <FaFileAlt className="mx-auto text-4xl text-gray-600 mb-4" />
+                          <p className="text-gray-400">No hay notas diarias para este día</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Panel del día seleccionado para eventos */}
+              <div className="space-y-6">
+                {/* Información del día */}
+                <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
+                  <h2 className="text-xl font-bold text-accent mb-4">
+                    {new Date(selectedDate).toLocaleDateString('es-ES', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </h2>
+                  
+                  {(eventsByDay[selectedDate]?.length > 0 || (showRecurringEvents && dayStats[selectedDate])) && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-primary/40 rounded-lg p-3">
+                        <div className="text-accent font-bold">Total Eventos</div>
+                        <div className="text-xl font-bold text-white">{eventsByDay[selectedDate]?.length || 0}</div>
+                      </div>
+                      <div className="bg-primary/40 rounded-lg p-3">
+                        <div className="text-green-400 font-bold">Presencial</div>
+                        <div className="text-xl font-bold text-white">{eventsByDay[selectedDate]?.filter(e => e.modo === 'presencial').length || 0}</div>
+                      </div>
+                      <div className="bg-primary/40 rounded-lg p-3">
+                        <div className="text-blue-400 font-bold">Virtual</div>
+                        <div className="text-xl font-bold text-white">{eventsByDay[selectedDate]?.filter(e => e.modo === 'virtual').length || 0}</div>
+                      </div>
+                      <div className="bg-primary/40 rounded-lg p-3">
+                        <div className="text-purple-400 font-bold">Híbrido</div>
+                        <div className="text-xl font-bold text-white">{eventsByDay[selectedDate]?.filter(e => e.modo === 'hibrido').length || 0}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Eventos del día */}
+                <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-accent">
+                      Eventos del Día ({filteredEvents.length})
+                    </h2>
+                  </div>
+                  
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {eventsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                        <p className="text-gray-400 mt-2">Cargando eventos...</p>
+                      </div>
+                    ) : filteredEvents.length > 0 ? (
+                      filteredEvents.map(event => (
+                        <div key={event.id} className="bg-primary/40 rounded-lg p-3 border border-accent/30">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-accent">
+                                <FaCalendarAlt />
+                              </span>
+                              <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => editEvent(event)}
+                                className="p-1 text-accent hover:bg-accent/10 rounded transition-colors"
+                              >
+                                <FaEdit className="text-xs" />
+                              </button>
+                              <button
+                                onClick={() => deleteEvent(event.id)}
+                                className="p-1 text-red-400 hover:bg-red-400/10 rounded transition-colors"
+                              >
+                                <FaTrash className="text-xs" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {event.description && (
+                            <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
+                          )}
+                          
+                          <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              {event.modo && (
+                                <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300">
+                                  {event.modo}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-gray-400">
+                              {new Date(event.startDate).toLocaleDateString('es-ES')}
+                            </span>
+                          </div>
+                          
+                          {/* Información adicional del evento */}
+                          {(event.validador || event.codigoDana || event.nombreNotificacion || event.relatedResources?.length) && (
+                            <div className="mt-2 pt-2 border-t border-accent/20">
+                              <div className="flex flex-wrap gap-2 text-xs">
+                                {event.validador && (
+                                  <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+                                    👤 {event.validador}
+                                  </span>
+                                )}
+                                {event.codigoDana && (
+                                  <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
+                                    🏢 {event.codigoDana}
+                                  </span>
+                                )}
+                                {event.nombreNotificacion && (
+                                  <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
+                                    🔔 {event.nombreNotificacion}
+                                  </span>
+                                )}
+                                {event.relatedResources && event.relatedResources.length > 0 && (
+                                  <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">
+                                    📎 {event.relatedResources.length} recursos
+                                  </span>
+                                )}
+                              </div>
+                              {event.relatedResources && event.relatedResources.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {event.relatedResources.map((resource, idx) => (
+                                    <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded">
+                                      📄 {resource}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <FaCalendarAlt className="mx-auto text-4xl text-gray-600 mb-4" />
+                        <p className="text-gray-400">No hay eventos para este día</p>
+                        <button
+                          onClick={() => setIsCreatingEvent(true)}
+                          className="mt-2 text-accent hover:underline"
+                        >
+                          Crear primer evento
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Vista de Lista para Eventos */
+            <div className="lg:col-span-3">
+              <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-accent">
+                    Lista de Todos los Eventos
+                  </h2>
+                  <p className="text-gray-400">
+                    Total: {filteredEvents.length} eventos
+                  </p>
+                </div>
+                
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto">
+                  {eventsLoading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                      <p className="text-gray-400 mt-2">Cargando eventos...</p>
+                    </div>
+                  ) : filteredEvents.length > 0 ? (
+                    filteredEvents.map(event => (
+                      <div key={event.id} className="bg-primary/40 rounded-lg p-4 border border-accent/30 hover:border-accent/60 transition-colors">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-accent">
+                              <FaCalendarAlt />
+                            </span>
+                            <div>
+                              <h5 className="font-semibold text-white">{event.title}</h5>
+                              <p className="text-xs text-gray-400">
+                                {new Date(event.startDate).toLocaleDateString('es-ES', { 
+                                  weekday: 'short', 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}
+                                {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES', { 
+                                  weekday: 'short', 
+                                  year: 'numeric', 
+                                  month: 'short', 
+                                  day: 'numeric' 
+                                })}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => editEvent(event)}
+                              className="p-2 text-accent hover:bg-accent/10 rounded transition-colors"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={() => deleteEvent(event.id)}
+                              className="p-2 text-red-400 hover:bg-red-400/10 rounded transition-colors"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {event.description && (
+                          <p className="text-gray-300 text-sm mb-3">{event.description}</p>
+                        )}
+                        
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            {event.modo && (
+                              <span className="px-3 py-1 rounded text-xs font-medium bg-gray-500/20 text-gray-300">
+                                {event.modo}
+                              </span>
+                            )}
+                            {event.location && (
+                              <span className="px-3 py-1 rounded text-xs font-medium bg-blue-500/20 text-blue-300">
+                                📍 {event.location}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Información adicional */}
+                        {(event.validador || event.codigoDana || event.nombreNotificacion || event.relatedResources?.length) && (
+                          <div className="mt-3 pt-3 border-t border-accent/20">
+                            <div className="flex flex-wrap gap-2">
+                              {event.validador && (
+                                <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">
+                                  👤 {event.validador}
+                                </span>
+                              )}
+                              {event.codigoDana && (
+                                <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs rounded">
+                                  🏢 {event.codigoDana}
+                                </span>
+                              )}
+                              {event.nombreNotificacion && (
+                                <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded">
+                                  🔔 {event.nombreNotificacion}
+                                </span>
+                              )}
+                              {event.relatedResources && event.relatedResources.length > 0 && (
+                                <span className="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded">
+                                  📎 {event.relatedResources.length} recursos
+                                </span>
+                              )}
+                            </div>
+                            {event.relatedResources && event.relatedResources.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {event.relatedResources.map((resource, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded">
+                                    📄 {resource}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <FaCalendarAlt className="mx-auto text-5xl text-gray-600 mb-4" />
+                      <p className="text-gray-400 text-lg">No hay eventos disponibles</p>
+                      <button
+                        onClick={() => setIsCreatingEvent(true)}
+                        className="mt-4 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors"
+                      >
+                        Crear primer evento
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+        </div>
         )}
 
         {/* Modal de creación/edición de notas */}
@@ -1453,6 +1965,21 @@ const Calendar: React.FC = () => {
                       onChange={(e) => setNewEvent(prev => ({ ...prev, nombreNotificacion: e.target.value }))}
                       className="w-full px-3 py-2 bg-primary border border-accent/30 rounded-lg focus:outline-none focus:border-accent text-white placeholder-gray-400 h-10"
                       placeholder="Nombre para las notificaciones..."
+                    />
+                  </div>
+
+                  {/* Recursos relacionados */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Recursos Relacionados (separados por comas)</label>
+                    <input
+                      type="text"
+                      value={newEvent.relatedResources?.join(', ') || ''}
+                      onChange={(e) => setNewEvent(prev => ({ 
+                        ...prev, 
+                        relatedResources: e.target.value.split(',').map(resource => resource.trim()).filter(resource => resource) 
+                      }))}
+                      className="w-full px-3 py-2 bg-primary border border-accent/30 rounded-lg focus:outline-none focus:border-accent text-white placeholder-gray-400 h-10"
+                      placeholder="manual-evento, protocolo-123, documento-procedimiento..."
                     />
                   </div>
                 </div>

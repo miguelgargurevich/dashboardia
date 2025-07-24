@@ -3,7 +3,7 @@
  * Funciones centralizadas para llamadas a la API de Google Gemini
  */
 
-interface GeminiConfig {
+export interface GeminiConfig {
   temperature?: number;
   topK?: number;
   topP?: number;

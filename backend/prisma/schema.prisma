@@ -168,3 +168,19 @@ model DailyNote {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
+model Note {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   // Contenido en formato Markdown
+  tema        String   // notificaciones, polizas, tickets, actividades-diarias, emergencias, etc
+  tipo        String   @default("nota") // procedimiento, manual, guia, nota, checklist
+  descripcion String?  // Descripción corta
+  tags        String[] // Etiquetas para búsqueda
+  context     String?  // Contexto adicional
+  keyPoints   String[] // Puntos clave
+  status      String   @default("activo") // activo, archivado, borrador
+  userId      String?  // Usuario que creó la nota
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

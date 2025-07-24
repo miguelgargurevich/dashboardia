@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaClock } from "react-icons/fa";
 
 interface Event {
@@ -15,6 +16,7 @@ interface Event {
   nombreNotificacion?: string;
   diaEnvio?: string;
   query?: string;
+  relatedResources?: string[];
 }
 
 interface Props {
@@ -25,6 +27,16 @@ interface Props {
 const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  const handleEventClick = (event: Event) => {
+    // Formatear la fecha para la URL
+    const eventDate = new Date(event.startDate);
+    const dateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+    
+    // Navegar al calendario con la fecha del evento y la pestaña de eventos activa
+    router.push(`/calendar?date=${dateString}&tab=events`);
+  };
 
   useEffect(() => {
     async function fetchUpcomingEvents() {
@@ -105,7 +117,11 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
       {events.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {events.map((event) => (
-            <div key={event.id} className="bg-primary/40 rounded-lg p-3 border border-accent/20 hover:border-accent/40 transition-colors">
+            <div 
+              key={event.id} 
+              className="bg-primary/40 rounded-lg p-3 border border-accent/20 hover:border-accent/40 transition-colors cursor-pointer hover:bg-primary/60"
+              onClick={() => handleEventClick(event)}
+            >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2 flex-1">
                   {getEventIcon(event.title)}
@@ -138,7 +154,7 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
                 </p>
               )}
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs mb-2">
                 <div className="flex items-center gap-2">
                   {event.modo && (
                     <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
@@ -150,6 +166,11 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
                       👤 {event.validador}
                     </span>
                   )}
+                  {event.relatedResources && event.relatedResources.length > 0 && (
+                    <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">
+                      📎 {event.relatedResources.length}
+                    </span>
+                  )}
                 </div>
                 {event.location && (
                   <span className="text-gray-400 truncate max-w-32">
@@ -157,6 +178,22 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
                   </span>
                 )}
               </div>
+
+              {/* Recursos relacionados */}
+              {event.relatedResources && event.relatedResources.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {event.relatedResources.slice(0, 3).map((resource, idx) => (
+                    <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                      📄 {resource}
+                    </span>
+                  ))}
+                  {event.relatedResources.length > 3 && (
+                    <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                      +{event.relatedResources.length - 3} más
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

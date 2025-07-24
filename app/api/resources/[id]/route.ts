@@ -15,7 +15,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const response = await fetch(`${process.env.BACKEND_URL}/api/resources/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/resources/${id}`, {
       method: 'PUT',
       headers: createAuthHeaders(request),
       body: JSON.stringify({
@@ -62,7 +62,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    const response = await fetch(`${process.env.BACKEND_URL}/api/resources/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/resources/${id}`, {
       method: 'DELETE',
       headers: createAuthHeaders(request)
     });
@@ -99,7 +99,7 @@ export async function GET(
 
     const { id } = await params;
 
-    const response = await fetch(`${process.env.BACKEND_URL}/api/resources/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/resources/${id}`, {
       headers: createAuthHeaders(request)
     });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callGeminiForJSON, GeminiConfigs } from '../../lib/gemini';
-import { hasValidAuth, createUnauthorizedResponse } from '../../lib/auth';
+import { callGeminiForJSON, GeminiConfigs } from '../../../lib/gemini';
+import { hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
 export async function POST(request: NextRequest) {
   try {

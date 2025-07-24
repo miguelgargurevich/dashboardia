@@ -1413,4 +1413,228 @@ router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
   }
 });
 
+// ===== RUTAS PARA NOTAS GENERALES (REEMPLAZA ARCHIVOS .MD) =====
+
+// GET /api/notes - Obtener todas las notas o filtradas por tema
+router.get('/api/notes', requireAuth, async (req, res) => {
+  try {
+    const { tema, tipo, status, search } = req.query;
+    let whereClause = {};
+    
+    if (tema) {
+      whereClause.tema = tema;
+    }
+    
+    if (tipo) {
+      whereClause.tipo = tipo;
+    }
+    
+    if (status) {
+      whereClause.status = status;
+    }
+    
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { descripcion: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    
+    const notes = await prisma.note.findMany({
+      where: whereClause,
+      orderBy: [
+        { tema: 'asc' },
+        { createdAt: 'desc' }
+      ]
+    });
+    
+    res.json(notes);
+  } catch (error) {
+    console.error('Error obteniendo notas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/notes/:id - Obtener una nota específica
+router.get('/api/notes/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const note = await prisma.note.findUnique({
+      where: { id }
+    });
+    
+    if (!note) {
+      return res.status(404).json({ error: 'Nota no encontrada' });
+    }
+    
+    res.json(note);
+  } catch (error) {
+    console.error('Error obteniendo nota:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// POST /api/notes - Crear nueva nota
+router.post('/api/notes', requireAuth, async (req, res) => {
+  try {
+    const {
+      title,
+      content,
+      tema,
+      tipo = 'nota',
+      descripcion,
+      tags = [],
+      context,
+      keyPoints = [],
+      status = 'activo',
+      userId
+    } = req.body;
+    
+    // Validaciones básicas
+    if (!title || !content || !tema) {
+      return res.status(400).json({ 
+        error: 'Faltan campos requeridos: title, content, tema' 
+      });
+    }
+    
+    const note = await prisma.note.create({
+      data: {
+        title,
+        content,
+        tema,
+        tipo,
+        descripcion,
+        tags,
+        context,
+        keyPoints,
+        status,
+        userId
+      }
+    });
+    
+    res.status(201).json(note);
+  } catch (error) {
+    console.error('Error creando nota:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// PUT /api/notes/:id - Actualizar nota
+router.put('/api/notes/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      content,
+      tema,
+      tipo,
+      descripcion,
+      tags,
+      context,
+      keyPoints,
+      status
+    } = req.body;
+    
+    const existingNote = await prisma.note.findUnique({
+      where: { id }
+    });
+    
+    if (!existingNote) {
+      return res.status(404).json({ error: 'Nota no encontrada' });
+    }
+    
+    const note = await prisma.note.update({
+      where: { id },
+      data: {
+        title,
+        content,
+        tema,
+        tipo,
+        descripcion,
+        tags,
+        context,
+        keyPoints,
+        status,
+        updatedAt: new Date()
+      }
+    });
+    
+    res.json(note);
+  } catch (error) {
+    console.error('Error actualizando nota:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// DELETE /api/notes/:id - Eliminar nota
+router.delete('/api/notes/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const existingNote = await prisma.note.findUnique({
+      where: { id }
+    });
+    
+    if (!existingNote) {
+      return res.status(404).json({ error: 'Nota no encontrada' });
+    }
+    
+    await prisma.note.delete({
+      where: { id }
+    });
+    
+    res.json({ success: true, message: 'Nota eliminada exitosamente' });
+  } catch (error) {
+    console.error('Error eliminando nota:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/notes/search - Búsqueda avanzada de notas
+router.get('/api/notes/search', requireAuth, async (req, res) => {
+  try {
+    const { q, tema, tipo, tags, limit = 50 } = req.query;
+    
+    let whereClause = {};
+    
+    if (q) {
+      whereClause.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { content: { contains: q, mode: 'insensitive' } },
+        { descripcion: { contains: q, mode: 'insensitive' } }
+      ];
+    }
+    
+    if (tema) {
+      whereClause.tema = tema;
+    }
+    
+    if (tipo) {
+      whereClause.tipo = tipo;
+    }
+    
+    if (tags) {
+      const tagsArray = Array.isArray(tags) ? tags : [tags];
+      whereClause.tags = {
+        hasSome: tagsArray
+      };
+    }
+    
+    const notes = await prisma.note.findMany({
+      where: whereClause,
+      orderBy: [
+        { createdAt: 'desc' }
+      ],
+      take: parseInt(limit)
+    });
+    
+    res.json(notes);
+  } catch (error) {
+    console.error('Error buscando notas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 module.exports = router;

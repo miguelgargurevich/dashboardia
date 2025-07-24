@@ -40,7 +40,10 @@ import { usePathname } from 'next/navigation';
 type MessageContent =
   | string
   | { type: 'cancel', text: string }
-  | { type: 'login-options', text: string };
+  | { type: 'login-options', text: string }
+  | { type: 'note-wizard', step: string, data?: any }
+  | { type: 'url-wizard', step: string, data?: any }
+  | { type: 'resource-wizard', step: string, files?: File[], data?: any };
 type Message = { role: string; content: MessageContent };
 
 export default function AssistantBubble() {
@@ -120,6 +123,223 @@ export default function AssistantBubble() {
   const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  
+  // Estados para wizards de creación
+  const [noteWizardStep, setNoteWizardStep] = useState<'none'|'collecting'|'generating'>('none');
+  const [noteWizardData, setNoteWizardData] = useState<any>({});
+  const [urlWizardStep, setUrlWizardStep] = useState<'none'|'collecting'|'processing'>('none');
+  const [urlWizardData, setUrlWizardData] = useState<any>({});
+  const [resourceWizardStep, setResourceWizardStep] = useState<'none'|'categorizing'|'uploading'>('none');
+  
+  // Funciones para manejar comandos específicos
+  async function handleCreateNote(_userMessage: string) {
+    try {
+      setNoteWizardStep('collecting');
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '🤖 ¡Perfecto! Voy a ayudarte a crear una nota con IA. Por favor proporciona:\n\n**Título:** ¿Cómo quieres llamar a la nota?\n**Tema:** ¿A qué categoría pertenece? (notificaciones, polizas, tickets, etc.)\n**Descripción:** ¿Qué tipo de contenido necesitas?\n**Tipo:** ¿Es un procedimiento, manual, guía o checklist?\n\nPuedes escribir todo junto o yo te voy preguntando paso a paso.' }]);
+      
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al iniciar la creación de nota. Intenta de nuevo.' }]);
+    }
+  }
+
+  async function processNoteGeneration(data: any) {
+    try {
+      setNoteWizardStep('generating');
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '🔄 Generando nota con IA, esto puede tomar unos segundos...' }]);
+      
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const response = await fetch('/api/ai/content-generator', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setMessages(msgs => [...msgs, { 
+          role: 'assistant', 
+          content: `✅ **¡Nota creada exitosamente!**\n\n**Título:** ${result.nota.title}\n**Tema:** ${result.nota.tema}\n**Tipo:** ${result.nota.tipo}\n\nLa nota ha sido guardada en la base de conocimiento y está disponible en la sección de **Knowledge**.`
+        }]);
+      } else {
+        const error = await response.json();
+        setMessages(msgs => [...msgs, { role: 'assistant', content: `❌ Error al generar la nota: ${error.error || 'Error desconocido'}` }]);
+      }
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al conectar con el servicio de generación de notas.' }]);
+    } finally {
+      setNoteWizardStep('none');
+      setNoteWizardData({});
+    }
+  }
+
+  async function handleNoteWizardResponse(userInput: string) {
+    try {
+      // Intentar extraer información de la respuesta del usuario
+      const data = extractNoteDataFromText(userInput);
+      
+      // Validar si tenemos información suficiente
+      if (data.titulo && data.tema && data.descripcion && data.tipo) {
+        // Tenemos toda la información, proceder a generar
+        await processNoteGeneration(data);
+      } else {
+        // Pedir información faltante
+        const missing: string[] = [];
+        if (!data.titulo) missing.push('título');
+        if (!data.tema) missing.push('tema/categoría');
+        if (!data.descripcion) missing.push('descripción del contenido');
+        if (!data.tipo) missing.push('tipo (procedimiento/manual/guía/checklist)');
+        
+        setMessages(msgs => [...msgs, { 
+          role: 'assistant', 
+          content: `📝 Gracias por la información. Aún necesito:\n\n**${missing.join(', ')}**\n\nPor favor proporciona estos datos para continuar.` 
+        }]);
+      }
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error procesando la información. Intenta de nuevo.' }]);
+    }
+  }
+
+  async function handleUrlWizardResponse(userInput: string) {
+    try {
+      const data = extractUrlDataFromText(userInput);
+      
+      if (data.url && data.titulo && data.tema) {
+        // Procesar la URL
+        setUrlWizardStep('processing');
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '🔗 Procesando URL...' }]);
+        
+        const response = await fetch('/api/ai/url-processor', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: '✅ URL agregada exitosamente al sistema.' }]);
+        } else {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al procesar la URL.' }]);
+        }
+        
+        setUrlWizardStep('none');
+        setUrlWizardData({});
+      } else {
+        const missing: string[] = [];
+        if (!data.url) missing.push('URL');
+        if (!data.titulo) missing.push('título');
+        if (!data.tema) missing.push('tema/categoría');
+        
+        setMessages(msgs => [...msgs, { 
+          role: 'assistant', 
+          content: `🔗 Aún necesito: **${missing.join(', ')}**` 
+        }]);
+      }
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error procesando la URL. Intenta de nuevo.' }]);
+    }
+  }
+
+  async function handleResourceWizardResponse(userInput: string) {
+    try {
+      const tema = userInput.trim();
+      
+      if (attachedFiles.length > 0) {
+        setResourceWizardStep('uploading');
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '📁 Subiendo archivos...' }]);
+        
+        for (const file of attachedFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('tema', tema);
+          formData.append('titulo', file.name.split('.')[0]);
+          
+          const response = await fetch('/api/resources/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+          });
+
+          if (!response.ok) {
+            setMessages(msgs => [...msgs, { role: 'assistant', content: `❌ Error subiendo ${file.name}` }]);
+          }
+        }
+        
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '✅ Recursos subidos exitosamente.' }]);
+        setAttachedFiles([]);
+        setResourceWizardStep('none');
+      } else {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '📁 No hay archivos para subir. Adjunta archivos primero.' }]);
+      }
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error subiendo recursos. Intenta de nuevo.' }]);
+    }
+  }
+
+  // Funciones auxiliares para extraer datos
+  function extractNoteDataFromText(text: string) {
+    const data: any = {};
+    
+    // Buscar patrones comunes
+    const tituloMatch = text.match(/t[íi]tulo:?\s*(.+?)(?:\n|$|tema|tipo|descripci[óo]n)/i);
+    const temaMatch = text.match(/tema:?\s*(.+?)(?:\n|$|t[íi]tulo|tipo|descripci[óo]n)/i);
+    const descripcionMatch = text.match(/descripci[óo]n:?\s*(.+?)(?:\n|$|tema|tipo|t[íi]tulo)/i);
+    const tipoMatch = text.match(/tipo:?\s*(procedimiento|manual|gu[íi]a|checklist|nota)(?:\n|$|tema|t[íi]tulo|descripci[óo]n)/i);
+    
+    if (tituloMatch) data.titulo = tituloMatch[1].trim();
+    if (temaMatch) data.tema = temaMatch[1].trim();
+    if (descripcionMatch) data.descripcion = descripcionMatch[1].trim();
+    if (tipoMatch) data.tipo = tipoMatch[1].trim().toLowerCase();
+    
+    return data;
+  }
+
+  function extractUrlDataFromText(text: string) {
+    const data: any = {};
+    
+    const urlMatch = text.match(/(https?:\/\/[^\s]+)/i);
+    const tituloMatch = text.match(/t[íi]tulo:?\s*(.+?)(?:\n|$|tema|url|descripci[óo]n)/i);
+    const temaMatch = text.match(/tema:?\s*(.+?)(?:\n|$|t[íi]tulo|url|descripci[óo]n)/i);
+    const descripcionMatch = text.match(/descripci[óo]n:?\s*(.+?)(?:\n|$|tema|url|t[íi]tulo)/i);
+    
+    if (urlMatch) data.url = urlMatch[1];
+    if (tituloMatch) data.titulo = tituloMatch[1].trim();
+    if (temaMatch) data.tema = temaMatch[1].trim();
+    if (descripcionMatch) data.descripcion = descripcionMatch[1].trim();
+    
+    return data;
+  }
+
+  async function handleAddUrl(_userMessage: string) {
+    try {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '🔗 ¡Excelente! Para agregar una URL, necesito:\n\n**URL:** ¿Cuál es la dirección web?\n**Título:** ¿Cómo quieres llamarla?\n**Tema:** ¿A qué categoría pertenece?\n**Descripción:** (Opcional) ¿Qué contiene?\n\nPuedes escribir todo junto o paso a paso.' }]);
+      
+      setMessages(msgs => [...msgs, { role: 'assistant', content: { type: 'url-wizard', step: 'start' } }]);
+      
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al iniciar la adición de URL. Intenta de nuevo.' }]);
+    }
+  }
+
+  async function handleUploadResource(_userMessage: string) {
+    try {
+      if (attachedFiles.length > 0) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: `📎 Veo que ya tienes archivos adjuntos: ${attachedFiles.map(f => f.name).join(', ')}\n\n¿En qué tema/categoría quieres clasificar estos recursos?` }]);
+        setMessages(msgs => [...msgs, { role: 'assistant', content: { type: 'resource-wizard', step: 'categorize', files: attachedFiles } }]);
+      } else {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '📁 Para subir un recurso, puedes:\n\n1. **Arrastrar y soltar** archivos aquí\n2. **Hacer clic en "Adjuntar archivo"** abajo\n3. Después te ayudo a categorizarlo\n\nFormatos soportados: PDF, Word, Excel, imágenes, videos, etc.' }]);
+      }
+    } catch (error) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al procesar el recurso. Intenta de nuevo.' }]);
+    }
+  }
+
   async function sendMessage(e: any) {
     e.preventDefault();
     const value = e.target?.value || input;
@@ -377,6 +597,57 @@ export default function AssistantBubble() {
 
     // Flujo normal de chat IA (dashboard)
     setMessages(msgs => [...msgs, { role: 'user', content: value }]);
+    
+    // Detectar si estamos en un wizard activo
+    if (noteWizardStep === 'collecting') {
+      await handleNoteWizardResponse(value);
+      setInput('');
+      setLoading(false);
+      return;
+    }
+    
+    if (urlWizardStep === 'collecting') {
+      await handleUrlWizardResponse(value);
+      setInput('');
+      setLoading(false);
+      return;
+    }
+    
+    if (resourceWizardStep === 'categorizing') {
+      await handleResourceWizardResponse(value);
+      setInput('');
+      setLoading(false);
+      return;
+    }
+    
+    // Detectar comandos específicos antes del chat general
+    const lowerValue = value.toLowerCase().trim();
+    
+    // Comando: Crear nota con IA
+    if (lowerValue.includes('crear nota') || lowerValue.includes('generar nota') || lowerValue.includes('nueva nota')) {
+      await handleCreateNote(value);
+      setInput('');
+      setLoading(false);
+      return;
+    }
+    
+    // Comando: Agregar URL
+    if (lowerValue.includes('agregar url') || lowerValue.includes('nueva url') || lowerValue.includes('añadir url')) {
+      await handleAddUrl(value);
+      setInput('');
+      setLoading(false);
+      return;
+    }
+    
+    // Comando: Subir recurso
+    if (lowerValue.includes('subir recurso') || lowerValue.includes('nuevo recurso') || lowerValue.includes('cargar archivo')) {
+      await handleUploadResource(value);
+      setInput('');
+      setLoading(false);
+      return;
+    }
+    
+    // Chat IA general para otras consultas
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
       const res = await fetch(`${apiUrl}/api/assistant`, {

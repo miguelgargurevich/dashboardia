@@ -1,8 +1,9 @@
-// app/api/daily-notes/stats/route.ts
+// app/api/calendar/notes/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { hasValidAuth, createUnauthorizedResponse, createAuthHeaders } from '../../../../lib/auth';
 
 // Configuración centralizada del backend
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export async function GET(request: NextRequest) {
   try {

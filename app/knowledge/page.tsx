@@ -205,7 +205,7 @@ const KnowledgePage: React.FC = () => {
     
     try {
       // Obtener archivos dinámicamente del nuevo endpoint
-      const response = await fetch('/api/notas-md', {
+      const response = await fetch('/api/content/knowledge', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -368,7 +368,7 @@ const KnowledgePage: React.FC = () => {
       const params = new URLSearchParams();
       if (temaSeleccionado) params.append('categoria', temaSeleccionado);
       
-      const response = await fetch(`/api/recursos?${params.toString()}`, {
+      const response = await fetch(`/api/resources?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -390,7 +390,7 @@ const KnowledgePage: React.FC = () => {
     if (!token) return;
     
     try {
-      const response = await fetch(`/api/recursos/${id}`, { 
+      const response = await fetch(`/api/resources/${id}`, { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -412,7 +412,7 @@ const KnowledgePage: React.FC = () => {
     if (!token) return;
     
     try {
-      const response = await fetch('/api/recursos', {
+      const response = await fetch('/api/resources', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -576,7 +576,7 @@ ${formData.contenido}
 
 **Etiquetas:** ${etiquetas.join(', ')}`;
 
-        const response = await fetch('/api/notas-md', {
+        const response = await fetch('/api/content/knowledge', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -719,7 +719,7 @@ ${formData.contenido}
           formDataFile.append('tema', formData.tema);
           formDataFile.append('tags', JSON.stringify(etiquetas));
 
-          const response = await fetch('/api/recursos/upload', {
+          const response = await fetch('/api/resources/upload', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -732,7 +732,7 @@ ${formData.contenido}
           }
         } else if (recursoEditando) {
           // Editar recurso existente
-          const response = await fetch(`/api/recursos/${recursoEditando.id}`, {
+          const response = await fetch(`/api/resources/${recursoEditando.id}`, {
             method: 'PUT',
             headers: { 
               'Content-Type': 'application/json',

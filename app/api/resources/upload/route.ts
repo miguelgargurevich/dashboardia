@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       nombreOriginal: file.name
     };
 
-    const response = await fetch(`${process.env.BACKEND_URL}/api/resources`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/resources`, {
       method: 'POST',
       headers: createAuthHeaders(request),
       body: JSON.stringify(recursoData)
