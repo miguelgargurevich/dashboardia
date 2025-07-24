@@ -15,6 +15,10 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  
+  // Estados compartidos para comunicación entre calendarios
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [triggerDateSelection, setTriggerDateSelection] = useState<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -47,7 +51,12 @@ export default function Home() {
                 <FaRegCalendarAlt className="text-accent" />
                 Eventos
               </h2>
-              <EventsCalendar token={token || ''} />
+              <EventsCalendar 
+                token={token || ''} 
+                selectedDate={selectedDate}
+                triggerDateSelection={triggerDateSelection}
+                onDateChange={setSelectedDate}
+              />
             </div>
            
           </div>
@@ -58,7 +67,13 @@ export default function Home() {
                 <FaClock className="text-accent" />
                 Próximos Eventos
               </h2>
-              <UpcomingEvents token={token || ''} />
+              <UpcomingEvents 
+                token={token || ''} 
+                onEventClick={(date: string) => {
+                  setSelectedDate(date);
+                  setTriggerDateSelection(prev => prev + 1);
+                }}
+              />
             </div>
             <div className="bg-secondary rounded-xl shadow-lg p-4 flex flex-col h-full">
               <h2 className="text-xl font-bold mb-2 text-gray-200 flex items-center gap-2">

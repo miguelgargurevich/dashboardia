@@ -22,20 +22,25 @@ interface Event {
 interface Props {
   token: string;
   limit?: number;
+  onEventClick?: (date: string) => void;
 }
 
-const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
+const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   const handleEventClick = (event: Event) => {
-    // Formatear la fecha para la URL
-    const eventDate = new Date(event.startDate);
-    const dateString = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+    // Extraer la fecha directamente del string sin convertir a Date para evitar problemas de zona horaria
+    const dateString = event.startDate.split('T')[0]; // Obtiene solo la parte de fecha (YYYY-MM-DD)
     
-    // Navegar al calendario con la fecha del evento y la pestaña de eventos activa
-    router.push(`/calendar?date=${dateString}&tab=events`);
+    // Si hay callback, usarla para comunicarse con el calendario del home
+    if (onEventClick) {
+      onEventClick(dateString);
+    } else {
+      // Fallback: navegar al calendario si no hay callback (para otros usos del componente)
+      router.push(`/calendar?date=${dateString}&tab=events`);
+    }
   };
 
   useEffect(() => {
@@ -57,6 +62,11 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5 }) => {
             .slice(0, limit); // Mostrar solo los próximos eventos según el límite
           
           setEvents(upcomingEvents);
+        } else if (res.status === 401) {
+          // Token expirado o inválido, redirigir al login
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
         } else {
           setEvents([]);
         }

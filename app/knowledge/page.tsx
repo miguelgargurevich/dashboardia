@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaTimes } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
@@ -607,12 +607,22 @@ ${formData.contenido}
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
           <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
-            <h3 className="text-xl font-bold text-accent">
-              Crear Nueva Nota
-            </h3>
-            <p className="text-sm text-gray-400 mt-2">
-              Completa la información para crear una nueva nota
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-accent">
+                  Crear Nueva Nota
+                </h3>
+                <p className="text-sm text-gray-400 mt-2">
+                  Completa la información para crear una nueva nota
+                </p>
+              </div>
+              <button
+                onClick={() => setMostrarFormularioNota(false)}
+                className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-600/20"
+              >
+                <FaTimes />
+              </button>
+            </div>
           </div>
           
           <div className="p-6 overflow-y-auto flex-1">
@@ -776,15 +786,28 @@ ${formData.contenido}
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
           <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
-            <h3 className="text-xl font-bold text-accent">
-              {recursoEditando ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
-            </h3>
-            <p className="text-sm text-gray-400 mt-2">
-              {recursoEditando 
-                ? 'Modifica la información del recurso y guarda los cambios'
-                : 'Completa la información del recurso'
-              }
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-accent">
+                  {recursoEditando ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
+                </h3>
+                <p className="text-sm text-gray-400 mt-2">
+                  {recursoEditando 
+                    ? 'Modifica la información del recurso y guarda los cambios'
+                    : 'Completa la información del recurso'
+                  }
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setMostrarFormularioRecurso(false);
+                  setRecursoEditando(null);
+                }}
+                className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-600/20"
+              >
+                <FaTimes />
+              </button>
+            </div>
           </div>
           
           <div className="p-6 overflow-y-auto flex-1">

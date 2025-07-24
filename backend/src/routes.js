@@ -1278,7 +1278,7 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
           pendingTasks: 0,
           highPriorityTasks: 0,
           incidents: 0,
-          types: {
+          notesTypes: {
             incidente: 0,
             mantenimiento: 0,
             reunion: 0,
@@ -1322,8 +1322,8 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
       }
       
       // Contadores detallados
-      if (dayStats.types[note.type] !== undefined) {
-        dayStats.types[note.type]++;
+      if (dayStats.notesTypes[note.type] !== undefined) {
+        dayStats.notesTypes[note.type]++;
       }
       
       if (dayStats.priorities[note.priority] !== undefined) {

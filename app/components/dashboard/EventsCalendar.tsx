@@ -19,10 +19,13 @@ interface Event {
 
 interface Props {
   token: string;
+  selectedDate?: string;
+  triggerDateSelection?: number;
+  onDateChange?: (date: string) => void;
 }
 
 
-const EventsCalendar: React.FC<Props> = ({ token }) => {
+const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelectedDate, triggerDateSelection, onDateChange }) => {
   // Día actual (número y mes/año)
   const today = new Date();
   const todayDay = today.getDate();
@@ -41,15 +44,49 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
   useEffect(() => {
     async function fetchEvents() {
       setLoading(true);
-      const res = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setEvents(data);
-      setLoading(false);
+      try {
+        const res = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const data = await res.json();
+          setEvents(Array.isArray(data) ? data : []);
+        } else if (res.status === 401) {
+          // Token expirado o inválido, redirigir al login
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
+        } else {
+          console.error('Error fetching events:', res.statusText);
+          setEvents([]);
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchEvents();
   }, [token, visibleMonth]);
+
+  // Efecto para responder a cambios de fecha externa (desde UpcomingEvents)
+  useEffect(() => {
+    if (externalSelectedDate && triggerDateSelection && triggerDateSelection > 0) {
+      // Extraer fecha directamente del string para evitar problemas de zona horaria
+      const [year, month, day] = externalSelectedDate.split('-').map(Number);
+      
+      // Actualizar el mes visible si es diferente
+      const newVisibleMonth = `${year}-${String(month).padStart(2, '0')}`;
+      if (newVisibleMonth !== visibleMonth) {
+        setVisibleMonth(newVisibleMonth);
+      }
+      
+      // Actualizar el día seleccionado
+      setSelectedDate(day.toString());
+    }
+  }, [externalSelectedDate, triggerDateSelection, visibleMonth]);
 
   // Generar días del mes actual
   const [yyyy, mm] = visibleMonth.split('-');
@@ -65,11 +102,13 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
 
   // Eventos por día
   const eventsByDay: { [key: number]: Event[] } = {};
-  events.forEach(ev => {
-    const day = new Date(ev.startDate).getDate();
-    if (!eventsByDay[day]) eventsByDay[day] = [];
-    eventsByDay[day].push(ev);
-  });
+  if (events && Array.isArray(events)) {
+    events.forEach(ev => {
+      const day = new Date(ev.startDate).getDate();
+      if (!eventsByDay[day]) eventsByDay[day] = [];
+      eventsByDay[day].push(ev);
+    });
+  }
 
   // Nombre del mes
   const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -138,7 +177,14 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
                   ${isToday ? 'border-2 border-blue-400' : ''}
                   ${dayEvents.length > 0 ? 'bg-accent/10' : 'bg-primary/40'}
                 `}
-                onClick={() => setSelectedDate(day.toString())}
+                onClick={() => {
+                  setSelectedDate(day.toString());
+                  // Notificar al componente padre si tiene la callback
+                  if (onDateChange) {
+                    const dateString = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    onDateChange(dateString);
+                  }
+                }}
               >
                 <span className={`text-sm font-medium ${dayEvents.length > 0 ? 'text-accent' : 'text-white'}`}>
                   {day}

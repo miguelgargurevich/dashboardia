@@ -30,6 +30,11 @@ const TicketsPieChart: React.FC<Props> = ({ groupBy = 'tipo', token }) => {
         if (res.ok) {
           const data = await res.json();
           setStats(data);
+        } else if (res.status === 401) {
+          // Token expirado o inválido, redirigir al login
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+          return;
         } else {
           // Fallback a datos de ejemplo
           setStats([
