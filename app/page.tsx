@@ -5,8 +5,8 @@ import TicketsLineChart from './components/dashboard/TicketsLineChart';
 import TicketsBarChart from './components/dashboard/TicketsBarChart';
 import TicketsPieChart from './components/dashboard/TicketsPieChart';
 import EventsCalendar from './components/dashboard/EventsCalendar';
-import RecentResources from './components/dashboard/RecentResources';
-import { FaRegCalendarAlt, FaChartBar, FaBook } from "react-icons/fa";
+import UpcomingEvents from './components/dashboard/UpcomingEvents';
+import { FaRegCalendarAlt, FaChartBar, FaClock } from "react-icons/fa";
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -51,12 +51,10 @@ export default function Home() {
             </div>
             <div className="bg-secondary rounded-xl shadow-lg p-4 flex flex-col h-full">
               <h2 className="text-xl font-bold mb-2 text-gray-200 flex items-center gap-2">
-                <FaBook className="text-accent" />
-                Recursos recientes
+                <FaClock className="text-accent" />
+                Próximos Eventos
               </h2>
-              <div className="grid grid-cols-1 gap-4 w-full">
-                <RecentResources token={token || ''} />
-              </div>
+              <UpcomingEvents token={token || ''} />
             </div>
           </div>
           {/* Columna Derecha: Gráficos estadísticos */}

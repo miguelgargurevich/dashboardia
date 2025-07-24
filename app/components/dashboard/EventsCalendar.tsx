@@ -117,7 +117,7 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
       {loading ? <div>Cargando...</div> : (
         <div className="grid grid-cols-7 gap-2 mb-4">
           {/* Cabecera de días de la semana */}
-          {weekDays.map((wd, idx) => (
+          {weekDays.map((wd) => (
             <div key={wd} className="text-xs font-bold text-accent text-center pb-2">{wd}</div>
           ))}
           {/* Espacios vacíos para alinear el primer día */}
@@ -125,54 +125,122 @@ const EventsCalendar: React.FC<Props> = ({ token }) => {
             <div key={`empty-${idx}`}></div>
           ))}
           {/* Días del mes */}
-          {days.map(day => (
-            <div
-              key={day}
-              className={`rounded-lg p-2 text-center cursor-pointer border border-accent/30
-                ${eventsByDay[day] ? 'bg-accent/20 text-accent font-bold' : 'bg-primary/40 text-white'}
-                ${selectedDate === day.toString() ? 'ring-2 ring-accent' : ''}
-                ${(day === todayDay && mon === todayMonth && year === todayYear) ? 'border-2 border-blue-400' : ''}`}
-              onClick={() => setSelectedDate(day.toString())}
-            >
-              {day}
-            </div>
-          ))}
+          {days.map(day => {
+            const dayEvents = eventsByDay[day] || [];
+            const isSelected = selectedDate === day.toString();
+            const isToday = day === todayDay && mon === todayMonth && year === todayYear;
+            
+            return (
+              <div
+                key={day}
+                className={`relative rounded-lg p-2 text-center cursor-pointer border transition-all duration-200 min-h-[50px] flex flex-col justify-between
+                  ${isSelected ? 'ring-2 ring-accent bg-accent/20' : 'border-accent/30 hover:border-accent/60'}
+                  ${isToday ? 'border-2 border-blue-400' : ''}
+                  ${dayEvents.length > 0 ? 'bg-accent/10' : 'bg-primary/40'}
+                `}
+                onClick={() => setSelectedDate(day.toString())}
+              >
+                <span className={`text-sm font-medium ${dayEvents.length > 0 ? 'text-accent' : 'text-white'}`}>
+                  {day}
+                </span>
+                
+                {/* Indicador de eventos */}
+                {dayEvents.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <div className="w-full h-1 bg-yellow-400 rounded-full"></div>
+                    <div className="text-xs text-accent font-bold">
+                      {dayEvents.length}E
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-      {/* Panel de eventos del día actual siempre visible */}
-      <div className="mt-2">
-        <h4 className="text-accent font-bold mb-2">Eventos el día {selectedDate}</h4>
-        {eventsByDay[parseInt(selectedDate)] && eventsByDay[parseInt(selectedDate)].length > 0 ? (
-          eventsByDay[parseInt(selectedDate)].map(ev => (
-            <div key={ev.id} className="bg-accent/10 rounded-lg p-2 mb-6 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                {/* Icono según el tipo/título del evento */}
-                {ev.title.toLowerCase().includes('mantenimiento') && <FaTools className="text-accent" />}
-                {ev.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher className="text-accent" />}
-                {ev.title.toLowerCase().includes('reunión') && <FaUsers className="text-accent" />}
-                {ev.title.toLowerCase().includes('webinar') && <FaRobot className="text-accent" />}
-                {ev.title.toLowerCase().includes('revisión') && <FaClipboardList className="text-accent" />}
-                {ev.title.toLowerCase().includes('demo') && <FaLaptop className="text-accent" />}
-                {/* Icono genérico si no coincide */}
-                {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => ev.title.toLowerCase().includes(t)) && <FaCalendarAlt className="text-accent" />}
-                <span className="font-semibold">{ev.title}</span>
-                <span className="ml-2 text-xs text-gray-400">{ev.startDate ? new Date(ev.startDate).toLocaleString() : '-'}</span>
+      {/* Panel de eventos del día seleccionado */}
+      <div className="mt-4">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-xl font-bold text-yellow-400">
+            Eventos del día {selectedDate} ({eventsByDay[parseInt(selectedDate)]?.length || 0})
+          </h4>
+        </div>
+        
+        <div className="space-y-3 max-h-96 overflow-y-auto">
+          {eventsByDay[parseInt(selectedDate)]?.length > 0 ? (
+            eventsByDay[parseInt(selectedDate)].map((event, index) => (
+              <div key={index} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-yellow-400">
+                      {/* Icono según el tipo/título del evento */}
+                      {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
+                      {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
+                      {event.title.toLowerCase().includes('reunión') && <FaUsers />}
+                      {event.title.toLowerCase().includes('webinar') && <FaRobot />}
+                      {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
+                      {event.title.toLowerCase().includes('demo') && <FaLaptop />}
+                      {/* Icono genérico si no coincide */}
+                      {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
+                    </span>
+                    <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                  </div>
+                  {event.modo && (
+                    <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
+                      {event.modo}
+                    </span>
+                  )}
+                </div>
+                
+                {event.description && (
+                  <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
+                )}
+                
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">
+                      {new Date(event.startDate).toLocaleDateString('es-ES')}
+                      {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
+                    </span>
+                  </div>
+                  {event.location && (
+                    <span className="text-gray-400">
+                      📍 {event.location}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Información adicional del evento */}
+                {(event.validador || event.codigoDana || event.nombreNotificacion) && (
+                  <div className="mt-2 pt-2 border-t border-yellow-400/20">
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      {event.validador && (
+                        <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+                          👤 {event.validador}
+                        </span>
+                      )}
+                      {event.codigoDana && (
+                        <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
+                          🏢 {event.codigoDana}
+                        </span>
+                      )}
+                      {event.nombreNotificacion && (
+                        <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
+                          🔔 {event.nombreNotificacion}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-300 mt-2">
-                <div><span className="font-bold text-accent">Validador:</span> {ev.validador || '-'}</div>
-                <div><span className="font-bold text-accent">Modo:</span> {ev.modo || '-'}</div>
-                <div><span className="font-bold text-accent">Código DANA:</span> {ev.codigoDana || '-'}</div>
-                <div><span className="font-bold text-accent">Notificación:</span> {ev.nombreNotificacion || '-'}</div>
-                <div><span className="font-bold text-accent">Día envío:</span> {ev.diaEnvio || '-'}</div>
-                <div><span className="font-bold text-accent">Query:</span> {ev.query || '-'}</div>
-                <div><span className="font-bold text-accent">Descripción:</span> {ev.description || '-'}</div>
-                <div><span className="font-bold text-accent">Ubicación:</span> {ev.location || '-'}</div>
-              </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <FaCalendarAlt className="mx-auto text-4xl text-gray-600 mb-4" />
+              <p className="text-gray-400">No hay eventos para este día</p>
             </div>
-          ))
-        ) : (
-          <div className="bg-accent/10 rounded-lg p-4 text-center text-accent font-bold">No hay eventos para hoy</div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

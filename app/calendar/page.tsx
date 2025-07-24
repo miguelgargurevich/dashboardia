@@ -78,6 +78,7 @@ const Calendar: React.FC = () => {
   // Estados para eventos recurrentes
   const [events, setEvents] = useState<Event[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [showRecurringEvents, setShowRecurringEvents] = useState(true); // Control para mostrar/ocultar eventos recurrentes
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({
@@ -133,6 +134,17 @@ const Calendar: React.FC = () => {
   const selectedDayNotes = viewMode === 'calendar' 
     ? dailyNotes.filter(note => note.date === selectedDate)
     : dailyNotes; // En vista de lista, mostrar todas las notas
+
+  // Crear objeto para eventos por día (para mostrar en el calendario)
+  const eventsByDay: { [key: string]: Event[] } = {};
+  if (showRecurringEvents) {
+    events.forEach(event => {
+      const eventDate = new Date(event.startDate);
+      const dayKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}-${String(eventDate.getDate()).padStart(2, '0')}`;
+      if (!eventsByDay[dayKey]) eventsByDay[dayKey] = [];
+      eventsByDay[dayKey].push(event);
+    });
+  }
     
   const filteredNotes = selectedDayNotes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -690,6 +702,18 @@ const Calendar: React.FC = () => {
                     <FaFilter />
                     Filtros
                   </button>
+                  
+                  <button
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors shadow-lg font-medium ${
+                      showRecurringEvents 
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-secondary/50 text-yellow-400 hover:bg-yellow-400/10'
+                    }`}
+                    onClick={() => setShowRecurringEvents(!showRecurringEvents)}
+                  >
+                    <FaCalendarAlt />
+                    {showRecurringEvents ? 'Ocultar Eventos' : 'Mostrar Eventos'}
+                  </button>
                 </>
               ) : (
                 <button
@@ -745,8 +769,9 @@ const Calendar: React.FC = () => {
             {/* Vista de Calendario */}
             {viewMode === 'calendar' ? (
             <>
-              {/* Calendario */}
-              <div className="lg:col-span-2">
+              {/* Columna del Calendario y Eventos */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Calendario */}
                 <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
                 {/* Navegación del calendario */}
                 <div className="flex items-center justify-between mb-6">
@@ -794,6 +819,7 @@ const Calendar: React.FC = () => {
                   {days.map(day => {
                     const dayKey = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const dayData = dayStats[dayKey];
+                    const dayEvents = eventsByDay[dayKey] || [];
                     const isSelected = selectedDate === dayKey;
                     const isToday = day === todayDay && mon === todayMonth && year === todayYear;
                     
@@ -803,38 +829,129 @@ const Calendar: React.FC = () => {
                         className={`relative rounded-lg p-2 text-center cursor-pointer border transition-all duration-200 min-h-[60px] flex flex-col justify-between
                           ${isSelected ? 'ring-2 ring-accent bg-accent/20' : 'border-accent/30 hover:border-accent/60'}
                           ${isToday ? 'border-2 border-blue-400' : ''}
-                          ${dayData?.totalNotes ? 'bg-accent/10' : 'bg-primary/40'}
+                          ${(dayData?.totalNotes || dayEvents.length > 0) ? 'bg-accent/10' : 'bg-primary/40'}
                         `}
                         onClick={() => setSelectedDate(dayKey)}
                       >
-                        <span className={`text-sm font-medium ${dayData?.totalNotes ? 'text-accent' : 'text-white'}`}>
+                        <span className={`text-sm font-medium ${(dayData?.totalNotes || dayEvents.length > 0) ? 'text-accent' : 'text-white'}`}>
                           {day}
                         </span>
                         
                         {/* Indicadores de actividad */}
-                        {dayData && (
-                          <div className="flex flex-col gap-1">
-                            {/* Mostrar indicadores por tipo de nota */}
-                            {dayData.notesTypes.emergencia > 0 && (
-                              <div className="w-full h-1 bg-red-400 rounded-full"></div>
-                            )}
-                            {dayData.notesTypes.reunion > 0 && (
-                              <div className="w-full h-1 bg-blue-400 rounded-full"></div>
-                            )}
-                            {dayData.notesTypes.tarea > 0 && (
-                              <div className="w-full h-1 bg-green-400 rounded-full"></div>
-                            )}
-                            <div className="text-xs text-accent font-bold">
-                              {dayData.totalNotes}
+                        <div className="flex flex-col gap-1">
+                          {/* Indicadores de notas */}
+                          {dayData && (
+                            <>
+                              {dayData.notesTypes.emergencia > 0 && (
+                                <div className="w-full h-1 bg-red-400 rounded-full"></div>
+                              )}
+                              {dayData.notesTypes.reunion > 0 && (
+                                <div className="w-full h-1 bg-blue-400 rounded-full"></div>
+                              )}
+                              {dayData.notesTypes.tarea > 0 && (
+                                <div className="w-full h-1 bg-green-400 rounded-full"></div>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Indicador de eventos recurrentes */}
+                          {showRecurringEvents && dayEvents.length > 0 && (
+                            <div className="w-full h-1 bg-yellow-400 rounded-full"></div>
+                          )}
+                          
+                          {/* Contador total */}
+                          {(dayData?.totalNotes || dayEvents.length > 0) && (
+                            <div className="text-xs text-accent font-bold flex gap-1">
+                              {dayData?.totalNotes > 0 && <span>{dayData.totalNotes}N</span>}
+                              {showRecurringEvents && dayEvents.length > 0 && <span>{dayEvents.length}E</span>}
                             </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-            </div>
+                
+                {/* Eventos Recurrentes del Día */}
+                {showRecurringEvents && (
+                  <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-bold text-yellow-400">
+                        Eventos Recurrentes ({eventsByDay[selectedDate]?.length || 0})
+                      </h2>
+                    </div>
+                    
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {eventsByDay[selectedDate]?.length > 0 ? (
+                        eventsByDay[selectedDate].map((event, index) => (
+                          <div key={index} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-yellow-400">
+                                  <FaCalendarAlt />
+                                </span>
+                                <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                              </div>
+                              {event.modo && (
+                                <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
+                                  {event.modo}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {event.description && (
+                              <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
+                            )}
+                            
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400">
+                                  {new Date(event.startDate).toLocaleDateString('es-ES')}
+                                  {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
+                                </span>
+                              </div>
+                              {event.location && (
+                                <span className="text-gray-400">
+                                  📍 {event.location}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {/* Información adicional del evento */}
+                            {(event.validador || event.codigoDana || event.nombreNotificacion) && (
+                              <div className="mt-2 pt-2 border-t border-yellow-400/20">
+                                <div className="flex flex-wrap gap-2 text-xs">
+                                  {event.validador && (
+                                    <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+                                      👤 {event.validador}
+                                    </span>
+                                  )}
+                                  {event.codigoDana && (
+                                    <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
+                                      🏢 {event.codigoDana}
+                                    </span>
+                                  )}
+                                  {event.nombreNotificacion && (
+                                    <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
+                                      🔔 {event.nombreNotificacion}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <FaCalendarAlt className="mx-auto text-4xl text-gray-600 mb-4" />
+                          <p className="text-gray-400">No hay eventos recurrentes para este día</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Panel del día seleccionado */}
               <div className="space-y-6">

@@ -1030,24 +1030,24 @@ router.get('/api/tickets/distribucion', requireAuth, async (req, res) => {
   }
 });
 
-// Estadísticas de tickets por prioridad (para gráfico de barras)
+// Estadísticas de tickets por tipo (para gráfico de barras)
 router.get('/api/tickets/por-prioridad', requireAuth, async (req, res) => {
   try {
-    const prioridades = await prisma.ticket.groupBy({
-      by: ['prioridad'],
+    const tipos = await prisma.ticket.groupBy({
+      by: ['tipo'],
       _count: {
         id: true
       }
     });
     
-    const datos = prioridades.map(item => ({
-      prioridad: item.prioridad || 'Sin prioridad',
+    const datos = tipos.map(item => ({
+      prioridad: item.tipo || 'Sin tipo',
       cantidad: item._count.id
     }));
     
     res.json(datos);
   } catch (error) {
-    console.error('Error obteniendo tickets por prioridad:', error);
+    console.error('Error obteniendo tickets por tipo:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

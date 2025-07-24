@@ -20,13 +20,15 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
     async function fetchStats() {
       setLoading(true);
       try {
-        const apiUrl = process.env.BACKEND_URL + "/api" || '';
-        const res = await fetch(`${apiUrl}/tickets/por-prioridad`, {
+        // URL base del backend
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+        
+        const response = await fetch(`${apiUrl}/api/tickets/por-prioridad`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        if (res.ok) {
-          const result = await res.json();
+        if (response.ok) {
+          const result = await response.json();
           setStats(result);
         } else {
           // Fallback a datos de ejemplo

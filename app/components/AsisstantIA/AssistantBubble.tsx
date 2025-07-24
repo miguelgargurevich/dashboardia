@@ -133,8 +133,8 @@ export default function AssistantBubble() {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('topic', value || 'Sin tema');
-          const apiUrl = process.env.BACKEND_URL + "/api" || '';
-          const res = await fetch(`${apiUrl}/upload`, {
+          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+          const res = await fetch(`${apiUrl}/api/upload`, {
             method: 'POST',
             body: formData
           });
@@ -206,8 +206,8 @@ export default function AssistantBubble() {
           { role: 'assistant', content: 'Validando credenciales...' }
         ]);
         try {
-          const apiUrl = process.env.BACKEND_URL + "/api" || '';
-          const res = await fetch(`${apiUrl}/login`, {
+          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+          const res = await fetch(`${apiUrl}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: loginEmail, password: value.trim() })
@@ -269,8 +269,8 @@ export default function AssistantBubble() {
             { role: 'assistant', content: 'Creando tu cuenta y enviando el correo de acceso. Un momento por favor...' }
           ]);
           try {
-            const apiUrl = process.env.BACKEND_URL + "/api" || '';
-            const res = await fetch(`${apiUrl}/signup`, {
+            const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+            const res = await fetch(`${apiUrl}/api/signup`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -355,8 +355,8 @@ export default function AssistantBubble() {
       if (signupStep === 'none') {
         setMessages(msgs => [...msgs, { role: 'user', content: value }]);
         try {
-          const apiUrl = process.env.BACKEND_URL + "/api" || '';
-          const res = await fetch(`${apiUrl}/assistant`, {
+          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+          const res = await fetch(`${apiUrl}/api/assistant`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ messages: [...messages.filter(m => m.role !== 'system'), { role: 'user', content: value }] })
@@ -378,8 +378,8 @@ export default function AssistantBubble() {
     // Flujo normal de chat IA (dashboard)
     setMessages(msgs => [...msgs, { role: 'user', content: value }]);
     try {
-      const apiUrl = process.env.BACKEND_URL + "/api" || '';
-      const res = await fetch(`${apiUrl}/assistant`, {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const res = await fetch(`${apiUrl}/api/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages.filter(m => m.role !== 'system'), { role: 'user', content: value }] })
@@ -558,10 +558,12 @@ export default function AssistantBubble() {
             {/* Formulario adaptativo para el wizard */}
             {isLoginPage && signupStep === 'email' ? (
               <form
+                key="email-form"
                 className="flex gap-2 p-4 border-t border-accent"
                 onSubmit={sendMessage}
               >
                 <input
+                  key="email-input"
                   type="text"
                   value={input}
                   onChange={e => setInput(e.target.value)}
@@ -578,7 +580,7 @@ export default function AssistantBubble() {
                 </button>
               </form>
             ) : isLoginPage && signupStep === 'confirm' ? (
-              <div className="flex gap-4 p-4 border-t border-accent">
+              <div key="confirm-buttons" className="flex gap-4 p-4 border-t border-accent">
                 <button
                   className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
                   disabled={loading}
@@ -595,7 +597,7 @@ export default function AssistantBubble() {
                 </button>
               </div>
             ) : isLoginPage && signupStep === 'confirm-resend' ? (
-              <div className="flex gap-4 p-4 border-t border-accent">
+              <div key="confirm-resend-buttons" className="flex gap-4 p-4 border-t border-accent">
                 <button
                   className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
                   disabled={loading}
@@ -613,10 +615,12 @@ export default function AssistantBubble() {
               </div>
             ) : (
               <form
+                key="main-form"
                 className="flex gap-2 p-4 border-t border-accent"
                 onSubmit={sendMessage}
               >
                 <input
+                  key="main-input"
                   type="text"
                   value={input}
                   onChange={e => setInput(e.target.value)}
