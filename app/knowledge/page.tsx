@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaCheck, FaEyeSlash, FaBrain } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList } from 'react-icons/fa';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 interface NotasMD {
@@ -11,21 +11,21 @@ interface NotasMD {
   etiquetas?: string[];
 }
 
-interface URLResource {
+interface Recurso {
   id: string;
+  tipo: string; // 'url', 'archivo', 'video', 'documento'
   titulo: string;
-  url: string;
   descripcion?: string;
+  url?: string;
+  filePath?: string;
+  tags: string[];
+  categoria?: string;
   tema: string;
-  tipoContenido: string;
-  estado: 'pendiente' | 'revisado' | 'archivado';
-  prioridad: 'alta' | 'media' | 'baja';
-  etiquetas: string[];
-  agregadoPor?: string;
-  comentarios?: string;
-  createdAt: string;
-  updatedAt: string;
-  fechaRevision?: string;
+  fechaCarga: string;
+  tipoArchivo?: string;
+  tamaño?: number;
+  nombreOriginal?: string;
+  estado?: string;
 }
 
 interface Tema {
@@ -44,26 +44,69 @@ const KnowledgePage: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(false);
   
-  // Estados para URLs
-  const [urls, setUrls] = useState<URLResource[]>([]);
-  const [urlSeleccionada, setUrlSeleccionada] = useState<URLResource | null>(null);
-  const [mostrarFormularioUrl, setMostrarFormularioUrl] = useState(false);
-  const [urlEditando, setUrlEditando] = useState<URLResource | null>(null);
-  const [filtroEstadoUrl, setFiltroEstadoUrl] = useState<string>('');
-  const [cargandoUrls, setCargandoUrls] = useState(false);
-
   // Estados para filtros de etiquetas
-  const [filtroEtiquetaUrl, setFiltroEtiquetaUrl] = useState<string>('');
-  const [etiquetasDisponiblesUrls, setEtiquetasDisponiblesUrls] = useState<string[]>([]);
   const [filtroEtiquetaNota, setFiltroEtiquetaNota] = useState<string>('');
   const [etiquetasDisponiblesNotas, setEtiquetasDisponiblesNotas] = useState<string[]>([]);
 
   // Estados para crear nueva nota
   const [mostrarFormularioNota, setMostrarFormularioNota] = useState(false);
-  const [cargandoGeneracion, setCargandoGeneracion] = useState(false);
-  
-  // Estados para IA en URLs
-  const [cargandoGeneracionUrl, setCargandoGeneracionUrl] = useState(false);
+
+  // Estados para recursos
+  const [recursos, setRecursos] = useState<Recurso[]>([]);
+  const [recursoSeleccionado, setRecursoSeleccionado] = useState<Recurso | null>(null);
+  const [mostrarFormularioRecurso, setMostrarFormularioRecurso] = useState(false);
+  const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
+  const [cargandoRecursos, setCargandoRecursos] = useState(false);
+  const [filtroTipoRecurso, setFiltroTipoRecurso] = useState<string>('');
+  const [filtroEtiquetaRecurso, setFiltroEtiquetaRecurso] = useState<string>('');
+  const [etiquetasDisponiblesRecursos, setEtiquetasDisponiblesRecursos] = useState<string[]>([]);
+  const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);
+
+  // Definición de tipos de recursos
+  const tiposRecursos = [
+    {
+      id: 'url',
+      nombre: 'Enlaces / URLs',
+      descripcion: 'Enlaces web, páginas de referencia y recursos en línea',
+      icono: <FaLink className="text-xl" />,
+      color: 'bg-blue-500/20 text-blue-400 border-blue-400/30'
+    },
+    {
+      id: 'archivo',
+      nombre: 'Archivos',
+      descripcion: 'Documentos PDF, Word, Excel, ZIP, SQL y otros archivos descargables',
+      icono: <FaFileAlt className="text-xl" />,
+      color: 'bg-green-500/20 text-green-400 border-green-400/30'
+    },
+    {
+      id: 'video',
+      nombre: 'Videos',
+      descripcion: 'Tutoriales en video, capacitaciones y presentaciones',
+      icono: <FaVideo className="text-xl" />,
+      color: 'bg-purple-500/20 text-purple-400 border-purple-400/30'
+    },
+    {
+      id: 'ia-automatizacion',
+      nombre: 'IA y Automatización',
+      descripcion: 'Scripts, prompts para IA, flujos automatizados y herramientas de productividad',
+      icono: <FaBrain className="text-xl" />,
+      color: 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30'
+    },
+    {
+      id: 'contactos-externos',
+      nombre: 'Contactos y Recursos Externos',
+      descripcion: 'Contactos de proveedores, recursos externos, números de emergencia',
+      icono: <FaAddressBook className="text-xl" />,
+      color: 'bg-orange-500/20 text-orange-400 border-orange-400/30'
+    },
+    {
+      id: 'plantillas-formularios',
+      nombre: 'Plantillas y Formularios',
+      descripcion: 'Plantillas reutilizables, formularios estándar, documentos tipo',
+      icono: <FaClipboardList className="text-xl" />,
+      color: 'bg-pink-500/20 text-pink-400 border-pink-400/30'
+    }
+  ];
 
   // Definición de temas basados en las actividades de soporte
   const temas: Tema[] = [
@@ -113,20 +156,11 @@ const KnowledgePage: React.FC = () => {
 
   useEffect(() => {
     cargarContenido();
-    cargarUrls();
+    cargarRecursos();
   }, []);
 
   // Efecto para extraer etiquetas disponibles
   useEffect(() => {
-    // Extraer etiquetas únicas de URLs
-    const etiquetasUrls = new Set<string>();
-    urls.forEach(url => {
-      url.etiquetas?.forEach(etiqueta => {
-        etiquetasUrls.add(etiqueta);
-      });
-    });
-    setEtiquetasDisponiblesUrls(Array.from(etiquetasUrls).sort());
-
     // Extraer etiquetas únicas de notas
     const etiquetasNotas = new Set<string>();
     notasMD.forEach(nota => {
@@ -135,7 +169,16 @@ const KnowledgePage: React.FC = () => {
       });
     });
     setEtiquetasDisponiblesNotas(Array.from(etiquetasNotas).sort());
-  }, [urls, notasMD]);
+
+    // Extraer etiquetas únicas de recursos
+    const etiquetasRecursos = new Set<string>();
+    recursos.forEach(recurso => {
+      recurso.tags?.forEach(tag => {
+        etiquetasRecursos.add(tag);
+      });
+    });
+    setEtiquetasDisponiblesRecursos(Array.from(etiquetasRecursos).sort());
+  }, [notasMD, recursos]);
 
   const cargarContenido = async () => {
     setCargando(true);
@@ -220,177 +263,6 @@ const KnowledgePage: React.FC = () => {
     }
   };
 
-  const cargarUrls = async (filtros?: { tema?: string; estado?: string }) => {
-    setCargandoUrls(true);
-    try {
-      const params = new URLSearchParams();
-      if (filtros?.tema) params.append('tema', filtros.tema);
-      if (filtros?.estado) params.append('estado', filtros.estado);
-      
-      const response = await fetch(`/api/urls?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setUrls(data.urls || []);
-      } else {
-        console.error('Error cargando URLs:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error cargando URLs:', error);
-    } finally {
-      setCargandoUrls(false);
-    }
-  };
-
-  const crearUrl = async (datosUrl: Partial<URLResource>) => {
-    try {
-      const response = await fetch('/api/urls', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosUrl)
-      });
-      
-      if (response.ok) {
-        const nuevaUrl = await response.json();
-        setUrls(prev => [nuevaUrl, ...prev]);
-        setMostrarFormularioUrl(false);
-        return nuevaUrl;
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error creando URL');
-      }
-    } catch (error) {
-      console.error('Error creando URL:', error);
-      throw error;
-    }
-  };
-
-  const actualizarUrl = async (id: string, datosUrl: Partial<URLResource>) => {
-    try {
-      const response = await fetch(`/api/urls/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosUrl)
-      });
-      
-      if (response.ok) {
-        const urlActualizada = await response.json();
-        setUrls(prev => prev.map(url => url.id === id ? urlActualizada : url));
-        setUrlEditando(null);
-        setMostrarFormularioUrl(false);
-        return urlActualizada;
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error actualizando URL');
-      }
-    } catch (error) {
-      console.error('Error actualizando URL:', error);
-      throw error;
-    }
-  };
-
-  const eliminarUrl = async (id: string) => {
-    try {
-      const response = await fetch(`/api/urls/${id}`, { method: 'DELETE' });
-      if (response.ok) {
-        setUrls(prev => prev.filter(url => url.id !== id));
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error eliminando URL');
-      }
-    } catch (error) {
-      console.error('Error eliminando URL:', error);
-      throw error;
-    }
-  };
-
-  const marcarComoRevisado = async (id: string, comentarios?: string) => {
-    try {
-      const response = await fetch(`/api/urls/${id}/revisar`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comentarios })
-      });
-      
-      if (response.ok) {
-        const urlRevisada = await response.json();
-        setUrls(prev => prev.map(url => url.id === id ? urlRevisada : url));
-        return urlRevisada;
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error marcando como revisado');
-      }
-    } catch (error) {
-      console.error('Error marcando como revisado:', error);
-      throw error;
-    }
-  };
-
-  const generarNuevaNota = async (datosNota: {
-    titulo: string;
-    tema: string;
-    descripcion: string;
-    tipo: string;
-    puntosClave?: string[];
-    etiquetas?: string[];
-    contexto?: string;
-  }) => {
-    setCargandoGeneracion(true);
-    try {
-      const response = await fetch('/api/generar-nota', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosNota)
-      });
-      
-      if (response.ok) {
-        const resultado = await response.json();
-        
-        // Recargar el contenido para incluir la nueva nota
-        await cargarContenido();
-        
-        // Cerrar el formulario
-        setMostrarFormularioNota(false);
-        
-        // Mostrar mensaje de éxito (opcional)
-        alert(`Nota "${datosNota.titulo}" generada exitosamente`);
-        
-        return resultado;
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error generando nota');
-      }
-    } catch (error) {
-      console.error('Error generando nota:', error);
-      throw error;
-    } finally {
-      setCargandoGeneracion(false);
-    }
-  };
-
-  const procesarUrlConIA = async (url: string, tema: string) => {
-    setCargandoGeneracionUrl(true);
-    try {
-      const response = await fetch('/api/procesar-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, tema })
-      });
-      
-      if (response.ok) {
-        const resultado = await response.json();
-        return resultado;
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error procesando URL');
-      }
-    } catch (error) {
-      console.error('Error procesando URL con IA:', error);
-      throw error;
-    } finally {
-      setCargandoGeneracionUrl(false);
-    }
-  };
-
   const descargarNota = (nota: NotasMD) => {
     const element = document.createElement('a');
     const file = new Blob([nota.contenido], { type: 'text/markdown' });
@@ -399,6 +271,128 @@ const KnowledgePage: React.FC = () => {
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+  };
+
+  // Funciones auxiliares para recursos
+  const getIconoTipoRecurso = (tipo: string, tipoArchivo?: string) => {
+    if (tipo === 'url') return <FaLink className="text-accent text-sm" />;
+    if (tipo === 'video') return <FaVideo className="text-accent text-sm" />;
+    if (tipo === 'ia-automatizacion') return <FaBrain className="text-accent text-sm" />;
+    if (tipo === 'contactos-externos') return <FaAddressBook className="text-accent text-sm" />;
+    if (tipo === 'plantillas-formularios') return <FaClipboardList className="text-accent text-sm" />;
+    
+    if (tipo === 'archivo') {
+      switch (tipoArchivo) {
+        case 'pdf':
+          return <FaFileAlt className="text-red-400 text-sm" />;
+        case 'word':
+          return <FaFileAlt className="text-blue-400 text-sm" />;
+        case 'excel':
+          return <FaFileAlt className="text-green-400 text-sm" />;
+        case 'powerpoint':
+          return <FaFileAlt className="text-orange-400 text-sm" />;
+        case 'video':
+          return <FaVideo className="text-purple-400 text-sm" />;
+        case 'imagen':
+          return <FaFileAlt className="text-pink-400 text-sm" />;
+        default:
+          return <FaFileAlt className="text-accent text-sm" />;
+      }
+    }
+    
+    return <FaFileAlt className="text-accent text-sm" />;
+  };
+
+  const getTipoRecursoLabel = (tipo: string, tipoArchivo?: string) => {
+    if (tipo === 'url') return 'Enlace Web';
+    if (tipo === 'video') return 'Video';
+    if (tipo === 'ia-automatizacion') return 'IA y Automatización';
+    if (tipo === 'contactos-externos') return 'Contactos y Recursos Externos';
+    if (tipo === 'plantillas-formularios') return 'Plantillas y Formularios';
+    
+    if (tipo === 'archivo') {
+      switch (tipoArchivo) {
+        case 'pdf': return 'Documento PDF';
+        case 'word': return 'Documento Word';
+        case 'excel': return 'Hoja Excel';
+        case 'powerpoint': return 'Presentación PowerPoint';
+        case 'video': return 'Archivo de Video';
+        case 'audio': return 'Archivo de Audio';
+        case 'imagen': return 'Imagen';
+        case 'archivo_comprimido': return 'Archivo Comprimido';
+        case 'texto': return 'Archivo de Texto';
+        default: return 'Archivo';
+      }
+    }
+    
+    return tipo.charAt(0).toUpperCase() + tipo.slice(1);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const cargarRecursos = async () => {
+    setCargandoRecursos(true);
+    try {
+      const params = new URLSearchParams();
+      if (temaSeleccionado) params.append('categoria', temaSeleccionado);
+      
+      const response = await fetch(`/api/recursos?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecursos(data.recursos || []);
+      } else {
+        console.error('Error cargando recursos:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error cargando recursos:', error);
+    } finally {
+      setCargandoRecursos(false);
+    }
+  };
+
+  const eliminarRecurso = async (id: string) => {
+    try {
+      const response = await fetch(`/api/recursos/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setRecursos(prev => prev.filter(recurso => recurso.id !== id));
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Error eliminando recurso');
+      }
+    } catch (error) {
+      console.error('Error eliminando recurso:', error);
+      throw error;
+    }
+  };
+
+  const crearRecurso = async (datosRecurso: Partial<Recurso>) => {
+    try {
+      const response = await fetch('/api/recursos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosRecurso)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const nuevoRecurso = data.recurso;
+        setRecursos(prev => [nuevoRecurso, ...prev]);
+        setMostrarFormularioRecurso(false);
+        return nuevoRecurso;
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Error creando recurso');
+      }
+    } catch (error) {
+      console.error('Error creando recurso:', error);
+      throw error;
+    }
   };
 
   const notasFiltradas = notasMD.filter(nota => {
@@ -429,7 +423,7 @@ const KnowledgePage: React.FC = () => {
       
       // Detectar inicio de tabla
       if (linea.includes('|') && linea.trim().startsWith('|') && linea.trim().endsWith('|')) {
-        const filasTabla = [];
+        const filasTabla: string[][] = [];
         let j = i;
         
         // Recoger todas las filas de la tabla
@@ -518,46 +512,49 @@ const KnowledgePage: React.FC = () => {
     return resultado;
   };
 
-  const urlsFiltradas = urls.filter(url => {
-    const matchBusqueda = url.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
-                         (url.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) || false);
-    const matchTema = !temaSeleccionado || url.tema === temaSeleccionado;
-    const matchEstado = !filtroEstadoUrl || url.estado === filtroEstadoUrl;
-    const matchEtiqueta = !filtroEtiquetaUrl || url.etiquetas.includes(filtroEtiquetaUrl);
-    return matchBusqueda && matchTema && matchEstado && matchEtiqueta;
-  });
-
   const FormularioNuevaNota = () => {
     const [formData, setFormData] = useState({
       titulo: '',
       tema: temaSeleccionado || 'notificaciones',
-      descripcion: '',
-      tipo: 'nota' as 'procedimiento' | 'manual' | 'guia' | 'nota' | 'checklist',
-      puntosClave: '',
-      contexto: '',
+      contenido: '',
       etiquetas: ''
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-        const puntosClave = formData.puntosClave 
-          ? formData.puntosClave.split('\n').map(punto => punto.trim()).filter(Boolean)
-          : [];
-
         const etiquetas = formData.etiquetas 
           ? formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
           : [];
 
-        await generarNuevaNota({
-          ...formData,
-          puntosClave,
-          etiquetas,
-          contexto: formData.contexto || undefined
+        // Crear el archivo markdown directamente
+        const contenidoMarkdown = `# ${formData.titulo}
+
+${formData.contenido}
+
+**Etiquetas:** ${etiquetas.join(', ')}`;
+
+        const response = await fetch('/api/notas-md', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: formData.titulo,
+            tema: formData.tema,
+            contenido: contenidoMarkdown,
+            etiquetas
+          })
         });
+
+        if (response.ok) {
+          await cargarContenido();
+          setMostrarFormularioNota(false);
+          alert('Nota creada exitosamente');
+        } else {
+          throw new Error('Error al crear la nota');
+        }
       } catch (error) {
-        console.error('Error generando nota:', error);
-        alert('Error al generar la nota. Por favor intenta nuevamente.');
+        console.error('Error creando nota:', error);
+        alert('Error al crear la nota. Por favor intenta nuevamente.');
       }
     };
 
@@ -566,10 +563,10 @@ const KnowledgePage: React.FC = () => {
         <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
           <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
             <h3 className="text-xl font-bold text-accent">
-              Crear Nueva Nota con IA
+              Crear Nueva Nota
             </h3>
             <p className="text-sm text-gray-400 mt-2">
-              Completa la información y la IA generará un documento estructurado para ti
+              Completa la información para crear una nueva nota
             </p>
           </div>
           
@@ -587,69 +584,29 @@ const KnowledgePage: React.FC = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
-                  <select
-                    value={formData.tema}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    required
-                  >
-                    {temas.map(tema => (
-                      <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Documento *</label>
-                  <select
-                    value={formData.tipo}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value as any }))}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    required
-                  >
-                    <option value="nota" className="bg-primary text-white">Nota</option>
-                    <option value="procedimiento" className="bg-primary text-white">Procedimiento</option>
-                    <option value="manual" className="bg-primary text-white">Manual</option>
-                    <option value="guia" className="bg-primary text-white">Guía</option>
-                    <option value="checklist" className="bg-primary text-white">Lista de Verificación</option>
-                  </select>
-                </div>
-              </div>
-              
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Descripción *</label>
-                <textarea
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-                  rows={3}
-                  placeholder="Describe brevemente qué debe cubrir esta nota..."
+                <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
+                <select
+                  value={formData.tema}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
+                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
                   required
-                />
+                >
+                  {temas.map(tema => (
+                    <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
+                  ))}
+                </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Puntos Clave (opcional)</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Contenido *</label>
                 <textarea
-                  value={formData.puntosClave}
-                  onChange={(e) => setFormData(prev => ({ ...prev, puntosClave: e.target.value }))}
+                  value={formData.contenido}
+                  onChange={(e) => setFormData(prev => ({ ...prev, contenido: e.target.value }))}
                   className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-                  rows={4}
-                  placeholder="Lista los puntos importantes que debe incluir (uno por línea)&#10;Ej:&#10;Verificar estado del sistema&#10;Contactar al usuario afectado&#10;Documentar la solución"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Contexto Adicional (opcional)</label>
-                <textarea
-                  value={formData.contexto}
-                  onChange={(e) => setFormData(prev => ({ ...prev, contexto: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-                  rows={3}
-                  placeholder="Información adicional que puede ser útil para la generación del documento..."
+                  rows={8}
+                  placeholder="Escribe el contenido de la nota en formato Markdown..."
+                  required
                 />
               </div>
               
@@ -667,23 +624,14 @@ const KnowledgePage: React.FC = () => {
               <div className="flex gap-3 pt-6 border-t border-accent/20">
                 <button
                   type="submit"
-                  disabled={cargandoGeneracion}
-                  className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
                 >
-                  {cargandoGeneracion ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-secondary border-t-transparent"></div>
-                      Generando...
-                    </span>
-                  ) : (
-                    'Generar Nota con IA'
-                  )}
+                  Crear Nota
                 </button>
                 <button
                   type="button"
                   onClick={() => setMostrarFormularioNota(false)}
-                  disabled={cargandoGeneracion}
-                  className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
                 >
                   Cancelar
                 </button>
@@ -695,58 +643,81 @@ const KnowledgePage: React.FC = () => {
     );
   };
 
-  const FormularioUrl = () => {
+  // Componente para el formulario de crear recurso
+  const FormularioRecurso = () => {
     const [formData, setFormData] = useState({
-      titulo: urlEditando?.titulo || '',
-      url: urlEditando?.url || '',
-      descripcion: urlEditando?.descripcion || '',
-      tema: urlEditando?.tema || temaSeleccionado || 'notificaciones',
-      tipoContenido: urlEditando?.tipoContenido || 'pagina-contenidos',
-      etiquetas: urlEditando?.etiquetas?.join(', ') || '',
-      comentarios: urlEditando?.comentarios || ''
+      titulo: recursoEditando?.titulo || '',
+      tipo: (recursoEditando?.tipo as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios') || 'url',
+      descripcion: recursoEditando?.descripcion || '',
+      url: recursoEditando?.url || '',
+      tema: recursoEditando?.tema || temaSeleccionado || 'notificaciones',
+      etiquetas: recursoEditando?.tags?.join(', ') || ''
     });
-
-    const [modoManual, setModoManual] = useState(!!urlEditando);
-
-    const handleGenerarConIA = async () => {
-      if (!formData.url) {
-        alert('Por favor ingresa una URL válida primero');
-        return;
-      }
-
-      try {
-        const resultado = await procesarUrlConIA(formData.url, formData.tema);
-        
-        setFormData(prev => ({
-          ...prev,
-          titulo: resultado.titulo,
-          descripcion: resultado.descripcion,
-          tipoContenido: resultado.tipoContenido,
-          etiquetas: resultado.etiquetas.join(', ')
-        }));
-        
-        setModoManual(true); // Cambiar a modo manual para permitir ediciones
-      } catch (error) {
-        console.error('Error generando con IA:', error);
-        alert('Error al procesar la URL con IA. Puedes continuar rellenando manualmente.');
-      }
-    };
+    const [archivo, setArchivo] = useState<File | null>(null);
+    const [procesandoRecurso, setProcesandoRecurso] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      try {
-        const datosUrl = {
-          ...formData,
-          etiquetas: formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
-        };
+      setProcesandoRecurso(true);
 
-        if (urlEditando) {
-          await actualizarUrl(urlEditando.id, datosUrl);
+      try {
+        const etiquetas = formData.etiquetas 
+          ? formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
+          : [];
+
+        if (formData.tipo === 'archivo' && archivo) {
+          // Subir archivo
+          const formDataFile = new FormData();
+          formDataFile.append('file', archivo);
+          formDataFile.append('titulo', formData.titulo);
+          formDataFile.append('descripcion', formData.descripcion);
+          formDataFile.append('tema', formData.tema);
+          formDataFile.append('tags', JSON.stringify(etiquetas));
+
+          const response = await fetch('/api/recursos/upload', {
+            method: 'POST',
+            body: formDataFile,
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al subir el archivo');
+          }
+        } else if (recursoEditando) {
+          // Editar recurso existente
+          const response = await fetch(`/api/recursos/${recursoEditando.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...formData,
+              tags: etiquetas
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al actualizar el recurso');
+          }
         } else {
-          await crearUrl(datosUrl);
+          // Crear nuevo recurso (URL, video, documento)
+          await crearRecurso({
+            titulo: formData.titulo,
+            tipo: formData.tipo,
+            descripcion: formData.descripcion,
+            url: formData.url,
+            tema: formData.tema,
+            tags: etiquetas
+          });
         }
+
+        // Recargar recursos y cerrar formulario
+        await cargarRecursos();
+        setMostrarFormularioRecurso(false);
+        setRecursoEditando(null);
+        alert(recursoEditando ? 'Recurso actualizado exitosamente' : 'Recurso creado exitosamente');
       } catch (error) {
-        console.error('Error guardando URL:', error);
+        console.error('Error al procesar recurso:', error);
+        alert('Error al procesar el recurso');
+      } finally {
+        setProcesandoRecurso(false);
       }
     };
 
@@ -755,14 +726,12 @@ const KnowledgePage: React.FC = () => {
         <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
           <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
             <h3 className="text-xl font-bold text-accent">
-              {urlEditando ? 'Editar URL' : 'Agregar Nueva URL con IA'}
+              {recursoEditando ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
             </h3>
             <p className="text-sm text-gray-400 mt-2">
-              {urlEditando 
-                ? 'Modifica la información del enlace y guarda los cambios'
-                : modoManual 
-                  ? 'Edita los campos generados automáticamente o continúa llenando manualmente'
-                  : 'Ingresa la URL y la IA generará automáticamente el título, descripción y etiquetas'
+              {recursoEditando 
+                ? 'Modifica la información del recurso y guarda los cambios'
+                : 'Completa la información del recurso'
               }
             </p>
           </div>
@@ -770,9 +739,7 @@ const KnowledgePage: React.FC = () => {
           <div className="p-6 overflow-y-auto flex-1">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Título * {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Generado por IA)</span>}
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
                 <input
                   type="text"
                   value={formData.titulo}
@@ -784,49 +751,61 @@ const KnowledgePage: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">URL *</label>
-                <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Recurso *</label>
+                <select
+                  value={formData.tipo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios' }))}
+                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                  required
+                  disabled={!!recursoEditando}
+                >
+                  <option value="url" className="bg-primary text-white">🔗 Enlace / URL</option>
+                  <option value="archivo" className="bg-primary text-white">📁 Archivo</option>
+                  <option value="video" className="bg-primary text-white">🎥 Video</option>
+                  <option value="ia-automatizacion" className="bg-primary text-white">🤖 IA y Automatización</option>
+                  <option value="contactos-externos" className="bg-primary text-white">� Contactos y Recursos Externos</option>
+                  <option value="plantillas-formularios" className="bg-primary text-white">📋 Plantillas y Formularios</option>
+                </select>
+              </div>
+
+              {(formData.tipo === 'url' || formData.tipo === 'video' || formData.tipo === 'ia-automatizacion' || formData.tipo === 'contactos-externos' || formData.tipo === 'plantillas-formularios') ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">URL *</label>
                   <input
                     type="url"
                     value={formData.url}
                     onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                     className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    placeholder="https://ejemplo.com"
+                    placeholder={
+                      formData.tipo === 'video' ? "https://youtube.com/watch?v=..." : 
+                      formData.tipo === 'ia-automatizacion' ? "https://docs.google.com/document/d/..." :
+                      formData.tipo === 'contactos-externos' ? "https://directorio.empresa.com" :
+                      formData.tipo === 'plantillas-formularios' ? "https://forms.google.com/..." :
+                      "https://ejemplo.com"
+                    }
                     required
                   />
-                  {!urlEditando && !modoManual && formData.url && (
-                    <button
-                      type="button"
-                      onClick={handleGenerarConIA}
-                      disabled={cargandoGeneracionUrl}
-                      className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold px-4 py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                    >
-                      {cargandoGeneracionUrl ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                          Procesando con IA...
-                        </span>
-                      ) : (
-                        '🤖 Generar información con IA'
-                      )}
-                    </button>
-                  )}
-                  {!urlEditando && modoManual && (
-                    <button
-                      type="button"
-                      onClick={() => setModoManual(false)}
-                      className="w-full bg-gradient-to-r from-gray-500 to-gray-600 text-white font-semibold px-4 py-2 rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 text-sm"
-                    >
-                      ↻ Generar nuevamente con IA
-                    </button>
+                </div>
+              ) : formData.tipo === 'archivo' && !recursoEditando ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Archivo *</label>
+                  <input
+                    type="file"
+                    onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-secondary hover:file:bg-accent/80 transition-all"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov"
+                    required
+                  />
+                  {archivo && (
+                    <p className="text-sm text-accent mt-2">
+                      📎 Archivo seleccionado: {archivo.name} ({formatFileSize(archivo.size)})
+                    </p>
                   )}
                 </div>
-              </div>
+              ) : null}
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Descripción {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Generada por IA)</span>}
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
                 <textarea
                   value={formData.descripcion}
                   onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
@@ -852,60 +831,33 @@ const KnowledgePage: React.FC = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Tipo de Contenido * {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Detectado por IA)</span>}
-                  </label>
-                  <select
-                    value={formData.tipoContenido}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tipoContenido: e.target.value }))}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    required
-                  >
-                    <option value="video" className="bg-primary text-white">Video</option>
-                    <option value="documento" className="bg-primary text-white">Documento</option>
-                    <option value="pagina-contenidos" className="bg-primary text-white">Página de Contenidos</option>
-                    <option value="tutorial" className="bg-primary text-white">Tutorial</option>
-                    <option value="referencia" className="bg-primary text-white">Referencia</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
+                  <input
+                    type="text"
+                    value={formData.etiquetas}
+                    onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
+                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                    placeholder="manual, tutorial, urgente"
+                  />
                 </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Etiquetas {modoManual && !urlEditando && <span className="text-blue-400 text-xs">(Generadas por IA)</span>}
-                </label>
-                <input
-                  type="text"
-                  value={formData.etiquetas}
-                  onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  placeholder="Separadas por comas: urgente, soporte, procedimiento"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Comentarios</label>
-                <textarea
-                  value={formData.comentarios}
-                  onChange={(e) => setFormData(prev => ({ ...prev, comentarios: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-                  rows={2}
-                  placeholder="Comentarios adicionales sobre el recurso"
-                />
               </div>
               
               <div className="flex gap-3 pt-6 border-t border-accent/20">
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
+                  disabled={procesandoRecurso || (formData.tipo === 'archivo' && !archivo && !recursoEditando)}
+                  className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  {urlEditando ? 'Actualizar' : modoManual ? 'Crear con IA' : 'Crear'}
+                  {procesandoRecurso 
+                    ? (recursoEditando ? 'Actualizando...' : 'Creando...') 
+                    : (recursoEditando ? 'Actualizar Recurso' : 'Crear Recurso')
+                  }
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setMostrarFormularioUrl(false);
-                    setUrlEditando(null);
+                    setMostrarFormularioRecurso(false);
+                    setRecursoEditando(null);
                   }}
                   className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
                 >
@@ -930,62 +882,109 @@ const KnowledgePage: React.FC = () => {
         {/* Navegación por secciones */}
         <div className="flex flex-wrap gap-4 mb-8">
           <button
-            onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); }}
+            onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              seccionActiva === 'temas' 
+              seccionActiva === 'temas' || seccionActiva === 'todos'
                 ? 'bg-accent text-secondary' 
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
           >
             <FaBook />
-            Por Temas
+            Notas y Documentos
           </button>
           <button
-            onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
+            onClick={() => { setSeccionActiva('tipos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              seccionActiva === 'todos' 
+              seccionActiva === 'tipos' || seccionActiva === 'recursos'
                 ? 'bg-accent text-secondary' 
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
           >
-            <FaFileAlt />
-            Todos los Documentos
-          </button>
-          <button
-            onClick={() => { setSeccionActiva('urls'); setTemaSeleccionado(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              seccionActiva === 'urls' 
-                ? 'bg-accent text-secondary' 
-                : 'bg-secondary text-accent hover:bg-accent/10'
-            }`}
-          >
-            <FaLink />
-            Enlaces y URLs
+            <FaLayerGroup />
+            Recursos y Archivos
           </button>
         </div>
 
+        {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
+        {(seccionActiva === 'temas' || seccionActiva === 'todos') && (
+          <div className="flex flex-wrap gap-3 mb-6">
+            <button
+              onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                seccionActiva === 'temas'
+                  ? 'bg-accent/20 text-accent border border-accent/30'
+                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              <FaLayerGroup className="text-sm" />
+              Por Temas
+            </button>
+            <button
+              onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                seccionActiva === 'todos'
+                  ? 'bg-accent/20 text-accent border border-accent/30'
+                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              <FaFileAlt className="text-sm" />
+              Todas las Notas
+            </button>
+          </div>
+        )}
+
+        {/* Subnavegación para Recursos y Archivos - Siempre visible cuando estemos en este contexto */}
+        {(seccionActiva === 'tipos' || seccionActiva === 'recursos') && (
+          <div className="flex flex-wrap gap-3 mb-6">
+            <button
+              onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                seccionActiva === 'tipos'
+                  ? 'bg-accent/20 text-accent border border-accent/30'
+                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              <FaLayerGroup className="text-sm" />
+              Por Tipos
+            </button>
+            <button
+              onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                seccionActiva === 'recursos'
+                  ? 'bg-accent/20 text-accent border border-accent/30'
+                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              <FaVideo className="text-sm" />
+              Todos los Recursos
+            </button>
+          </div>
+        )}
+
         {/* Vista por temas */}
         {seccionActiva === 'temas' && !temaSeleccionado && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {temas.map((tema) => {
-              const cantidadDocs = notasMD.filter(nota => nota.tema === tema.id).length;
-              return (
-                <button
-                  key={tema.id}
-                  onClick={() => setTemaSeleccionado(tema.id)}
-                  className={`text-left p-6 rounded-lg border transition-all duration-300 hover:shadow-xl hover:shadow-current/20 hover:brightness-110 hover:-translate-y-1 ${tema.color}`}
-                >
-                  <div className="flex items-center gap-4 mb-3">
-                    {tema.icono}
-                    <h3 className="text-lg font-bold">{tema.nombre}</h3>
-                  </div>
-                  <p className="text-sm mb-3 opacity-80">{tema.descripcion}</p>
-                  <div className="text-xs opacity-60">
-                    {cantidadDocs} documento{cantidadDocs !== 1 ? 's' : ''}
-                  </div>
-                </button>
-              );
-            })}
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {temas.map((tema) => {
+                const cantidadDocs = notasMD.filter(nota => nota.tema === tema.id).length;
+                return (
+                  <button
+                    key={tema.id}
+                    onClick={() => setTemaSeleccionado(tema.id)}
+                    className={`text-left p-6 rounded-lg border transition-all duration-300 hover:shadow-xl hover:shadow-current/20 hover:brightness-110 hover:-translate-y-1 ${tema.color}`}
+                  >
+                    <div className="flex items-center gap-4 mb-3">
+                      {tema.icono}
+                      <h3 className="text-lg font-bold">{tema.nombre}</h3>
+                    </div>
+                    <p className="text-sm mb-3 opacity-80">{tema.descripcion}</p>
+                    <div className="text-xs opacity-60">
+                      {cantidadDocs} documento{cantidadDocs !== 1 ? 's' : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -1014,7 +1013,7 @@ const KnowledgePage: React.FC = () => {
                   className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
-                  Crear Nueva Nota
+                  Crear Nota Manual
                 </button>
               </div>
             </div>
@@ -1108,174 +1107,401 @@ const KnowledgePage: React.FC = () => {
           </div>
         )}
 
-        {/* Vista de todos los documentos */}
-        {seccionActiva === 'todos' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-4">
-                <div className="space-y-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <FaSearch className="text-accent" />
-                    <input
-                      type="text"
-                      placeholder="Buscar documentos..."
-                      value={busqueda}
-                      onChange={(e) => setBusqueda(e.target.value)}
-                      className="flex-1 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    />
-                  </div>
-                  
-                  {etiquetasDisponiblesNotas.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por etiqueta</label>
-                      <select
-                        value={filtroEtiquetaNota}
-                        onChange={(e) => setFiltroEtiquetaNota(e.target.value)}
-                        className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                      >
-                        <option value="">Todas las etiquetas</option>
-                        {etiquetasDisponiblesNotas.map(etiqueta => (
-                          <option key={etiqueta} value={etiqueta} className="bg-primary text-white">{etiqueta}</option>
-                        ))}
-                      </select>
+        {/* Vista por tipos de recursos */}
+        {seccionActiva === 'tipos' && !tipoRecursoSeleccionado && (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tiposRecursos.map((tipo) => {
+                const cantidadRecursos = recursos.filter(recurso => recurso.tipo === tipo.id).length;
+                return (
+                  <button
+                    key={tipo.id}
+                    onClick={() => setTipoRecursoSeleccionado(tipo.id)}
+                    className={`text-left p-6 rounded-lg border transition-all duration-300 hover:shadow-xl hover:shadow-current/20 hover:brightness-110 hover:-translate-y-1 ${tipo.color}`}
+                  >
+                    <div className="flex items-center gap-4 mb-3">
+                      {tipo.icono}
+                      <h3 className="text-lg font-bold">{tipo.nombre}</h3>
                     </div>
-                  )}
-                  
-                  {(busqueda || filtroEtiquetaNota) && (
-                    <button
-                      onClick={() => {
-                        setBusqueda('');
-                        setFiltroEtiquetaNota('');
-                      }}
-                      className="w-full px-3 py-2 bg-gray-600/50 text-gray-300 rounded-lg hover:bg-gray-600/70 transition-colors text-sm"
-                    >
-                      Limpiar filtros
-                    </button>
-                  )}
+                    <p className="text-sm mb-3 opacity-80">{tipo.descripcion}</p>
+                    <div className="text-xs opacity-60">
+                      {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Vista de recursos por tipo seleccionado */}
+        {seccionActiva === 'tipos' && tipoRecursoSeleccionado && (
+          <div>
+            {/* Header del tipo con colores */}
+            <div className={`rounded-lg p-4 mb-6 border ${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setTipoRecursoSeleccionado(null)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                  >
+                    ← Volver a tipos
+                  </button>
+                  <div className="flex items-center gap-3">
+                    {tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.icono}
+                    <h2 className="text-xl font-bold">
+                      {tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.nombre}
+                    </h2>
+                  </div>
                 </div>
-                
-                {cargando ? (
-                  <div className="text-center py-8">
-                    <div className="text-accent">Cargando...</div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {notasFiltradas.map((nota, index) => {
-                      const temaInfo = temas.find(t => t.id === nota.tema);
-                      const isSelected = notaSeleccionada?.nombre === nota.nombre;
-                      
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => setNotaSeleccionada(nota)}
-                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
-                            isSelected
-                              ? `${temaInfo?.color} shadow-lg shadow-current/20`
-                              : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo?.color?.replace('text-', 'from-').replace('border-', 'from-').split(' ')[1]?.replace('400', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-lg ${
-                              isSelected 
-                                ? `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/30') || 'bg-accent/30'}`
-                                : `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'}`
-                            }`}>
-                              {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${
-                                temaInfo?.color?.split(' ')[1] || 'text-accent'
-                              }`} /> : 
-                               nota.tipo === 'documento' ? <FaBook className={`text-sm ${
-                                temaInfo?.color?.split(' ')[1] || 'text-accent'
-                              }`} /> :
-                               <FaVideo className={`text-sm ${
-                                temaInfo?.color?.split(' ')[1] || 'text-accent'
-                              }`} />}
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
-                              <p className={`text-xs mb-1 font-medium ${
-                                temaInfo?.color?.split(' ')[1] || 'text-accent'
-                              }`}>
-                                {temaInfo?.nombre}
-                              </p>
-                              {nota.etiquetas && nota.etiquetas.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mb-1">
-                                  {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
-                                    <span
-                                      key={etIndex}
-                                      className={`px-1.5 py-0.5 rounded text-xs ${
-                                        temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'
-                                      } ${
-                                        temaInfo?.color?.split(' ')[1] || 'text-accent'
-                                      }`}
-                                    >
-                                      {etiqueta}
-                                    </span>
-                                  ))}
-                                  {nota.etiquetas.length > 3 && (
-                                    <span className="text-xs text-gray-400">+{nota.etiquetas.length - 3}</span>
-                                  )}
-                                </div>
-                              )}
-                              <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                                {nota.contenido.slice(0, 100)}...
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                <button
+                  onClick={() => setMostrarFormularioRecurso(true)}
+                  className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                  Agregar Recurso
+                </button>
               </div>
             </div>
-
-            <div className="lg:col-span-2">
-              <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-                {notaSeleccionada ? (
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <h2 className="text-xl font-bold text-accent">{notaSeleccionada.nombre}</h2>
-                        <p className="text-sm text-gray-400">
-                          {temas.find(t => t.id === notaSeleccionada.tema)?.nombre}
-                        </p>
-                      </div>
-                      <button 
-                        onClick={() => descargarNota(notaSeleccionada)}
-                        className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Lista de recursos del tipo */}
+              <div className="lg:col-span-1">
+                <div className="bg-secondary rounded-lg p-4">
+                  <div className="space-y-2">
+                    {recursos.filter(recurso => recurso.tipo === tipoRecursoSeleccionado).map((recurso, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setRecursoSeleccionado(recurso)}
+                        className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] ${
+                          recursoSeleccionado?.id === recurso.id
+                            ? `border-2 ${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.split(' ')[2] || 'border-accent'} ${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color || 'bg-accent/20 text-accent'} shadow-lg`
+                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
+                        }`}
                       >
-                        <FaDownload className="text-sm" />
-                        Descargar
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            recursoSeleccionado?.id === recurso.id 
+                              ? `${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0] || 'bg-accent/30'}`
+                              : 'bg-accent/20'
+                          }`}>
+                            {getIconoTipoRecurso(recurso.tipo, recurso.tipoArchivo)}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{recurso.titulo}</h3>
+                            <p className={`text-xs mb-1 font-medium ${
+                              tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                            }`}>
+                              {temas.find(t => t.id === recurso.tema)?.nombre}
+                            </p>
+                            {recurso.tags && recurso.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-1">
+                                {recurso.tags.slice(0, 2).map((tag, tagIndex) => (
+                                  <span
+                                    key={tagIndex}
+                                    className={`px-1.5 py-0.5 rounded text-xs ${
+                                      tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'
+                                    } ${
+                                      tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                    }`}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                                {recurso.tags.length > 2 && (
+                                  <span className="text-xs text-gray-400">+{recurso.tags.length - 2}</span>
+                                )}
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                              {recurso.descripcion || 'Sin descripción'}
+                            </p>
+                          </div>
+                        </div>
                       </button>
-                    </div>
-                    <div className="prose prose-invert max-w-none">
-                      {renderizarContenidoMarkdown(notaSeleccionada.contenido)}
-                    </div>
+                    ))}
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
-                    <div className="text-center">
-                      <FaEye className="text-4xl mb-4 mx-auto" />
-                      <p>Selecciona un documento para visualizar su contenido</p>
+                </div>
+              </div>
+
+              {/* Visor de contenido */}
+              <div className="lg:col-span-2">
+                <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
+                  {recursoSeleccionado ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.replace('border-', 'bg-').replace('/30', '/20')}`}>
+                            {tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.icono}
+                          </div>
+                          <h2 className={`text-xl font-bold ${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color?.split(' ')[1] || 'text-accent'}`}>
+                            {recursoSeleccionado.titulo}
+                          </h2>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setRecursoEditando(recursoSeleccionado);
+                              setMostrarFormularioRecurso(true);
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
+                          >
+                            <FaEdit className="text-xs" />
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de eliminar este recurso?')) {
+                                eliminarRecurso(recursoSeleccionado.id);
+                                setRecursoSeleccionado(null);
+                              }
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
+                          >
+                            <FaTrash className="text-xs" />
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        {recursoSeleccionado.descripcion && (
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-300 mb-2">Descripción</h3>
+                            <p className="text-gray-400">{recursoSeleccionado.descripcion}</p>
+                          </div>
+                        )}
+                        
+                        {recursoSeleccionado.url && (
+                          <div>
+                            <h4 className="font-semibold text-gray-300 mb-2">Enlace</h4>
+                            <a
+                              href={recursoSeleccionado.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 text-sm break-all"
+                            >
+                              {recursoSeleccionado.url}
+                            </a>
+                          </div>
+                        )}
+
+                        {recursoSeleccionado.tags.length > 0 && (
+                          <div>
+                            <h4 className="font-semibold text-gray-300 mb-2">Etiquetas</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {recursoSeleccionado.tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="px-2 py-1 bg-accent/20 text-accent rounded text-xs"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="text-sm text-gray-500 space-y-1">
+                          <p>Tema: {temas.find(t => t.id === recursoSeleccionado.tema)?.nombre}</p>
+                          <p>Subido: {new Date(recursoSeleccionado.fechaCarga).toLocaleDateString()}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <FaEye className="text-4xl mb-4 mx-auto" />
+                        <p>Selecciona un recurso para visualizar su contenido</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Vista de URLs */}
-        {seccionActiva === 'urls' && (
+        {/* Vista de todas las Notas */}
+        {seccionActiva === 'todos' && (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Gestión de Enlaces y URLs</h2>
+              <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
               <button
-                onClick={() => setMostrarFormularioUrl(true)}
+                onClick={() => setMostrarFormularioNota(true)}
                 className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
               >
                 <FaPlus />
-                Agregar URL
+                Agregar Nota
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
+                <div className="bg-secondary rounded-lg p-4">
+                  <div className="space-y-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <FaSearch className="text-accent" />
+                      <input
+                        type="text"
+                        placeholder="Buscar notas..."
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        className="flex-1 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                      />
+                    </div>
+                    
+                    {etiquetasDisponiblesNotas.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por etiqueta</label>
+                        <select
+                          value={filtroEtiquetaNota}
+                          onChange={(e) => setFiltroEtiquetaNota(e.target.value)}
+                          className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                        >
+                          <option value="">Todas las etiquetas</option>
+                          {etiquetasDisponiblesNotas.map(etiqueta => (
+                            <option key={etiqueta} value={etiqueta} className="bg-primary text-white">{etiqueta}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    
+                    {(busqueda || filtroEtiquetaNota) && (
+                      <button
+                        onClick={() => {
+                          setBusqueda('');
+                          setFiltroEtiquetaNota('');
+                        }}
+                        className="w-full px-3 py-2 bg-gray-600/50 text-gray-300 rounded-lg hover:bg-gray-600/70 transition-colors text-sm"
+                      >
+                        Limpiar filtros
+                      </button>
+                    )}
+                  </div>
+
+                  {cargando ? (
+                    <div className="text-center py-8">
+                      <div className="text-accent">Cargando notas...</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {notasFiltradas.map((nota, index) => {
+                        const temaInfo = temas.find(t => t.id === nota.tema);
+                        const isSelected = notaSeleccionada?.nombre === nota.nombre;
+                        
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => setNotaSeleccionada(nota)}
+                            className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
+                              isSelected
+                                ? `${temaInfo?.color} shadow-lg shadow-current/20`
+                                : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo?.color?.replace('text-', 'from-').replace('border-', 'from-').split(' ')[1]?.replace('400', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`p-2 rounded-lg ${
+                                isSelected 
+                                  ? `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/30') || 'bg-accent/30'}`
+                                  : `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'}`
+                              }`}>
+                                {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${
+                                  temaInfo?.color?.split(' ')[1] || 'text-accent'
+                                }`} /> : 
+                                 nota.tipo === 'documento' ? <FaBook className={`text-sm ${
+                                  temaInfo?.color?.split(' ')[1] || 'text-accent'
+                                }`} /> :
+                                 <FaVideo className={`text-sm ${
+                                  temaInfo?.color?.split(' ')[1] || 'text-accent'
+                                }`} />}
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
+                                <p className={`text-xs mb-1 font-medium ${
+                                  temaInfo?.color?.split(' ')[1] || 'text-accent'
+                                }`}>
+                                  {temaInfo?.nombre}
+                                </p>
+                                {nota.etiquetas && nota.etiquetas.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-1">
+                                    {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
+                                      <span
+                                        key={etIndex}
+                                        className={`px-1.5 py-0.5 rounded text-xs ${
+                                          temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'
+                                        } ${
+                                          temaInfo?.color?.split(' ')[1] || 'text-accent'
+                                        }`}
+                                      >
+                                        {etiqueta}
+                                      </span>
+                                    ))}
+                                    {nota.etiquetas.length > 3 && (
+                                      <span className="text-xs text-gray-400">+{nota.etiquetas.length - 3}</span>
+                                    )}
+                                  </div>
+                                )}
+                                <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
+                                  {nota.contenido.slice(0, 100)}...
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Panel de detalles */}
+              <div className="lg:col-span-2">
+                <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
+                  {notaSeleccionada ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-6">
+                        <div>
+                          <h2 className="text-xl font-bold text-accent">{notaSeleccionada.nombre}</h2>
+                          <p className="text-sm text-gray-400">
+                            {temas.find(t => t.id === notaSeleccionada.tema)?.nombre}
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => descargarNota(notaSeleccionada)}
+                          className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
+                        >
+                          <FaDownload className="text-sm" />
+                          Descargar
+                        </button>
+                      </div>
+                      <div className="prose prose-invert max-w-none">
+                        {renderizarContenidoMarkdown(notaSeleccionada.contenido)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <FaEye className="text-4xl mb-4 mx-auto" />
+                        <p>Selecciona un documento para visualizar su contenido</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Vista de recursos */}
+        {seccionActiva === 'recursos' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-accent">Gestión de Recursos</h2>
+              <button
+                onClick={() => setMostrarFormularioRecurso(true)}
+                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+              >
+                <FaPlus />
+                Agregar Recurso
               </button>
             </div>
 
@@ -1288,7 +1514,7 @@ const KnowledgePage: React.FC = () => {
                       <FaSearch className="text-accent" />
                       <input
                         type="text"
-                        placeholder="Buscar URLs..."
+                        placeholder="Buscar recursos..."
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         className="flex-1 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
@@ -1296,44 +1522,44 @@ const KnowledgePage: React.FC = () => {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por estado</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por tipo</label>
                       <select
-                        value={filtroEstadoUrl}
-                        onChange={(e) => {
-                          setFiltroEstadoUrl(e.target.value);
-                          cargarUrls({ tema: temaSeleccionado || undefined, estado: e.target.value || undefined });
-                        }}
+                        value={filtroTipoRecurso}
+                        onChange={(e) => setFiltroTipoRecurso(e.target.value)}
                         className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
                       >
-                        <option value="">Todos los estados</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="revisado">Revisado</option>
-                        <option value="archivado">Archivado</option>
+                        <option value="">Todos los tipos</option>
+                        <option value="archivo">Archivos</option>
+                        <option value="url">Enlaces</option>
+                        <option value="video">Videos</option>
+                        <option value="ia-automatizacion">IA y Automatización</option>
+                        <option value="contactos-externos">Contactos y Recursos Externos</option>
+                        <option value="plantillas-formularios">Plantillas y Formularios</option>
                       </select>
                     </div>
                     
-                    {etiquetasDisponiblesUrls.length > 0 && (
+                    {etiquetasDisponiblesRecursos.length > 0 && (
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por etiqueta</label>
                         <select
-                          value={filtroEtiquetaUrl}
-                          onChange={(e) => setFiltroEtiquetaUrl(e.target.value)}
+                          value={filtroEtiquetaRecurso}
+                          onChange={(e) => setFiltroEtiquetaRecurso(e.target.value)}
                           className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
                         >
                           <option value="">Todas las etiquetas</option>
-                          {etiquetasDisponiblesUrls.map(etiqueta => (
+                          {etiquetasDisponiblesRecursos.map(etiqueta => (
                             <option key={etiqueta} value={etiqueta} className="bg-primary text-white">{etiqueta}</option>
                           ))}
                         </select>
                       </div>
                     )}
                     
-                    {(busqueda || filtroEstadoUrl || filtroEtiquetaUrl) && (
+                    {(busqueda || filtroTipoRecurso || filtroEtiquetaRecurso) && (
                       <button
                         onClick={() => {
                           setBusqueda('');
-                          setFiltroEstadoUrl('');
-                          setFiltroEtiquetaUrl('');
+                          setFiltroTipoRecurso('');
+                          setFiltroEtiquetaRecurso('');
                         }}
                         className="w-full px-3 py-2 bg-gray-600/50 text-gray-300 rounded-lg hover:bg-gray-600/70 transition-colors text-sm"
                       >
@@ -1342,43 +1568,48 @@ const KnowledgePage: React.FC = () => {
                     )}
                   </div>
 
-                  {cargandoUrls ? (
+                  {cargandoRecursos ? (
                     <div className="text-center py-8">
-                      <div className="text-accent">Cargando URLs...</div>
+                      <div className="text-accent">Cargando recursos...</div>
                     </div>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {urlsFiltradas.map((url) => (
+                      {recursos.filter(recurso => {
+                        const matchBusqueda = recurso.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+                                             (recurso.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) || false);
+                        const matchTipo = !filtroTipoRecurso || recurso.tipo === filtroTipoRecurso;
+                        const matchEtiqueta = !filtroEtiquetaRecurso || recurso.tags.includes(filtroEtiquetaRecurso);
+                        const matchTema = !temaSeleccionado || recurso.tema === temaSeleccionado;
+                        return matchBusqueda && matchTipo && matchEtiqueta && matchTema;
+                      }).map((recurso) => (
                         <div
-                          key={url.id}
-                          onClick={() => setUrlSeleccionada(url)}
+                          key={recurso.id}
+                          onClick={() => setRecursoSeleccionado(recurso)}
                           className={`p-4 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
-                            urlSeleccionada?.id === url.id
+                            recursoSeleccionado?.id === recurso.id
                               ? 'bg-gradient-to-r from-accent/20 to-accent/10 border border-accent shadow-lg shadow-accent/20'
                               : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                           }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className={`p-2 rounded-lg ${
-                              urlSeleccionada?.id === url.id 
+                              recursoSeleccionado?.id === recurso.id 
                                 ? 'bg-accent/30' 
                                 : 'bg-accent/20'
                             }`}>
-                              <FaLink className="text-accent text-sm" />
+                              {getIconoTipoRecurso(recurso.tipo, recurso.tipoArchivo)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-white text-sm truncate mb-1">{url.titulo}</h3>
+                              <h3 className="font-semibold text-white text-sm truncate mb-1">{recurso.titulo}</h3>
                               <p className="text-xs text-accent mb-2 font-medium">
-                                {temas.find(t => t.id === url.tema)?.nombre} • {url.tipoContenido}
+                                {temas.find(t => t.id === recurso.tema)?.nombre} • {getTipoRecursoLabel(recurso.tipo, recurso.tipoArchivo)}
                               </p>
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                  url.estado === 'pendiente' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
-                                  url.estado === 'revisado' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
-                                  'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                                }`}>
-                                  {url.estado}
-                                </span>
+                                {recurso.tamaño && (
+                                  <span className="text-xs text-gray-400">
+                                    {formatFileSize(recurso.tamaño)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1392,42 +1623,55 @@ const KnowledgePage: React.FC = () => {
               {/* Panel de detalles */}
               <div className="lg:col-span-2">
                 <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-                  {urlSeleccionada ? (
+                  {recursoSeleccionado ? (
                     <div>
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex-1">
-                          <h2 className="text-xl font-bold text-accent mb-2">{urlSeleccionada.titulo}</h2>
-                          <a
-                            href={urlSeleccionada.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 text-sm break-all"
-                          >
-                            {urlSeleccionada.url}
-                          </a>
+                          <h2 className="text-xl font-bold text-accent mb-2">{recursoSeleccionado.titulo}</h2>
+                          {recursoSeleccionado.url && (
+                            <a
+                              href={recursoSeleccionado.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 text-sm break-all"
+                            >
+                              {recursoSeleccionado.url}
+                            </a>
+                          )}
+                          {recursoSeleccionado.filePath && (
+                            <a
+                              href={recursoSeleccionado.filePath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 text-sm break-all"
+                            >
+                              {recursoSeleccionado.nombreOriginal || recursoSeleccionado.filePath}
+                            </a>
+                          )}
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-sm text-gray-400">
-                              {temas.find(t => t.id === urlSeleccionada.tema)?.nombre}
+                              {temas.find(t => t.id === recursoSeleccionado.tema)?.nombre}
                             </span>
                             <span className="text-gray-600">•</span>
-                            <span className="text-sm text-gray-400">{urlSeleccionada.tipoContenido}</span>
+                            <span className="text-sm text-gray-400">
+                              {getTipoRecursoLabel(recursoSeleccionado.tipo, recursoSeleccionado.tipoArchivo)}
+                            </span>
+                            {recursoSeleccionado.tamaño && (
+                              <>
+                                <span className="text-gray-600">•</span>
+                                <span className="text-sm text-gray-400">
+                                  {formatFileSize(recursoSeleccionado.tamaño)}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                         
                         <div className="flex gap-2">
-                          {urlSeleccionada.estado === 'pendiente' && (
-                            <button
-                              onClick={() => marcarComoRevisado(urlSeleccionada.id)}
-                              className="flex items-center gap-1 px-3 py-1 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-colors"
-                            >
-                              <FaCheck className="text-xs" />
-                              Marcar como revisado
-                            </button>
-                          )}
                           <button
                             onClick={() => {
-                              setUrlEditando(urlSeleccionada);
-                              setMostrarFormularioUrl(true);
+                              setRecursoEditando(recursoSeleccionado);
+                              setMostrarFormularioRecurso(true);
                             }}
                             className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
                           >
@@ -1436,9 +1680,9 @@ const KnowledgePage: React.FC = () => {
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm('¿Estás seguro de eliminar esta URL?')) {
-                                eliminarUrl(urlSeleccionada.id);
-                                setUrlSeleccionada(null);
+                              if (confirm('¿Estás seguro de eliminar este recurso?')) {
+                                eliminarRecurso(recursoSeleccionado.id);
+                                setRecursoSeleccionado(null);
                               }
                             }}
                             className="flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
@@ -1450,53 +1694,33 @@ const KnowledgePage: React.FC = () => {
                       </div>
 
                       <div className="space-y-4">
-                        {urlSeleccionada.descripcion && (
+                        {recursoSeleccionado.descripcion && (
                           <div>
                             <h3 className="text-lg font-semibold text-gray-300 mb-2">Descripción</h3>
-                            <p className="text-gray-400">{urlSeleccionada.descripcion}</p>
+                            <p className="text-gray-400">{recursoSeleccionado.descripcion}</p>
                           </div>
                         )}
 
-                        <div className="grid grid-cols-1 gap-4">
-                          <div>
-                            <h4 className="font-semibold text-gray-300 mb-1">Estado</h4>
-                            <span className={`inline-block px-3 py-1 rounded text-sm ${
-                              urlSeleccionada.estado === 'pendiente' ? 'bg-yellow-500/20 text-yellow-400' :
-                              urlSeleccionada.estado === 'revisado' ? 'bg-green-500/20 text-green-400' :
-                              'bg-gray-500/20 text-gray-400'
-                            }`}>
-                              {urlSeleccionada.estado}
-                            </span>
-                          </div>
-                        </div>
-
-                        {urlSeleccionada.etiquetas.length > 0 && (
+                        {recursoSeleccionado.tags.length > 0 && (
                           <div>
                             <h4 className="font-semibold text-gray-300 mb-2">Etiquetas</h4>
                             <div className="flex flex-wrap gap-2">
-                              {urlSeleccionada.etiquetas.map((etiqueta, index) => (
+                              {recursoSeleccionado.tags.map((tag, index) => (
                                 <span
                                   key={index}
                                   className="px-2 py-1 bg-accent/20 text-accent rounded text-xs"
                                 >
-                                  {etiqueta}
+                                  {tag}
                                 </span>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {urlSeleccionada.comentarios && (
-                          <div>
-                            <h4 className="font-semibold text-gray-300 mb-2">Comentarios</h4>
-                            <p className="text-gray-400 bg-primary rounded p-3">{urlSeleccionada.comentarios}</p>
-                          </div>
-                        )}
-
                         <div className="text-sm text-gray-500 space-y-1">
-                          <p>Creado: {new Date(urlSeleccionada.createdAt).toLocaleDateString()}</p>
-                          {urlSeleccionada.fechaRevision && (
-                            <p>Revisado: {new Date(urlSeleccionada.fechaRevision).toLocaleDateString()}</p>
+                          <p>Subido: {new Date(recursoSeleccionado.fechaCarga).toLocaleDateString()}</p>
+                          {recursoSeleccionado.nombreOriginal && (
+                            <p>Archivo original: {recursoSeleccionado.nombreOriginal}</p>
                           )}
                         </div>
                       </div>
@@ -1505,7 +1729,7 @@ const KnowledgePage: React.FC = () => {
                     <div className="flex items-center justify-center h-full text-gray-400">
                       <div className="text-center">
                         <FaEyeSlash className="text-4xl mb-4 mx-auto" />
-                        <p>Selecciona una URL para ver sus detalles</p>
+                        <p>Selecciona un recurso para ver sus detalles</p>
                       </div>
                     </div>
                   )}
@@ -1516,7 +1740,7 @@ const KnowledgePage: React.FC = () => {
         )}
         
         {mostrarFormularioNota && <FormularioNuevaNota />}
-        {mostrarFormularioUrl && <FormularioUrl />}
+        {mostrarFormularioRecurso && <FormularioRecurso />}
       </div>
       
       {/* Chat de IA flotante */}

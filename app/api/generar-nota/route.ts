@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { callGeminiAPI, GeminiConfigs, cleanAIGeneratedText } from '../../lib/gemini';
+import { hasValidAuth, createUnauthorizedResponse } from '../../lib/auth';
 
 interface GenerarNotaRequest {
   titulo: string;
@@ -16,6 +17,11 @@ interface GenerarNotaRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // Validar autenticación
+    if (!hasValidAuth(request)) {
+      return createUnauthorizedResponse();
+    }
+
     const body: GenerarNotaRequest = await request.json();
     const { titulo, tema, descripcion, tipo, puntosClave, etiquetas, contexto } = body;
 

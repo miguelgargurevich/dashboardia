@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Bar } from 'react-chartjs-2';
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 interface Stat {
   usuario?: string;
-  _count: { id: number };
+  prioridad?: string;
+  cantidad?: number;
+  _count?: { id: number };
 }
 
 interface Props {
@@ -20,52 +19,90 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
   useEffect(() => {
     async function fetchStats() {
       setLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-      // Consulta al backend para agrupar por usuario de soporte
-      const res = await fetch(`${apiUrl}/tickets/stats?groupBy=usuario`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const result = await res.json();
-      setStats(result);
+      try {
+        const apiUrl = process.env.BACKEND_URL + "/api" || '';
+        const res = await fetch(`${apiUrl}/tickets/por-prioridad`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const result = await res.json();
+          setStats(result);
+        } else {
+          // Fallback a datos de ejemplo
+          setStats([
+            { prioridad: 'Alta', cantidad: 25 },
+            { prioridad: 'Media', cantidad: 45 },
+            { prioridad: 'Baja', cantidad: 30 },
+            { prioridad: 'Sin prioridad', cantidad: 12 },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        // Fallback a datos de ejemplo
+        setStats([
+          { prioridad: 'Alta', cantidad: 25 },
+          { prioridad: 'Media', cantidad: 45 },
+          { prioridad: 'Baja', cantidad: 30 },
+          { prioridad: 'Sin prioridad', cantidad: 12 },
+        ]);
+      }
       setLoading(false);
     }
     fetchStats();
   }, [token]);
 
-  const labels = stats.map(s => s.usuario || 'Sin usuario');
-  const values = stats.map(s => s._count.id);
+  const labels = stats.map(s => s.prioridad || s.usuario || 'Sin categoría');
+  const values = stats.map(s => s.cantidad || s._count?.id || 0);
+  const maxValue = Math.max(...values, 1);
 
   const colorPalette = [
-    'rgba(41,121,255,0.7)', // Azul intenso
-    'rgba(0,200,83,0.7)',  // Verde brillante
-    'rgba(255,213,0,0.7)', // Amarillo intenso
-    'rgba(255,0,255,0.7)', // Magenta
-    'rgba(0,229,255,0.7)', // Celeste
-    'rgba(255,87,34,0.7)', // Naranja fuerte
-    'rgba(156,39,176,0.7)',// Violeta
-    'rgba(0,150,136,0.7)', // Verde azulado
-    'rgba(233,30,99,0.7)', // Rosa,
-    'rgba(255,61,0,0.7)'  // Rojo intenso
+    '#2979ff', // Azul intenso
+    '#00c853', // Verde brillante
+    '#ffd500', // Amarillo intenso
+    '#ff00ff', // Magenta
+    '#00e5ff', // Celeste
+    '#ff5722', // Naranja fuerte
+    '#9c27b0', // Violeta
+    '#009688', // Verde azulado
+    '#e91e63', // Rosa
+    '#ff3d00'  // Rojo intenso
   ];
-  const backgroundColors = labels.map((_, i) => colorPalette[i % colorPalette.length]);
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: 'Tickets por persona',
-        data: values,
-        backgroundColor: backgroundColors,
-        borderColor: backgroundColors,
-        borderWidth: 1,
-      },
-    ],
-  };
 
   return (
     <div className="bg-primary rounded-lg p-4 shadow-md">
-      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por persona</h3>
-      {loading ? <div>Cargando...</div> : <Bar data={chartData} />}
+      <h3 className="text-lg font-bold mb-2 text-accent">Tickets por prioridad</h3>
+      {loading ? (
+        <div className="text-center text-accent">Cargando...</div>
+      ) : (
+        <div className="h-64 flex items-end justify-around space-x-2 mt-4">
+          {labels.map((label, index) => {
+            const value = values[index];
+            const height = (value / maxValue) * 100;
+            const color = colorPalette[index % colorPalette.length];
+            
+            return (
+              <div key={label} className="flex flex-col items-center flex-1">
+                <div
+                  className="w-8 transition-all duration-300 hover:opacity-80 rounded-t"
+                  style={{
+                    height: `${height}%`,
+                    backgroundColor: color,
+                    minHeight: value > 0 ? '4px' : '0px'
+                  }}
+                  title={`${label}: ${value}`}
+                />
+                <span className="text-xs text-accent mt-2 text-center break-words">
+                  {label}
+                </span>
+                <span className="text-xs text-accent-dark font-semibold">
+                  {value}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

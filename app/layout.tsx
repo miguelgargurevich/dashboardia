@@ -2,7 +2,8 @@
 import './globals.css'; // IGNORE
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { FaBars, FaHome, FaChartBar, FaCalendarAlt, FaBook, FaSignOutAlt } from "react-icons/fa";
 
 // Componente Tooltip
@@ -20,6 +21,13 @@ function Tooltip({ children, text }: { children: ReactNode, text: string }) {
 
 function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed: (c: boolean) => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+  
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    router.push('/login');
+  };
   
   const getLinkClasses = (path: string) => {
     const isActive = pathname === path || (path === '/dashboard' && pathname.startsWith('/dashboard'));
@@ -45,31 +53,34 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
       <aside className="fixed top-0 left-0 h-full bg-secondary shadow-lg w-16 flex flex-col items-center pt-20">
         <div className="flex flex-col items-center space-y-3 flex-1">
           <Tooltip text="Inicio">
-            <a href="/" className={getLinkClasses('/')}>
+            <Link href="/" className={getLinkClasses('/')}>
               <FaHome className={getIconClasses('/')} />
-            </a>
+            </Link>
           </Tooltip>
           <Tooltip text="Dashboard">
-            <a href="/dashboard" className={getLinkClasses('/dashboard')}>
+            <Link href="/dashboard" className={getLinkClasses('/dashboard')}>
               <FaChartBar className={getIconClasses('/dashboard')} />
-            </a>
+            </Link>
           </Tooltip>
           <Tooltip text="Calendario">
-            <a href="/dashboard" className={getLinkClasses('/calendar')}>
+            <Link href="/calendar" className={getLinkClasses('/calendar')}>
               <FaCalendarAlt className={getIconClasses('/calendar')} />
-            </a>
+            </Link>
           </Tooltip>
           <Tooltip text="Base de Conocimiento">
-            <a href="/knowledge" className={getLinkClasses('/knowledge')}>
+            <Link href="/knowledge" className={getLinkClasses('/knowledge')}>
               <FaBook className={getIconClasses('/knowledge')} />
-            </a>
+            </Link>
           </Tooltip>
         </div>
         <div className="mb-8">
           <Tooltip text="Cerrar Sesión">
-            <a href="/login" className="group flex items-center justify-center w-12 h-12 rounded-lg hover:bg-red-500/10 transition-all duration-200">
+            <button 
+              onClick={handleLogout}
+              className="group flex items-center justify-center w-12 h-12 rounded-lg hover:bg-red-500/10 transition-all duration-200"
+            >
               <FaSignOutAlt className="text-red-400 text-lg group-hover:text-red-300 transition-colors duration-200" />
-            </a>
+            </button>
           </Tooltip>
         </div>
       </aside>
@@ -91,21 +102,25 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
               </button>
             </div>
             <nav className="mt-6 flex flex-col items-center space-y-3">
-              <a href="/" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Inicio">
+              <Link href="/" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Inicio">
                 <FaHome className="text-lg" />
-              </a>
-              <a href="/dashboard" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Dashboard">
+              </Link>
+              <Link href="/dashboard" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Dashboard">
                 <FaChartBar className="text-lg" />
-              </a>
-              <a href="/dashboard" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Calendario">
+              </Link>
+              <Link href="/calendar" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Calendario">
                 <FaCalendarAlt className="text-lg" />
-              </a>
-              <a href="/knowledge" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Base de Conocimiento">
+              </Link>
+              <Link href="/knowledge" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Base de Conocimiento">
                 <FaBook className="text-lg" />
-              </a>
-              <a href="/login" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors mt-6" title="Cerrar Sesión">
+              </Link>
+              <button 
+                onClick={handleLogout}
+                className="flex items-center justify-center w-12 h-12 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors mt-6" 
+                title="Cerrar Sesión"
+              >
                 <FaSignOutAlt className="text-lg" />
-              </a>
+              </button>
             </nav>
           </aside>
         </>
@@ -114,9 +129,9 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
   );
 }
 
-function Header({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed: (c: boolean) => void }) {
+function Header() {
   return (
-    <header className={`w-full left-0 bg-secondary border-b border-accent/20 px-0 flex items-center fixed top-0 transition-all duration-300`} style={{height:'56px'}}>
+    <header className={`w-full left-0 border-b border-accent/20 px-0 flex items-center fixed top-0 z-50 transition-all duration-300`} style={{height:'56px', backgroundColor: '#111827'}}>
       <div className="flex items-center justify-between w-full">
         {/* Botón alineado y con mismo estilo que los iconos del sidebar */}
         {/* comentado para mejorar el ejcto de la ventana flotante */}
@@ -134,14 +149,6 @@ function Header({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed:
   );
 }
 
-function Footer() {
-  return (
-    <footer className="w-full bg-secondary border-t border-accent/20 py-3 px-6 text-center text-xs text-gray-400 sticky bottom-0 left-0 z-20">
-      &copy; {new Date().getFullYear()} Dashboard IA Soporte. Todos los derechos reservados.
-    </footer>
-  );
-}
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(true);
   const pathname = usePathname();
@@ -151,7 +158,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es">
       <body className="bg-primary text-white min-h-screen">
         {!isLogin && <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />}
-        {!isLogin && <Header collapsed={collapsed} setCollapsed={setCollapsed} />}
+        {!isLogin && <Header />}
         <main className={`${!isLogin ? `pt-20 pb-10 transition-all duration-300 ml-16` : ''}`}>
           {children}
         </main>

@@ -12,7 +12,7 @@ function markdownToHtml(text: string): string {
   // Listas con - o *
   html = html.replace(/(^|<br\/>)[\s]*[-*][ ](.*?)(?=<br\/>|$)/g, '$1<li>$2</li>');
   // Agrupar <li> en <ul>
-  html = html.replace(/(<li>.*?<\/li>)+/gs, m => `<ul>${m}</ul>`);
+  html = html.replace(/(<li>.*?<\/li>)+/g, m => `<ul>${m}</ul>`);
   // Tablas simples: |col1|col2|\n|---|---|\n|val1|val2|
   if (/\|.*\|/.test(html)) {
     const lines = html.split(/<br\/>/);
@@ -68,7 +68,7 @@ export default function AssistantBubble() {
         <ul style='margin-left:1.2em;margin-bottom:0.5em;color:#fff;line-height:1.3;'>
           <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
             <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M3 3h12v2H3V3zm0 4h12v2H3V7zm0 4h8v2H3v-2z'/></svg>
-            <span style='display:block;'>Registrar y clasificar tickets, recursos, KBs y eventos</span>
+            <span style='display:block;'>Crear y gestionar notas, URLs y recursos con IA</span>
           </li>
           <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
             <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M9 2a7 7 0 1 1 0 14A7 7 0 0 1 9 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 9 4zm1 2v4l3 2-1 1-4-2V6h2z'/></svg>
@@ -88,10 +88,10 @@ export default function AssistantBubble() {
           </li>
           <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
             <svg width='18' height='18' fill='#f7b787' style='display:block;'><rect x='3' y='3' width='12' height='12' rx='2'/><rect x='6' y='6' width='6' height='6' fill='#fff'/></svg>
-            <span style='display:block;'>Crear eventos y notas</span>
+            <span style='display:block;'>Crear eventos, tickets y registros</span>
           </li>
         </ul>
-        <div style='font-size:0.98em;color:#f7b787;font-weight:bold;'>¡Escríbeme lo que necesitas!</div>
+        <div style='font-size:0.98em;color:#f7b787;font-weight:bold;'>¡Escríbeme "crear nota", "agregar URL" o "subir recurso" para empezar!</div>
       </div>`;
   const [open, setOpen] = useState(false);
   // Eliminado: const [closing, setClosing] = useState(false);
@@ -133,7 +133,7 @@ export default function AssistantBubble() {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('topic', value || 'Sin tema');
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const apiUrl = process.env.BACKEND_URL + "/api" || '';
           const res = await fetch(`${apiUrl}/upload`, {
             method: 'POST',
             body: formData
@@ -206,7 +206,7 @@ export default function AssistantBubble() {
           { role: 'assistant', content: 'Validando credenciales...' }
         ]);
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const apiUrl = process.env.BACKEND_URL + "/api" || '';
           const res = await fetch(`${apiUrl}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -269,7 +269,7 @@ export default function AssistantBubble() {
             { role: 'assistant', content: 'Creando tu cuenta y enviando el correo de acceso. Un momento por favor...' }
           ]);
           try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+            const apiUrl = process.env.BACKEND_URL + "/api" || '';
             const res = await fetch(`${apiUrl}/signup`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -355,7 +355,7 @@ export default function AssistantBubble() {
       if (signupStep === 'none') {
         setMessages(msgs => [...msgs, { role: 'user', content: value }]);
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+          const apiUrl = process.env.BACKEND_URL + "/api" || '';
           const res = await fetch(`${apiUrl}/assistant`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -378,7 +378,7 @@ export default function AssistantBubble() {
     // Flujo normal de chat IA (dashboard)
     setMessages(msgs => [...msgs, { role: 'user', content: value }]);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const apiUrl = process.env.BACKEND_URL + "/api" || '';
       const res = await fetch(`${apiUrl}/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

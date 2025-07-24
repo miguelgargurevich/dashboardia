@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdir, stat } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { hasValidAuth, createUnauthorizedResponse } from '../../lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Validar autenticación
+    if (!hasValidAuth(request)) {
+      return createUnauthorizedResponse();
+    }
+
     const { searchParams } = new URL(request.url);
     const tema = searchParams.get('tema');
     

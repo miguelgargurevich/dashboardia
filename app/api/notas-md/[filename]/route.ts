@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: { filename: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const filename = params.filename;
+    // Validar autenticación
+    if (!hasValidAuth(request)) {
+      return createUnauthorizedResponse();
+    }
+
+    const { filename } = await params;
     console.log('Requested filename:', filename);
     
     const filePath = join(process.cwd(), 'public', 'notas-md', filename);

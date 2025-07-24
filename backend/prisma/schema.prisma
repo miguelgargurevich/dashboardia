@@ -153,3 +153,18 @@ model URL {
   updatedAt   DateTime @updatedAt
   fechaRevision DateTime?
 }
+
+model DailyNote {
+  id               String   @id @default(cuid())
+  date             String   // YYYY-MM-DD formato
+  title            String
+  content          String
+  priority         String   @default("media") // baja, media, alta, critica
+  status           String   @default("pendiente") // pendiente, en-progreso, completado, cancelado
+  type             String   @default("incidente") // incidente, mantenimiento, reunion, capacitacion, otro
+  tags             String[]
+  relatedResources String[] // IDs o nombres de recursos relacionados
+  userId           String?  // Opcional, para asignar a un usuario específico
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
