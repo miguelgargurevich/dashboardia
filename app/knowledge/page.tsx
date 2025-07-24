@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 interface NotasMD {
@@ -37,6 +38,10 @@ interface Tema {
 }
 
 const KnowledgePage: React.FC = () => {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [seccionActiva, setSeccionActiva] = useState('temas');
   const [temaSeleccionado, setTemaSeleccionado] = useState<string | null>(null);
   const [notasMD, setNotasMD] = useState<NotasMD[]>([]);
@@ -154,10 +159,23 @@ const KnowledgePage: React.FC = () => {
     }
   ];
 
+  // Efecto para inicializar autenticación
   useEffect(() => {
-    cargarContenido();
-    cargarRecursos();
-  }, []);
+    setMounted(true);
+    const t = localStorage.getItem('token');
+    setIsLoggedIn(!!t);
+    setToken(t);
+    if (!t) {
+      router.push('/login');
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (token) {
+      cargarContenido();
+      cargarRecursos();
+    }
+  }, [token]);
 
   // Efecto para extraer etiquetas disponibles
   useEffect(() => {
@@ -181,11 +199,17 @@ const KnowledgePage: React.FC = () => {
   }, [notasMD, recursos]);
 
   const cargarContenido = async () => {
+    if (!token) return;
+    
     setCargando(true);
     
     try {
       // Obtener archivos dinámicamente del nuevo endpoint
-      const response = await fetch('/api/notas-md');
+      const response = await fetch('/api/notas-md', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       
       if (!response.ok) {
         throw new Error('Error al obtener la lista de archivos');
@@ -337,12 +361,18 @@ const KnowledgePage: React.FC = () => {
   };
 
   const cargarRecursos = async () => {
+    if (!token) return;
+    
     setCargandoRecursos(true);
     try {
       const params = new URLSearchParams();
       if (temaSeleccionado) params.append('categoria', temaSeleccionado);
       
-      const response = await fetch(`/api/recursos?${params.toString()}`);
+      const response = await fetch(`/api/recursos?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setRecursos(data.recursos || []);
@@ -357,8 +387,15 @@ const KnowledgePage: React.FC = () => {
   };
 
   const eliminarRecurso = async (id: string) => {
+    if (!token) return;
+    
     try {
-      const response = await fetch(`/api/recursos/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/recursos/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         setRecursos(prev => prev.filter(recurso => recurso.id !== id));
       } else {
@@ -372,10 +409,15 @@ const KnowledgePage: React.FC = () => {
   };
 
   const crearRecurso = async (datosRecurso: Partial<Recurso>) => {
+    if (!token) return;
+    
     try {
       const response = await fetch('/api/recursos', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(datosRecurso)
       });
       
@@ -536,7 +578,10 @@ ${formData.contenido}
 
         const response = await fetch('/api/notas-md', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({
             nombre: formData.titulo,
             tema: formData.tema,
@@ -676,6 +721,9 @@ ${formData.contenido}
 
           const response = await fetch('/api/recursos/upload', {
             method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
             body: formDataFile,
           });
 
@@ -686,7 +734,10 @@ ${formData.contenido}
           // Editar recurso existente
           const response = await fetch(`/api/recursos/${recursoEditando.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({
               ...formData,
               tags: etiquetas
@@ -870,6 +921,15 @@ ${formData.contenido}
       </div>
     );
   };
+
+  // Protección de autenticación
+  if (!mounted || isLoggedIn === null) {
+    return null; // Espera a montar y verificar
+  }
+
+  if (!isLoggedIn) {
+    return null; // Ya redirigió al login
+  }
 
   return (
     <div className="min-h-screen bg-primary text-white p-6">
