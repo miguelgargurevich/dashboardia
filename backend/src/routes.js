@@ -268,16 +268,19 @@ router.get('/api/events/calendar', async (req, res) => {
       end = new Date(start);
       end.setMonth(end.getMonth() + 1);
     } else {
-      start = new Date();
-      end = new Date();
-      end.setMonth(end.getMonth() + 1);
+      // Si no se especifica mes, usar el mes actual
+      const now = new Date();
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     }
+    
     const events = await prisma.event.findMany({
       where: {
         startDate: { gte: start, lt: end }
       },
       orderBy: { startDate: 'asc' }
     });
+    
     res.json(events);
   } catch (err) {
     res.status(500).json({ error: 'Error obteniendo eventos para calendario', details: err.message });
@@ -1092,27 +1095,25 @@ router.get('/api/tickets/tendencia-semanal', requireAuth, async (req, res) => {
   }
 });
 
-// =====================================================
-// ENDPOINTS PARA NOTAS DIARIAS
-// =====================================================
+// ===== RUTAS PARA NOTAS GENERALES (REEMPLAZA ARCHIVOS .MD) =====
 
-// GET /api/daily-notes?month=YYYY-MM - Obtener notas de un mes específico
+// GET /api/daily-notes?month=YYYY-MM - LEGACY: Redirige al modelo unificado
 router.get('/api/daily-notes', requireAuth, async (req, res) => {
   try {
     const { month, date } = req.query;
-    let whereClause = {};
+    let whereClause = {
+      tema: 'actividades-diarias' // Filtrar solo notas de actividades diarias
+    };
     
     if (date) {
-      // Buscar notas de una fecha específica
       whereClause.date = date;
     } else if (month) {
-      // Buscar notas de un mes específico
       whereClause.date = {
         startsWith: month // YYYY-MM
       };
     }
     
-    const notes = await prisma.dailyNote.findMany({
+    const notes = await prisma.note.findMany({
       where: whereClause,
       orderBy: [
         { date: 'desc' },
@@ -1122,7 +1123,7 @@ router.get('/api/daily-notes', requireAuth, async (req, res) => {
     
     res.json(notes);
   } catch (error) {
-    console.error('Error obteniendo notas diarias:', error);
+    console.error('Error obteniendo notas diarias (legacy):', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
@@ -1157,17 +1158,19 @@ router.post('/api/daily-notes', requireAuth, async (req, res) => {
       });
     }
     
-    const note = await prisma.dailyNote.create({
+    const note = await prisma.note.create({
       data: {
         date,
         title,
         content,
         priority,
         status,
-        type,
+        tipo: type, // Mapear 'type' a 'tipo' del modelo unificado
         tags,
         relatedResources,
-        userId
+        userId,
+        tema: 'actividades-diarias', // Asignar tema específico
+        descripcion: `Nota diaria del ${date}` // Descripción automática
       }
     });
     
@@ -1194,22 +1197,25 @@ router.put('/api/daily-notes/:id', requireAuth, async (req, res) => {
     } = req.body;
     
     // Verificar que la nota existe
-    const existingNote = await prisma.dailyNote.findUnique({
-      where: { id }
+    const existingNote = await prisma.note.findFirst({
+      where: { 
+        id,
+        tema: 'actividades-diarias' // Solo permitir actualizar notas diarias
+      }
     });
     
     if (!existingNote) {
       return res.status(404).json({ error: 'Nota no encontrada' });
     }
     
-    const updatedNote = await prisma.dailyNote.update({
+    const updatedNote = await prisma.note.update({
       where: { id },
       data: {
         title,
         content,
         priority,
         status,
-        type,
+        tipo: type, // Mapear 'type' a 'tipo'
         tags,
         relatedResources,
         userId,
@@ -1229,16 +1235,19 @@ router.delete('/api/daily-notes/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Verificar que la nota existe
-    const existingNote = await prisma.dailyNote.findUnique({
-      where: { id }
+    // Verificar que la nota existe y es una nota diaria
+    const existingNote = await prisma.note.findFirst({
+      where: { 
+        id,
+        tema: 'actividades-diarias' // Solo permitir eliminar notas diarias
+      }
     });
     
     if (!existingNote) {
       return res.status(404).json({ error: 'Nota no encontrada' });
     }
     
-    await prisma.dailyNote.delete({
+    await prisma.note.delete({
       where: { id }
     });
     
@@ -1254,7 +1263,9 @@ router.delete('/api/daily-notes/:id', requireAuth, async (req, res) => {
 router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
   try {
     const { month } = req.query;
-    let whereClause = {};
+    let whereClause = {
+      tema: 'actividades-diarias' // Solo estadísticas de notas diarias
+    };
     
     if (month) {
       whereClause.date = {
@@ -1263,7 +1274,7 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
     }
     
     // Obtener todas las notas del período
-    const notes = await prisma.dailyNote.findMany({
+    const notes = await prisma.note.findMany({
       where: whereClause
     });
     
@@ -1316,14 +1327,14 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
         dayStats.highPriorityTasks++;
       }
       
-      // Contadores por tipo
-      if (note.type === 'incidente') {
+      // Contadores por tipo - usar 'tipo' en lugar de 'type'
+      if (note.tipo === 'incidente') {
         dayStats.incidents++;
       }
       
-      // Contadores detallados
-      if (dayStats.notesTypes[note.type] !== undefined) {
-        dayStats.notesTypes[note.type]++;
+      // Contadores detallados - usar 'tipo' en lugar de 'type'
+      if (dayStats.notesTypes[note.tipo] !== undefined) {
+        dayStats.notesTypes[note.tipo]++;
       }
       
       if (dayStats.priorities[note.priority] !== undefined) {
@@ -1356,7 +1367,9 @@ router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
       tags
     } = req.query;
     
-    let whereClause = {};
+    let whereClause = {
+      tema: 'actividades-diarias' // Solo buscar en notas diarias
+    };
     
     // Búsqueda por texto
     if (q) {
@@ -1376,7 +1389,7 @@ router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
     }
     
     if (type) {
-      whereClause.type = type;
+      whereClause.tipo = type; // Usar 'tipo' en lugar de 'type'
     }
     
     // Filtro por rango de fechas
@@ -1398,7 +1411,7 @@ router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
       };
     }
     
-    const notes = await prisma.dailyNote.findMany({
+    const notes = await prisma.note.findMany({
       where: whereClause,
       orderBy: [
         { date: 'desc' },
@@ -1588,6 +1601,129 @@ router.delete('/api/notes/:id', requireAuth, async (req, res) => {
     res.json({ success: true, message: 'Nota eliminada exitosamente' });
   } catch (error) {
     console.error('Error eliminando nota:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/notes/stats - Estadísticas de notas (incluye actividades diarias)
+router.get('/api/notes/stats', requireAuth, async (req, res) => {
+  try {
+    const { month, tema } = req.query;
+    let whereClause = {};
+    
+    // Filtrar por tema si se especifica
+    if (tema) {
+      whereClause.tema = tema;
+    }
+    
+    if (month) {
+      whereClause.date = {
+        startsWith: month // YYYY-MM
+      };
+    }
+    
+    // Obtener todas las notas del período
+    const notes = await prisma.note.findMany({
+      where: whereClause
+    });
+    
+    // Si es tema de actividades-diarias, agrupar estadísticas por día
+    if (tema === 'actividades-diarias') {
+      const statsByDay = {};
+      
+      notes.forEach(note => {
+        if (!statsByDay[note.date]) {
+          statsByDay[note.date] = {
+            totalNotes: 0,
+            completedTasks: 0,
+            pendingTasks: 0,
+            highPriorityTasks: 0,
+            incidents: 0,
+            notesTypes: {
+              incidente: 0,
+              mantenimiento: 0,
+              reunion: 0,
+              capacitacion: 0,
+              otro: 0
+            }
+          };
+        }
+        
+        const dayStats = statsByDay[note.date];
+        dayStats.totalNotes++;
+        
+        if (note.status === 'completado') {
+          dayStats.completedTasks++;
+        } else {
+          dayStats.pendingTasks++;
+        }
+        
+        if (note.priority === 'alta' || note.priority === 'critica') {
+          dayStats.highPriorityTasks++;
+        }
+        
+        if (note.tipo === 'incidente') {
+          dayStats.incidents++;
+        }
+        
+        if (dayStats.notesTypes[note.tipo] !== undefined) {
+          dayStats.notesTypes[note.tipo]++;
+        } else {
+          dayStats.notesTypes.otro++;
+        }
+      });
+      
+      res.json({
+        success: true,
+        statsByDay,
+        totalNotes: notes.length,
+        summary: {
+          totalDays: Object.keys(statsByDay).length,
+          totalNotes: notes.length,
+          avgNotesPerDay: Object.keys(statsByDay).length > 0 ? 
+            Math.round((notes.length / Object.keys(statsByDay).length) * 100) / 100 : 0
+        }
+      });
+    } else {
+      // Estadísticas generales para otros temas
+      const statsByType = {};
+      const statsByPriority = {};
+      const statsByStatus = {};
+      
+      notes.forEach(note => {
+        // Por tipo
+        if (!statsByType[note.tipo]) {
+          statsByType[note.tipo] = 0;
+        }
+        statsByType[note.tipo]++;
+        
+        // Por prioridad (si existe)
+        if (note.priority) {
+          if (!statsByPriority[note.priority]) {
+            statsByPriority[note.priority] = 0;
+          }
+          statsByPriority[note.priority]++;
+        }
+        
+        // Por estado (si existe)
+        if (note.status) {
+          if (!statsByStatus[note.status]) {
+            statsByStatus[note.status] = 0;
+          }
+          statsByStatus[note.status]++;
+        }
+      });
+      
+      res.json({
+        success: true,
+        totalNotes: notes.length,
+        statsByType,
+        statsByPriority,
+        statsByStatus
+      });
+    }
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

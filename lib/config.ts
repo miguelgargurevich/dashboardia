@@ -25,8 +25,8 @@ const getBackendConfig = () => {
     
     // URLs específicas para diferentes servicios
     endpoints: {
-      dailyNotes: '/api/daily-notes',
-      dailyNotesStats: '/api/daily-notes/stats',
+      notes: '/api/notes',
+      notesStats: '/api/notes/stats',
       tickets: '/api/tickets',
       events: '/api/events',
       resources: '/api/recursos'

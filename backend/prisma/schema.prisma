@@ -154,32 +154,23 @@ model URL {
   fechaRevision DateTime?
 }
 
-model DailyNote {
-  id               String   @id @default(cuid())
-  date             String   // YYYY-MM-DD formato
-  title            String
-  content          String
-  priority         String   @default("media") // baja, media, alta, critica
-  status           String   @default("pendiente") // pendiente, en-progreso, completado, cancelado
-  type             String   @default("incidente") // incidente, mantenimiento, reunion, capacitacion, otro
-  tags             String[]
-  relatedResources String[] // IDs o nombres de recursos relacionados
-  userId           String?  // Opcional, para asignar a un usuario específico
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-}
-
 model Note {
   id          String   @id @default(cuid())
   title       String
   content     String   // Contenido en formato Markdown
   tema        String   // notificaciones, polizas, tickets, actividades-diarias, emergencias, etc
-  tipo        String   @default("nota") // procedimiento, manual, guia, nota, checklist
+  tipo        String   @default("nota") // procedimiento, manual, guia, nota, checklist, incidente, mantenimiento, reunion, capacitacion
   descripcion String?  // Descripción corta
   tags        String[] // Etiquetas para búsqueda
   context     String?  // Contexto adicional
   keyPoints   String[] // Puntos clave
-  status      String   @default("activo") // activo, archivado, borrador
+  status      String   @default("activo") // activo, archivado, borrador, pendiente, en-progreso, completado, cancelado
+  
+  // Campos adicionales para notas diarias
+  date        String?  // YYYY-MM-DD formato (solo para notas diarias)
+  priority    String?  // baja, media, alta, critica (solo para notas diarias)
+  relatedResources String[] // IDs o nombres de recursos relacionados
+  
   userId      String?  // Usuario que creó la nota
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

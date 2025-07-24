@@ -1,8 +1,6 @@
 "use client";
 
 import AssistantBubble from './components/AsisstantIA/AssistantBubble';
-import TicketsLineChart from './components/dashboard/TicketsLineChart';
-import TicketsBarChart from './components/dashboard/TicketsBarChart';
 import TicketsPieChart from './components/dashboard/TicketsPieChart';
 import EventsCalendar from './components/dashboard/EventsCalendar';
 import UpcomingEvents from './components/dashboard/UpcomingEvents';
@@ -17,7 +15,13 @@ export default function Home() {
   const [token, setToken] = useState<string | null>(null);
   
   // Estados compartidos para comunicación entre calendarios
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [triggerDateSelection, setTriggerDateSelection] = useState<number>(0);
 
   useEffect(() => {
@@ -56,6 +60,10 @@ export default function Home() {
                 selectedDate={selectedDate}
                 triggerDateSelection={triggerDateSelection}
                 onDateChange={setSelectedDate}
+                onTodayClick={() => {
+                  // Resetear el trigger cuando se presiona "Hoy" para forzar actualización
+                  setTriggerDateSelection(0);
+                }}
               />
             </div>
            

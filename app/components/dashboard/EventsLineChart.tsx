@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { FaChartLine } from 'react-icons/fa';
 
 interface EventData {
   mes: string;

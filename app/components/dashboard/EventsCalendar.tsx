@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
 
 interface Event {
@@ -22,15 +22,21 @@ interface Props {
   selectedDate?: string;
   triggerDateSelection?: number;
   onDateChange?: (date: string) => void;
+  onTodayClick?: () => void;
 }
 
 
-const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelectedDate, triggerDateSelection, onDateChange }) => {
-  // Día actual (número y mes/año)
-  const today = new Date();
-  const todayDay = today.getDate();
-  const todayMonth = today.getMonth();
-  const todayYear = today.getFullYear();
+const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelectedDate, triggerDateSelection, onDateChange, onTodayClick }) => {
+  // Calcular fecha actual una vez al renderizar
+  const { todayDay, todayMonth, todayYear } = useMemo(() => {
+    const today = new Date();
+    return {
+      todayDay: today.getDate(),
+      todayMonth: today.getMonth(),
+      todayYear: today.getFullYear()
+    };
+  }, []);
+  
   // Días de la semana (Lun a Dom)
   const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const [events, setEvents] = useState<Event[]>([]);
@@ -104,7 +110,9 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
   const eventsByDay: { [key: number]: Event[] } = {};
   if (events && Array.isArray(events)) {
     events.forEach(ev => {
-      const day = new Date(ev.startDate).getDate();
+      // Las fechas ya vienen con hora desde el backend, extraer solo la fecha
+      const eventDate = new Date(ev.startDate);
+      const day = eventDate.getDate();
       if (!eventsByDay[day]) eventsByDay[day] = [];
       eventsByDay[day].push(ev);
     });
@@ -133,8 +141,26 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
     setSelectedDate('1');
   }
   function goToToday() {
-    setVisibleMonth(new Date().toISOString().slice(0,7));
-    setSelectedDate(todayDay.toString());
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; // +1 porque getMonth() devuelve 0-11
+    const currentDay = currentDate.getDate();
+    
+    // Actualizar el mes visible al mes actual
+    setVisibleMonth(`${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+    // Actualizar el día seleccionado al día actual
+    setSelectedDate(currentDay.toString());
+    
+    // Notificar el cambio de fecha si hay callback
+    if (onDateChange) {
+      const todayString = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+      onDateChange(todayString);
+    }
+    
+    // Notificar que se hizo clic en "Hoy" para activar triggers en el componente padre
+    if (onTodayClick) {
+      onTodayClick();
+    }
   }
 
   return (

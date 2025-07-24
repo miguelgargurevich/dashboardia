@@ -126,9 +126,7 @@ export default function AssistantBubble() {
   
   // Estados para wizards de creación
   const [noteWizardStep, setNoteWizardStep] = useState<'none'|'collecting'|'generating'>('none');
-  const [noteWizardData, setNoteWizardData] = useState<any>({});
   const [urlWizardStep, setUrlWizardStep] = useState<'none'|'collecting'|'processing'>('none');
-  const [urlWizardData, setUrlWizardData] = useState<any>({});
   const [resourceWizardStep, setResourceWizardStep] = useState<'none'|'categorizing'|'uploading'>('none');
   
   // Funciones para manejar comandos específicos
@@ -147,7 +145,6 @@ export default function AssistantBubble() {
       setNoteWizardStep('generating');
       setMessages(msgs => [...msgs, { role: 'assistant', content: '🔄 Generando nota con IA, esto puede tomar unos segundos...' }]);
       
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
       const response = await fetch('/api/ai/content-generator', {
         method: 'POST',
         headers: {
@@ -171,7 +168,6 @@ export default function AssistantBubble() {
       setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al conectar con el servicio de generación de notas.' }]);
     } finally {
       setNoteWizardStep('none');
-      setNoteWizardData({});
     }
   }
 
@@ -227,7 +223,6 @@ export default function AssistantBubble() {
         }
         
         setUrlWizardStep('none');
-        setUrlWizardData({});
       } else {
         const missing: string[] = [];
         if (!data.url) missing.push('URL');

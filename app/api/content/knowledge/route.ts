@@ -33,15 +33,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(data, { status: response.status });
     }
     
-    // Si se especifica un tema, formatear respuesta similar a la anterior
+    // Si se especifica un tema, formatear respuesta para compatibilidad con frontend
     if (tema) {
       const notasDelTema = data.filter((nota: any) => nota.tema === tema);
       
+      // Mantener nombre "archivosConInfo" por compatibilidad con frontend,
+      // aunque ahora son notas de base de datos
       const archivosConInfo = notasDelTema.map((nota: any) => ({
         id: nota.id,
-        nombre: `${nota.title}.md`, // Mantener compatibilidad
+        nombre: `${nota.title}.md`, // Formato .md por compatibilidad con frontend
         nombreSinExtension: nota.title,
-        rutaRelativa: `notes/${nota.id}`, // Nueva ruta basada en ID
+        content: nota.content, // Contenido desde base de datos
+        rutaRelativa: `notes/${nota.id}`, // Ruta virtual basada en ID de base de datos
         fechaModificacion: nota.updatedAt,
         tamaño: nota.content?.length || 0,
         tipo: nota.tipo,
@@ -53,12 +56,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         tema,
-        archivos: archivosConInfo,
+        archivos: archivosConInfo, // Nombre mantenido por compatibilidad con frontend
         cantidad: archivosConInfo.length
       });
     }
     
-    // Si no se especifica tema, agrupar por tema
+    // Si no se especifica tema, agrupar todas las notas por tema
+    // Mantener nombre "archivosPorTema" por compatibilidad con frontend,
+    // aunque ahora son notas de base de datos agrupadas por tema
     const archivosPorTema: Record<string, any[]> = {};
     
     data.forEach((nota: any) => {
@@ -68,9 +73,10 @@ export async function GET(request: NextRequest) {
       
       archivosPorTema[nota.tema].push({
         id: nota.id,
-        nombre: `${nota.title}.md`,
+        nombre: `${nota.title}.md`, // Formato .md por compatibilidad con frontend
         nombreSinExtension: nota.title,
-        rutaRelativa: `notes/${nota.id}`,
+        content: nota.content, // Contenido desde base de datos
+        rutaRelativa: `notes/${nota.id}`, // Ruta virtual basada en ID de base de datos
         fechaModificacion: nota.updatedAt,
         tamaño: nota.content?.length || 0,
         tipo: nota.tipo,
@@ -80,15 +86,15 @@ export async function GET(request: NextRequest) {
       });
     });
     
-    // Estadísticas
-    const totalArchivos = data.length;
+    // Estadísticas de notas (no archivos físicos)
+    const totalArchivos = data.length; // Nombre mantenido por compatibilidad
     const temas = Object.keys(archivosPorTema);
     
     return NextResponse.json({
       success: true,
-      archivosPorTema,
+      archivosPorTema, // Nombre mantenido por compatibilidad con frontend
       estadisticas: {
-        totalArchivos,
+        totalArchivos, // Realmente son totalNotas, pero mantenemos nombre
         totalTemas: temas.length,
         temas: temas.map(tema => ({
           nombre: tema,
@@ -159,6 +165,115 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creando nota:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // Validar autenticación
+    if (!hasValidAuth(request)) {
+      return createUnauthorizedResponse();
+    }
+
+    const body = await request.json();
+    const { id, nombre, tema } = body;
+
+    // Si tenemos ID, eliminar directamente
+    if (id) {
+      const deleteResponse = await fetch(`${BACKEND_URL}/api/notes/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': request.headers.get('Authorization') || '',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.json();
+        return NextResponse.json(
+          { error: error.error || 'Error eliminando la nota' },
+          { status: deleteResponse.status }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Nota eliminada exitosamente'
+      });
+    }
+
+    // Fallback: eliminar por nombre y tema (para compatibilidad)
+    if (!nombre) {
+      return NextResponse.json(
+        { error: 'Se requiere el ID o el nombre de la nota para eliminarla' },
+        { status: 400 }
+      );
+    }
+
+    // Buscar la nota por título y tema en el backend
+    const searchUrl = `${BACKEND_URL}/api/notes?search=${encodeURIComponent(nombre)}${tema ? `&tema=${encodeURIComponent(tema)}` : ''}`;
+    
+    const searchResponse = await fetch(searchUrl, {
+      headers: {
+        'Authorization': request.headers.get('Authorization') || '',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!searchResponse.ok) {
+      return NextResponse.json(
+        { error: 'Error buscando la nota' },
+        { status: searchResponse.status }
+      );
+    }
+
+    const notes = await searchResponse.json();
+    
+    // Buscar la nota exacta en los resultados
+    const noteToDelete = notes.find((note: any) => 
+      note.title === nombre || note.title === nombre.replace('.md', '') // Compatibilidad con nombres .md del frontend
+    );
+
+    if (!noteToDelete) {
+      return NextResponse.json(
+        { error: 'Nota no encontrada en la base de datos' },
+        { status: 404 }
+      );
+    }
+
+    // Eliminar la nota del backend
+    const deleteResponse = await fetch(`${BACKEND_URL}/api/notes/${noteToDelete.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': request.headers.get('Authorization') || '',
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!deleteResponse.ok) {
+      const error = await deleteResponse.json();
+      return NextResponse.json(
+        { error: error.error || 'Error eliminando la nota' },
+        { status: deleteResponse.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Nota eliminada exitosamente',
+      deletedNote: {
+        id: noteToDelete.id,
+        title: noteToDelete.title,
+        tema: noteToDelete.tema
+      }
+    });
+
+  } catch (error) {
+    console.error('Error eliminando nota:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

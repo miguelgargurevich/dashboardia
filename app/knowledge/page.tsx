@@ -1,15 +1,24 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaTimes } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaTimes, FaCog, FaUsers, FaGraduationCap } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 interface NotasMD {
+  id?: string; // ID para notas de la base de datos
   nombre: string;
   contenido: string;
   tema: string;
-  tipo: 'nota' | 'documento' | 'video';
+  tipo: 'nota' | 'documento' | 'video' | 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';
   etiquetas?: string[];
+  // Campos adicionales del modelo unificado
+  descripcion?: string;
+  status?: string;
+  priority?: string;
+  date?: string; // Para notas diarias
+  relatedResources?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Recurso {
@@ -204,7 +213,7 @@ const KnowledgePage: React.FC = () => {
     setCargando(true);
     
     try {
-      // Obtener archivos dinámicamente del nuevo endpoint
+      // Obtener notas directamente del endpoint
       const response = await fetch('/api/content/knowledge', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -212,76 +221,68 @@ const KnowledgePage: React.FC = () => {
       });
       
       if (!response.ok) {
-        throw new Error('Error al obtener la lista de archivos');
+        throw new Error('Error al obtener la lista de notas');
       }
       
       const data = await response.json();
       
       if (!data.success) {
-        throw new Error(data.error || 'Error desconocido al obtener archivos');
+        throw new Error(data.error || 'Error desconocido al obtener notas');
       }
       
       const notasCargadas: NotasMD[] = [];
-      const { archivosPorTema } = data;
+      const { archivosPorTema } = data; // Backend compatibility - contains notes grouped by tema
 
-      // Cargar archivos de cada tema
-      for (const [tema, archivos] of Object.entries(archivosPorTema)) {
-        const archivosArray = archivos as any[];
+      // Procesar notas de cada tema
+      for (const [tema, notas] of Object.entries(archivosPorTema)) {
+        const notasArray = notas as any[];
         
-        for (const archivoInfo of archivosArray) {
+        for (const notaInfo of notasArray) {
+          // Las notas ya vienen con el contenido desde la base de datos
+          // No necesitamos hacer fetch adicional
           try {
-            const response = await fetch(`/${archivoInfo.rutaRelativa}`);
-            if (response.ok) {
-              const contenido = await response.text();
-              
-              // Determinar tipo basado en el nombre del archivo
-              let tipo: 'nota' | 'documento' | 'video' = 'nota';
-              if (archivoInfo.nombre.includes('Manual') || 
-                  archivoInfo.nombre.includes('Rutina') || 
-                  archivoInfo.nombre.includes('Procedimientos')) {
-                tipo = 'documento';
-              }
+            // Determinar tipo basado en el tipo de la nota
+            let tipo: 'nota' | 'documento' | 'video' | 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro' = 
+              notaInfo.tipo || 'nota';
 
-              // Extraer etiquetas del markdown si están presentes
-              const extractEtiquetas = (contenido: string): string[] => {
-                const etiquetasMatch = contenido.match(/\*\*Etiquetas:\*\*\s*(.+)/);
-                if (etiquetasMatch) {
-                  return etiquetasMatch[1]
-                    .split(/[,\|]/)
-                    .map(tag => tag.trim().replace(/`/g, ''))
-                    .filter(Boolean);
-                }
-                return [];
-              };
+            // Extraer etiquetas - ahora vienen directamente en notaInfo.tags
+            const etiquetas = notaInfo.tags || [];
 
-              notasCargadas.push({
-                nombre: archivoInfo.nombreSinExtension,
-                tema: tema,
-                tipo: tipo,
-                contenido: contenido,
-                etiquetas: extractEtiquetas(contenido)
-              });
-            }
+            notasCargadas.push({
+              id: notaInfo.id, // ID de la base de datos para operaciones CRUD
+              nombre: notaInfo.title || notaInfo.nombreSinExtension || 'Sin título', // Usar title de la base de datos o nombreSinExtension como fallback
+              tema: tema,
+              tipo: tipo,
+              contenido: notaInfo.content || notaInfo.contenido || '', // Usar content de la base de datos o contenido como fallback
+              etiquetas: etiquetas,
+              // Campos adicionales del modelo unificado
+              descripcion: notaInfo.descripcion,
+              status: notaInfo.status,
+              priority: notaInfo.priority,
+              date: notaInfo.date,
+              relatedResources: notaInfo.relatedResources,
+              createdAt: notaInfo.createdAt || notaInfo.fechaModificacion,
+              updatedAt: notaInfo.updatedAt || notaInfo.fechaModificacion
+            });
           } catch (error) {
-            console.error(`Error cargando ${archivoInfo.nombre}:`, error);
+            console.error(`Error procesando nota ${notaInfo.nombreSinExtension}:`, error);
           }
         }
       }
 
       setNotasMD(notasCargadas);
-      console.log('Archivos cargados dinámicamente:', {
-        totalArchivos: notasCargadas.length,
-        archivosPorTema: Object.fromEntries(
-          Object.entries(archivosPorTema).map(([tema, archivos]) => 
-            [tema, (archivos as any[]).length]
+      console.log('Notas cargadas desde base de datos:', {
+        totalNotas: notasCargadas.length,
+        notasPorTema: Object.fromEntries(
+          Object.entries(archivosPorTema).map(([tema, notas]) => 
+            [tema, (notas as any[]).length]
           )
         )
       });
       
     } catch (error) {
       console.error('Error cargando contenido:', error);
-      // Mensaje más informativo para el usuario
-      alert('Error al cargar el contenido. Por favor, recarga la página.');
+      alert('Error al cargar las notas. Por favor, recarga la página.');
     } finally {
       setCargando(false);
     }
@@ -405,6 +406,65 @@ const KnowledgePage: React.FC = () => {
     } catch (error) {
       console.error('Error eliminando recurso:', error);
       throw error;
+    }
+  };
+
+  const eliminarNota = async (nota: NotasMD) => {
+    if (!token) return;
+    
+    try {
+      // Si la nota tiene ID, eliminarla directamente
+      if (nota.id) {
+        const response = await fetch('/api/content/knowledge', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id: nota.id })
+        });
+
+        if (response.ok) {
+          // Recargar notas después de eliminar
+          await cargarContenido();
+          // Si era la nota seleccionada, limpiar la selección
+          if (notaSeleccionada?.id === nota.id) {
+            setNotaSeleccionada(null);
+          }
+          alert('Nota eliminada exitosamente');
+          return;
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Error eliminando nota');
+        }
+      } else {
+        // Fallback: intentar eliminar por nombre y tema (para compatibilidad)
+        const response = await fetch('/api/content/knowledge', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ nombre: nota.nombre, tema: nota.tema })
+        });
+
+        if (response.ok) {
+          await cargarContenido();
+          if (notaSeleccionada?.nombre === nota.nombre) {
+            setNotaSeleccionada(null);
+          }
+          alert('Nota eliminada exitosamente');
+          return;
+        } else {
+          const error = await response.json();
+          throw new Error(error.error || 'Error eliminando nota');
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error eliminando nota:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      alert(`Error al eliminar la nota: ${errorMessage}`);
     }
   };
 
@@ -569,7 +629,7 @@ const KnowledgePage: React.FC = () => {
           ? formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
           : [];
 
-        // Crear el archivo markdown directamente
+        // Crear el contenido markdown para guardar en la base de datos
         const contenidoMarkdown = `# ${formData.titulo}
 
 ${formData.contenido}
@@ -1121,6 +1181,7 @@ ${formData.contenido}
                               ? `${temas.find(t => t.id === temaSeleccionado)?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0] || 'bg-accent/30'}`
                               : 'bg-accent/20'
                           }`}>
+                            {/* Iconos por tipo de nota */}
                             {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${
                               notaSeleccionada?.nombre === nota.nombre 
                                 ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
@@ -1131,17 +1192,71 @@ ${formData.contenido}
                                 ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
                                 : 'text-accent'
                             }`} /> :
-                             <FaVideo className={`text-sm ${
+                             nota.tipo === 'video' ? <FaVideo className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-accent'
+                            }`} /> :
+                             nota.tipo === 'incidente' ? <FaExclamationTriangle className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-red-400'
+                            }`} /> :
+                             nota.tipo === 'mantenimiento' ? <FaCog className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-orange-400'
+                            }`} /> :
+                             nota.tipo === 'reunion' ? <FaUsers className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-blue-400'
+                            }`} /> :
+                             nota.tipo === 'capacitacion' ? <FaGraduationCap className={`text-sm ${
+                              notaSeleccionada?.nombre === nota.nombre 
+                                ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
+                                : 'text-green-400'
+                            }`} /> :
+                             <FaFileAlt className={`text-sm ${
                               notaSeleccionada?.nombre === nota.nombre 
                                 ? temas.find(t => t.id === temaSeleccionado)?.color?.split(' ')[1] || 'text-accent'
                                 : 'text-accent'
                             }`} />}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-white text-sm leading-tight">{nota.nombre}</h3>
+                              {/* Indicadores para notas diarias */}
+                              {nota.date && (
+                                <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">
+                                  📅 {nota.date}
+                                </span>
+                              )}
+                              {nota.priority && nota.priority !== 'media' && (
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  nota.priority === 'alta' || nota.priority === 'critica' 
+                                    ? 'bg-red-500/20 text-red-300' 
+                                    : 'bg-gray-500/20 text-gray-300'
+                                }`}>
+                                  {nota.priority === 'critica' ? '🔴' : nota.priority === 'alta' ? '🟠' : '🔵'} {nota.priority}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                              {nota.contenido.slice(0, 100)}...
+                              {nota.descripcion || nota.contenido.slice(0, 100)}...
                             </p>
+                            {nota.etiquetas && nota.etiquetas.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {nota.etiquetas.slice(0, 3).map((etiqueta, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-accent/10 text-accent text-xs rounded">
+                                    #{etiqueta}
+                                  </span>
+                                ))}
+                                {nota.etiquetas.length > 3 && (
+                                  <span className="text-xs text-gray-500">+{nota.etiquetas.length - 3}</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </button>
@@ -1548,13 +1663,26 @@ ${formData.contenido}
                             {temas.find(t => t.id === notaSeleccionada.tema)?.nombre}
                           </p>
                         </div>
-                        <button 
-                          onClick={() => descargarNota(notaSeleccionada)}
-                          className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
-                        >
-                          <FaDownload className="text-sm" />
-                          Descargar
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => descargarNota(notaSeleccionada)}
+                            className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
+                          >
+                            <FaDownload className="text-sm" />
+                            Descargar
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('¿Estás seguro de eliminar esta nota?')) {
+                                eliminarNota(notaSeleccionada);
+                              }
+                            }}
+                            className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
+                          >
+                            <FaTrash className="text-sm" />
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
                       <div className="prose prose-invert max-w-none">
                         {renderizarContenidoMarkdown(notaSeleccionada.contenido)}

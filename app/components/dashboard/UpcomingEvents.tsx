@@ -47,27 +47,20 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
     async function fetchUpcomingEvents() {
       setLoading(true);
       try {
-        const res = await fetch('/api/events/calendar', {
+        const res = await fetch(`/api/events/upcoming?limit=${limit}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         if (res.ok) {
           const data = await res.json();
-          
-          // Filtrar eventos futuros y ordenarlos por fecha
-          const now = new Date();
-          const upcomingEvents = data
-            .filter((event: Event) => new Date(event.startDate) >= now)
-            .sort((a: Event, b: Event) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-            .slice(0, limit); // Mostrar solo los próximos eventos según el límite
-          
-          setEvents(upcomingEvents);
+          setEvents(Array.isArray(data) ? data : []);
         } else if (res.status === 401) {
           // Token expirado o inválido, redirigir al login
           localStorage.removeItem('token');
           window.location.href = '/login';
           return;
         } else {
+          console.error('Error fetching upcoming events:', res.statusText);
           setEvents([]);
         }
       } catch (error) {
