@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
+
 import { 
   FaCalendarAlt, 
   FaAngleLeft, 
@@ -20,7 +21,6 @@ import {
   FaEye,
   FaEyeSlash
 } from "react-icons/fa";
-
 
 
 type EventType = 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';

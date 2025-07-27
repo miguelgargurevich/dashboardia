@@ -136,7 +136,7 @@ const KnowledgePage: React.FC = () => {
       nombre: 'Pólizas y Reimpresión',
       descripcion: 'Gestión de pólizas, copias y reimpresiones',
       icono: <FaPrint className="text-xl" />,
-      color: 'bg-green-500/20 text-green-400 border-green-400/30'
+      color: 'bg-purple-500/20 text-purple-400 border-purple-400/30'
     },
     {
       id: 'tickets',
@@ -150,7 +150,7 @@ const KnowledgePage: React.FC = () => {
       nombre: 'Actividades Diarias',
       descripcion: 'Rutinas y procesos diarios del equipo de soporte',
       icono: <FaClock className="text-xl" />,
-      color: 'bg-purple-500/20 text-purple-400 border-purple-400/30'
+      color: 'bg-green-500/20 text-green-400 border-green-400/30'
     },
     {
       id: 'emergencias',

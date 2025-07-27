@@ -57,11 +57,7 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
               <FaHome className={getIconClasses('/')} />
             </Link>
           </Tooltip>
-          <Tooltip text="Dashboard">
-            <Link href="/dashboard" className={getLinkClasses('/dashboard')}>
-              <FaChartBar className={getIconClasses('/dashboard')} />
-            </Link>
-          </Tooltip>
+         
           <Tooltip text="Calendario">
             <Link href="/calendar" className={getLinkClasses('/calendar')}>
               <FaCalendarAlt className={getIconClasses('/calendar')} />
@@ -70,6 +66,11 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
           <Tooltip text="Base de Conocimiento">
             <Link href="/knowledge" className={getLinkClasses('/knowledge')}>
               <FaBook className={getIconClasses('/knowledge')} />
+            </Link>
+          </Tooltip>
+           <Tooltip text="Dashboard">
+            <Link href="/dashboard" className={getLinkClasses('/dashboard')}>
+              <FaChartBar className={getIconClasses('/dashboard')} />
             </Link>
           </Tooltip>
         </div>
@@ -105,14 +106,15 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
               <Link href="/" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Inicio">
                 <FaHome className="text-lg" />
               </Link>
-              <Link href="/dashboard" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Dashboard">
-                <FaChartBar className="text-lg" />
-              </Link>
+              
               <Link href="/calendar" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Calendario">
                 <FaCalendarAlt className="text-lg" />
               </Link>
               <Link href="/knowledge" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Base de Conocimiento">
                 <FaBook className="text-lg" />
+              </Link>
+              <Link href="/dashboard" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Dashboard">
+                <FaChartBar className="text-lg" />
               </Link>
               <button 
                 onClick={handleLogout}
