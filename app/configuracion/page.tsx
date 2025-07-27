@@ -2,16 +2,29 @@
 import React, { useState, useEffect } from 'react';
 import { FaCog, FaPlus, FaEdit, FaTrash, FaSyncAlt, FaLayerGroup, FaCalendarAlt, FaChevronRight } from 'react-icons/fa';
 import TemasConfigPanel from './TemasConfigPanel';
-import EventsCalendar from '../components/dashboard/EventsCalendar';
 
-// Placeholder for event type
+import EventsCalendar from '../components/dashboard/EventsCalendar';
+import Modal from '../components/Modal';
+
+
+// Modelo unificado de evento (igual que EventsCalendar y backend)
 interface Evento {
   id: string;
-  titulo: string;
-  descripcion: string;
-  fecha: string;
-  recurrente: boolean;
-  [key: string]: any;
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  location?: string;
+  modo?: string;
+  validador?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  relatedResources?: string[];
+  isRecurring?: boolean;
+  recurrencePattern?: string;
+  eventType?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 
@@ -23,6 +36,7 @@ const temasEjemplo = [
 
 const ConfiguracionPage: React.FC = () => {
   const [panel, setPanel] = useState<'eventos' | 'temas' | 'otros'>('eventos');
+
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -30,12 +44,20 @@ const ConfiguracionPage: React.FC = () => {
   const [temas, setTemas] = useState(temasEjemplo);
   const [token, setToken] = useState<string | null>(null);
 
-  // Form state
+  // Form state con todos los campos relevantes
   const [formData, setFormData] = useState({
-    titulo: '',
-    descripcion: '',
-    fecha: '',
-    recurrente: false,
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    modo: '',
+    validador: '',
+    codigoDana: '',
+    nombreNotificacion: '',
+    isRecurring: false,
+    recurrencePattern: '',
+    eventType: '',
   });
 
   useEffect(() => {
@@ -43,21 +65,26 @@ const ConfiguracionPage: React.FC = () => {
     setToken(t);
   }, []);
 
+
   useEffect(() => {
     if (panel === 'eventos' && token) cargarEventos(token);
   }, [panel, token]);
 
+  // Usar el endpoint calendar para obtener todos los campos
   const cargarEventos = async (token: string) => {
     setCargando(true);
     try {
-      const res = await fetch('/api/events', {
+      // Por defecto, traer el mes actual
+      const now = new Date();
+      const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const res = await fetch(`/api/events/calendar?month=${month}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       if (res.ok) {
         const data = await res.json();
-        setEventos(data.eventos || []);
+        setEventos(Array.isArray(data) ? data : []);
       }
     } catch (e) {
       // Manejo de error
@@ -66,13 +93,22 @@ const ConfiguracionPage: React.FC = () => {
     }
   };
 
+
   const handleEdit = (evento: Evento) => {
     setEventoEditando(evento);
     setFormData({
-      titulo: evento.titulo,
-      descripcion: evento.descripcion,
-      fecha: evento.fecha,
-      recurrente: evento.recurrente,
+      title: evento.title || '',
+      description: evento.description || '',
+      startDate: evento.startDate || '',
+      endDate: evento.endDate || '',
+      location: evento.location || '',
+      modo: evento.modo || '',
+      validador: evento.validador || '',
+      codigoDana: evento.codigoDana || '',
+      nombreNotificacion: evento.nombreNotificacion || '',
+      isRecurring: evento.isRecurring || false,
+      recurrencePattern: evento.recurrencePattern || '',
+      eventType: evento.eventType || '',
     });
     setMostrarFormulario(true);
   };
@@ -89,25 +125,29 @@ const ConfiguracionPage: React.FC = () => {
     cargarEventos(token);
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+    const payload = { ...formData };
     if (eventoEditando) {
       await fetch(`/api/events/${eventoEditando.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
     } else {
       await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
     }
     setMostrarFormulario(false);
     setEventoEditando(null);
-    setFormData({ titulo: '', descripcion: '', fecha: '', recurrente: false });
+    setFormData({
+      title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', nombreNotificacion: '', isRecurring: false, recurrencePattern: '', eventType: ''
+    });
     cargarEventos(token);
   };
 
@@ -157,7 +197,20 @@ const ConfiguracionPage: React.FC = () => {
                   onClick={() => {
                     setMostrarFormulario(true);
                     setEventoEditando(null);
-                    setFormData({ titulo: '', descripcion: '', fecha: '', recurrente: false });
+    setFormData({
+      title: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      location: '',
+      modo: '',
+      validador: '',
+      codigoDana: '',
+      nombreNotificacion: '',
+      isRecurring: false,
+      recurrencePattern: '',
+      eventType: ''
+    });
                   }}
                   className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
@@ -177,18 +230,34 @@ const ConfiguracionPage: React.FC = () => {
                       <tr className="text-accent">
                         <th className="py-2">Título</th>
                         <th>Descripción</th>
-                        <th>Fecha</th>
+                        <th>Fecha Inicio</th>
+                        <th>Fecha Fin</th>
+                        <th>Tipo</th>
+                        <th>Modo</th>
+                        <th>Ubicación</th>
+                        <th>Validador</th>
+                        <th>Código Dana</th>
+                        <th>Notificación</th>
                         <th>Recurrente</th>
+                        <th>Patrón Recurrencia</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {eventos.map(evento => (
                         <tr key={evento.id} className="border-b border-accent/10 hover:bg-accent/5">
-                          <td className="py-2 font-semibold">{evento.titulo}</td>
-                          <td>{evento.descripcion}</td>
-                          <td>{evento.fecha}</td>
-                          <td>{evento.recurrente ? 'Sí' : 'No'}</td>
+                          <td className="py-2 font-semibold">{evento.title}</td>
+                          <td>{evento.description}</td>
+                          <td>{evento.startDate ? new Date(evento.startDate).toLocaleDateString() : ''}</td>
+                          <td>{evento.endDate ? new Date(evento.endDate).toLocaleDateString() : ''}</td>
+                          <td>{evento.eventType}</td>
+                          <td>{evento.modo}</td>
+                          <td>{evento.location}</td>
+                          <td>{evento.validador}</td>
+                          <td>{evento.codigoDana}</td>
+                          <td>{evento.nombreNotificacion}</td>
+                          <td>{evento.isRecurring ? 'Sí' : 'No'}</td>
+                          <td>{evento.recurrencePattern}</td>
                           <td>
                             <button onClick={() => handleEdit(evento)} className="text-blue-400 hover:text-blue-200 mr-2"><FaEdit /></button>
                             <button onClick={() => handleDelete(evento.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
@@ -201,65 +270,140 @@ const ConfiguracionPage: React.FC = () => {
               </div>
               {/* Formulario modal */}
               {mostrarFormulario && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                  <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-lg p-8">
-                    <h3 className="text-xl font-bold text-accent mb-4">{eventoEditando ? 'Editar Evento' : 'Nuevo Evento'}</h3>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
-                        <input
-                          type="text"
-                          value={formData.titulo}
-                          onChange={e => setFormData(f => ({ ...f, titulo: e.target.value }))}
-                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
-                        <textarea
-                          value={formData.descripcion}
-                          onChange={e => setFormData(f => ({ ...f, descripcion: e.target.value }))}
-                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-                          rows={3}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-2">Fecha</label>
+                <Modal open={mostrarFormulario} onClose={() => { setMostrarFormulario(false); setEventoEditando(null); }} title={eventoEditando ? 'Editar Evento' : 'Nuevo Evento'} maxWidth="max-w-2xl">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
+                      <input
+                        type="text"
+                        value={formData.title}
+                        onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
+                        className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
+                      <textarea
+                        value={formData.description}
+                        onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+                        className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Fecha Inicio</label>
                         <input
                           type="date"
-                          value={formData.fecha}
-                          onChange={e => setFormData(f => ({ ...f, fecha: e.target.value }))}
+                          value={formData.startDate}
+                          onChange={e => setFormData(f => ({ ...f, startDate: e.target.value }))}
                           className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Fecha Fin</label>
                         <input
-                          type="checkbox"
-                          checked={formData.recurrente}
-                          onChange={e => setFormData(f => ({ ...f, recurrente: e.target.checked }))}
-                          id="recurrente"
+                          type="date"
+                          value={formData.endDate}
+                          onChange={e => setFormData(f => ({ ...f, endDate: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                         />
-                        <label htmlFor="recurrente" className="text-gray-300">Recurrente</label>
                       </div>
-                      <div className="flex gap-3 pt-4">
-                        <button
-                          type="submit"
-                          className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all"
-                        >
-                          {eventoEditando ? 'Actualizar' : 'Crear'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setMostrarFormulario(false); setEventoEditando(null); }}
-                          className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all"
-                        >
-                          Cancelar
-                        </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Evento</label>
+                        <input
+                          type="text"
+                          value={formData.eventType}
+                          onChange={e => setFormData(f => ({ ...f, eventType: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        />
                       </div>
-                    </form>
-                  </div>
-                </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Modo</label>
+                        <input
+                          type="text"
+                          value={formData.modo}
+                          onChange={e => setFormData(f => ({ ...f, modo: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Ubicación</label>
+                        <input
+                          type="text"
+                          value={formData.location}
+                          onChange={e => setFormData(f => ({ ...f, location: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Validador</label>
+                        <input
+                          type="text"
+                          value={formData.validador}
+                          onChange={e => setFormData(f => ({ ...f, validador: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Código Dana</label>
+                        <input
+                          type="text"
+                          value={formData.codigoDana}
+                          onChange={e => setFormData(f => ({ ...f, codigoDana: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Notificación</label>
+                        <input
+                          type="text"
+                          value={formData.nombreNotificacion}
+                          onChange={e => setFormData(f => ({ ...f, nombreNotificacion: e.target.value }))}
+                          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.isRecurring}
+                        onChange={e => setFormData(f => ({ ...f, isRecurring: e.target.checked }))}
+                        id="isRecurring"
+                      />
+                      <label htmlFor="isRecurring" className="text-gray-300">Recurrente</label>
+                      <input
+                        type="text"
+                        placeholder="Patrón de recurrencia"
+                        value={formData.recurrencePattern}
+                        onChange={e => setFormData(f => ({ ...f, recurrencePattern: e.target.value }))}
+                        className="ml-2 w-48 bg-primary/80 border border-accent/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="submit"
+                        className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all"
+                      >
+                        {eventoEditando ? 'Actualizar' : 'Crear'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setMostrarFormulario(false); setEventoEditando(null); }}
+                        className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </Modal>
               )}
             </>
           )}

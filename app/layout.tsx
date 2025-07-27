@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FaBars, FaHome, FaChartBar, FaCalendarAlt, FaBook, FaSignOutAlt } from "react-icons/fa";
+import { FaBars, FaHome, FaChartBar, FaCalendarAlt, FaBook, FaSignOutAlt, FaCog } from "react-icons/fa";
 
 // Componente Tooltip
 function Tooltip({ children, text }: { children: ReactNode, text: string }) {
@@ -50,10 +50,10 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
   return (
     <>
       {/* Sidebar siempre visible con solo iconos */}
-      <aside className="fixed top-0 left-0 h-full bg-secondary shadow-lg w-16 flex flex-col items-center pt-20">
+      <aside className="fixed top-0 left-0 h-full bg-secondary shadow-lg w-16 flex flex-col items-center pt-20 z-40">
         <div className="flex flex-col items-center space-y-3 flex-1">
           <Tooltip text="Inicio">
-            <Link href="/" className={getLinkClasses('/')}>
+            <Link href="/" className={getLinkClasses('/')}> 
               <FaHome className={getIconClasses('/')} />
             </Link>
           </Tooltip>
@@ -71,6 +71,11 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
            <Tooltip text="Dashboard">
             <Link href="/dashboard" className={getLinkClasses('/dashboard')}>
               <FaChartBar className={getIconClasses('/dashboard')} />
+            </Link>
+          </Tooltip>
+          <Tooltip text="Configuración">
+            <Link href="/configuracion" className={getLinkClasses('/configuracion')}>
+              <FaCog className={getIconClasses('/configuracion')} />
             </Link>
           </Tooltip>
         </div>
@@ -92,7 +97,7 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
             className="fixed inset-0 bg-black/40 transition-opacity duration-300 backdrop-blur-sm opacity-100 pointer-events-auto"
             onClick={() => setCollapsed(true)}
           />
-          <aside className="fixed top-0 left-0 h-full bg-secondary shadow-2xl w-56">
+          <aside className="fixed top-0 left-0 h-full bg-secondary shadow-2xl w-56 z-50">
             <div className="flex items-center h-14 border-b border-accent/20" style={{height:'56px'}}>
               <button
                 type="button"
@@ -106,7 +111,6 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
               <Link href="/" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Inicio">
                 <FaHome className="text-lg" />
               </Link>
-              
               <Link href="/calendar" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Calendario">
                 <FaCalendarAlt className="text-lg" />
               </Link>
@@ -115,6 +119,9 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCollapsed
               </Link>
               <Link href="/dashboard" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Dashboard">
                 <FaChartBar className="text-lg" />
+              </Link>
+              <Link href="/configuracion" className="flex items-center justify-center w-12 h-12 text-accent hover:bg-accent/10 rounded-lg transition-colors" title="Configuración">
+                <FaCog className="text-lg" />
               </Link>
               <button 
                 onClick={handleLogout}

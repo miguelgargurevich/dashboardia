@@ -294,7 +294,7 @@ const Calendar: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-accent mb-2">Calendario de Eventos</h1>
-          <p className="text-gray-400">Eventos recurrentes en el mes y registro de notas diarias</p>
+          <p className="text-gray-400">Eventos en el mes y registro de notas diarias</p>
         </div>
         {/* Header */}
         <div className="mb-8">
