@@ -7,7 +7,9 @@ import {
   FaAngleLeft, 
   FaAngleRight, 
   FaRegCalendarAlt, 
-  FaFileAlt
+  FaFileAlt, 
+  FaRegStickyNote, 
+  FaPlus
 } from "react-icons/fa";
 
 
@@ -74,6 +76,78 @@ const Calendar: React.FC = () => {
   // const [loading, setLoading] = useState(false); // Eliminado: ya no se usa
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [isUsingMockData] = useState(false); // Solo lectura, para mostrar banner si aplica
+
+  // --- Notas diarias ---
+  interface Note {
+    id: string;
+    title: string;
+    content: string;
+    date: string;
+    createdAt: string;
+    tags?: string[];
+    tema?: string;
+  }
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+  const [noteTitle, setNoteTitle] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [noteTags, setNoteTags] = useState(''); // tags separados por coma
+  const [noteTema, setNoteTema] = useState('');
+  const [creatingNote, setCreatingNote] = useState(false);
+  // Cargar notas del mes visible
+  const fetchNotes = async () => {
+    setLoadingNotes(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/daily-notes?month=${visibleMonth}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Error al cargar notas');
+      const data = await res.json();
+      setNotes(Array.isArray(data) ? data : []);
+    } catch {
+      setNotes([]);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+  // Crear nota
+  const createNote = async () => {
+    if (!noteTitle.trim() && !noteContent.trim()) return;
+    setCreatingNote(true);
+    try {
+      const token = getToken();
+      const res = await fetch('/api/daily-notes', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: noteTitle,
+          content: noteContent,
+          date: selectedDate,
+          tags: noteTags.split(',').map(t => t.trim()).filter(Boolean),
+          tema: noteTema,
+        }),
+      });
+      if (!res.ok) throw new Error('Error al crear nota');
+      setNoteTitle('');
+      setNoteContent('');
+      setNoteTags('');
+      setNoteTema('');
+      fetchNotes();
+    } catch {}
+    setCreatingNote(false);
+  };
+  // Notas del día seleccionado
+  const selectedDayNotes = notes.filter(n => n.date === selectedDate);
+
+  // Estado para controlar qué notas están expandidas (ver más)
+  const [showMoreNotes, setShowMoreNotes] = useState<Record<string, boolean>>({});
+  const toggleShowMore = (id: string) => {
+    setShowMoreNotes(prev => ({ ...prev, [id]: !prev[id] }));
+  };
   
   // Estados para eventos recurrentes - ELIMINADOS
   
@@ -189,6 +263,9 @@ const Calendar: React.FC = () => {
     }
   };
 
+  // Marcar días con notas
+  const hasNotesOnDay = (dateString: string) => notes.some(n => n.date === dateString);
+
 
 
 
@@ -196,6 +273,7 @@ const Calendar: React.FC = () => {
   useEffect(() => {
    
     fetchEvents(); // Cargar eventos (incluye regulares y recurrentes)
+    fetchNotes(); // Cargar notas del mes
   }, [visibleMonth, viewMode]);
 
 
@@ -256,7 +334,7 @@ const Calendar: React.FC = () => {
               <button
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm border ${
                   showRecurringEvents 
-                    ? 'bg-purple-600/20 border-purple-600/40 text-purple-400 hover:bg-purple-600/30' 
+                    ? 'bg-blue-600/20 border-blue-600/40 text-blue-400 hover:bg-blue-600/30' 
                     : 'bg-gray-600/20 border-gray-600/40 text-gray-400 hover:bg-gray-600/30'
                 }`}
                 onClick={() => setShowRecurringEvents(!showRecurringEvents)}
@@ -268,7 +346,7 @@ const Calendar: React.FC = () => {
                   <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
                 )}
                 {!loadingEvents && recurringEvents.length > 0 && (
-                  <span className="text-xs bg-purple-500/30 px-1 rounded-full">
+                  <span className="text-xs bg-blue-500/30 px-1 rounded-full">
                     {recurringEvents.length}
                   </span>
                 )}
@@ -353,8 +431,10 @@ const Calendar: React.FC = () => {
                           <div className="flex flex-col gap-1 w-full overflow-hidden">
                             {dayContent.events.slice(0, 4).map((event, index) => (
                               <div key={`event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}`} className="w-full">
-                                <div className={`text-xs px-1 py-0.5 rounded text-black truncate ${
-                                  event.recurrencePattern !== 'ninguno' ? 'bg-purple-500/80' : 'bg-yellow-500/80'
+                                <div className={`text-xs px-1 py-0.5 rounded truncate ${
+                                  event.recurrencePattern !== 'ninguno' 
+                                    ? 'bg-blue-600/20 text-blue-400 border border-blue-600/40 font-semibold' 
+                                    : 'bg-yellow-500/80 text-black'
                                 }`}>
                                   {event.recurrencePattern !== 'ninguno' && '🔄 '}{event.title}
                                 </div>
@@ -370,6 +450,12 @@ const Calendar: React.FC = () => {
                             {dayContent.hasContent && (
                               <div className="flex justify-end text-xs mt-1">
                                 <span className="text-yellow-400 font-bold">{dayContent.eventsCount}E</span>
+                              </div>
+                            )}
+                            {/* Marcar si hay notas */}
+                            {hasNotesOnDay(dayKey) && (
+                              <div className="absolute top-1 right-1">
+                                <span className="inline-block w-3 h-3 bg-green-400 rounded-full border-2 border-white" title="Hay notas"></span>
                               </div>
                             )}
                           </div>
@@ -493,6 +579,93 @@ const Calendar: React.FC = () => {
                       day: 'numeric'
                     })}
                   </h2>
+                </div>
+                {/* Panel de Notas del Día */}
+                <div className="bg-secondary border border-green-400/30 rounded-xl shadow-lg p-6">
+                  <h3 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2">
+                    <FaRegStickyNote className="text-green-400" /> Notas del Día
+                  </h3>
+                  {/* Crear nueva nota */}
+                  <div className="mb-4 space-y-2">
+                    <input
+                      type="text"
+                      className="w-full px-2 py-1 rounded bg-primary border border-green-400/30 text-white text-xs"
+                      placeholder="Título de la nota (opcional)"
+                      value={noteTitle}
+                      onChange={e => setNoteTitle(e.target.value)}
+                      disabled={creatingNote}
+                    />
+                    <textarea
+                      className="w-full px-2 py-1 rounded bg-primary border border-green-400/30 text-white text-xs"
+                      placeholder="Contenido de la nota..."
+                      value={noteContent}
+                      onChange={e => setNoteContent(e.target.value)}
+                      rows={2}
+                      disabled={creatingNote}
+                    />
+                    <input
+                      type="text"
+                      className="w-full px-2 py-1 rounded bg-primary border border-green-400/30 text-white text-xs"
+                      placeholder="Tags (separados por coma)"
+                      value={noteTags}
+                      onChange={e => setNoteTags(e.target.value)}
+                      disabled={creatingNote}
+                    />
+                    <button
+                      className="px-3 py-1 bg-green-500 text-white rounded font-medium text-xs hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+                      onClick={createNote}
+                      disabled={creatingNote || (!noteTitle.trim() && !noteContent.trim())}
+                    >
+                      {creatingNote ? (
+                        <>
+                          <FaPlus className="animate-spin" /> Guardando...
+                        </>
+                      ) : (
+                        <>
+                          <FaPlus /> Agregar Nota
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {/* Listado de notas del día */}
+                  {loadingNotes ? (
+                    <div className="text-center text-xs text-gray-400">Cargando notas...</div>
+                  ) : selectedDayNotes.length > 0 ? (
+                    <ul className="space-y-2">
+                      {selectedDayNotes.map(note => (
+                        <li key={note.id} className="bg-primary/40 border border-green-400/20 rounded p-2">
+                          <div className="font-semibold text-green-300 text-xs mb-1">{note.title || 'Sin título'}</div>
+                          <div className="text-white text-xs whitespace-pre-line">{note.content}</div>
+                          {/* Mostrar tema y tags siempre en el listado */}
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {note.tema && (
+                              <span className="bg-green-700/40 text-green-200 text-[10px] px-2 py-0.5 rounded-full">Tema: {note.tema}</span>
+                            )}
+                            {note.tags && note.tags.length > 0 && (
+                              <span className="bg-green-700/40 text-green-200 text-[10px] px-2 py-0.5 rounded-full">Tags: {note.tags.join(', ')}</span>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-center mt-1">
+                            <div className="text-[10px] text-gray-400">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                            <button
+                              className="text-green-300 text-[10px] underline hover:text-green-200 focus:outline-none"
+                              onClick={() => toggleShowMore(note.id)}
+                            >
+                              {showMoreNotes[note.id] ? 'Ver menos' : 'Ver más'}
+                            </button>
+                          </div>
+                          {showMoreNotes[note.id] && (
+                            <div className="mt-2 text-xs text-green-200">
+                              <div><span className="font-bold">Tema:</span> {note.tema || 'Sin tema'}</div>
+                              <div><span className="font-bold">Tags:</span> {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}</div>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-xs text-gray-400">No hay notas para este día.</div>
+                  )}
                 </div>
               </div>
             </>
