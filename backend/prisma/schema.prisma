@@ -1,3 +1,19 @@
+enum EventType {
+  incidente
+  mantenimiento
+  reunion
+  capacitacion
+  otro
+}
+
+enum RecurrencePattern {
+  ninguno
+  diario
+  semanal
+  mensual
+  trimestral
+  anual
+}
 generator client {
   provider = "prisma-client-js"
 }
@@ -78,6 +94,8 @@ model Event {
   nombreNotificacion String?
   query              String?
   validador          String?
+  eventType          EventType          @default(otro)
+  recurrencePattern  RecurrencePattern  @default(ninguno)
   kbs                EventToKBArticle[]
   tickets            EventToTicket[]
   resources          ResourceToEvent[]

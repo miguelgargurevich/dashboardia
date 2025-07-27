@@ -12,6 +12,9 @@ import {
 
 
 
+type EventType = 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';
+type RecurrencePattern = 'ninguno' | 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'anual';
+
 interface Event {
   id: string;
   title: string;
@@ -25,14 +28,15 @@ interface Event {
   nombreNotificacion?: string;
   diaEnvio?: string;
   query?: string;
-  relatedResources?: string[];
-  isRecurring?: boolean;
-  recurrencePattern?: string;
+  eventType: EventType;
+  recurrencePattern: RecurrencePattern;
 }
 
 
 
 const Calendar: React.FC = () => {
+  // Estado para mostrar/ocultar el panel de filtros en la vista de lista
+  const [showFilters, setShowFilters] = useState(false);
   const searchParams = useSearchParams();
   
   // Verificar autenticación al cargar el componente
@@ -41,7 +45,7 @@ const Calendar: React.FC = () => {
     if (token) {
       try {
         // Decodificar el token para ver su contenido (sin verificar)
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        JSON.parse(atob(token.split('.')[1]));
       } catch (error) {
       }
     }
@@ -73,9 +77,10 @@ const Calendar: React.FC = () => {
   
   // Estados para eventos recurrentes - ELIMINADOS
   
-  // Estados del formulario para notas
-  // Estados de vista
+  // Filtros para la vista de lista
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
 
   const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -167,13 +172,9 @@ const Calendar: React.FC = () => {
       }
       const eventData = await response.json();
       if (Array.isArray(eventData)) {
-        const transformedEvents = eventData.map((event: any) => ({
-          ...event,
-          isRecurring: isRecurringEvent(event),
-          recurrencePattern: getRecurrencePattern(event)
-        }));
-        const regularEvents = transformedEvents.filter((event: any) => !event.isRecurring);
-        const recurringEventsData = transformedEvents.filter((event: any) => event.isRecurring);
+        // Separar eventos recurrentes y no recurrentes según recurrencePattern
+        const regularEvents = eventData.filter((event: Event) => event.recurrencePattern === 'ninguno');
+        const recurringEventsData = eventData.filter((event: Event) => event.recurrencePattern !== 'ninguno');
         setEvents(regularEvents);
         setRecurringEvents(recurringEventsData);
       } else {
@@ -188,64 +189,7 @@ const Calendar: React.FC = () => {
     }
   };
 
-  // Función para detectar si un evento es recurrente
-  const isRecurringEvent = (event: any): boolean => {
-    // Primero verificar si el evento tiene la propiedad isRecurring del backend
-    if (event.isRecurring !== undefined) {
-      console.log(`[Calendar] ✅ Evento "${event.title}" marcado como recurrente por campo isRecurring: ${event.isRecurring}`);
-      return event.isRecurring;
-    }
-    
-    // Si no tiene el campo, usar detección por palabras clave
-    const title = event.title?.toLowerCase() || '';
-    const description = event.description?.toLowerCase() || '';
-    const textToCheck = `${title} ${description}`;
-    
-    // Palabras clave que indican eventos recurrentes
-    const recurringKeywords = [
-      'semanal', 'mensual', 'diario', 'trimestral', 'anual',
-      'cada', 'todos los', 'rutina', 'mantenimiento', 'respaldo',
-      'backup', 'revisión', 'reporte', 'integrales', 'periódico',
-      'recurrente', 'repetir', 'ciclo', 'programado', 'automático',
-      'quincenal', 'bimestral', 'semestre', 'horario', 'regular',
-      'continuo', 'permanente', 'fijo', 'sistemático'
-    ];
-    
-    const hasKeyword = recurringKeywords.some(keyword => textToCheck.includes(keyword));
-    
-    // Log para debugging
-    if (hasKeyword) {
-      const foundKeywords = recurringKeywords.filter(keyword => textToCheck.includes(keyword));
-      console.log(`[Calendar] ✅ Evento "${event.title}" marcado como recurrente por palabras: ${foundKeywords.join(', ')}`);
-    } else {
-      console.log(`[Calendar] ❌ Evento "${event.title}" NO marcado como recurrente. Texto analizado: "${textToCheck}"`);
-    }
-    
-    return hasKeyword;
-  };
 
-  // Función para determinar el patrón de recurrencia basado en el evento
-  const getRecurrencePattern = (event: any): string => {
-    const title = event.title?.toLowerCase() || '';
-    
-    if (title.includes('diario') || title.includes('respaldo')) {
-      return 'Diario';
-    } else if (title.includes('semanal')) {
-      return 'Semanal';
-    } else if (title.includes('mensual') || title.includes('integrales')) {
-      return 'Mensual';
-    } else if (title.includes('trimestral')) {
-      return 'Trimestral';
-    } else if (title.includes('anual')) {
-      return 'Anual';
-    } else if (title.includes('cada lunes')) {
-      return 'Cada lunes';
-    } else if (title.includes('cada 15')) {
-      return 'Cada 15 del mes';
-    } else {
-      return 'Recurrente';
-    }
-  };
 
 
   // Efectos
@@ -408,11 +352,11 @@ const Calendar: React.FC = () => {
                           {/* Contenido del día - Solo eventos */}
                           <div className="flex flex-col gap-1 w-full overflow-hidden">
                             {dayContent.events.slice(0, 4).map((event, index) => (
-                              <div key={`event-${event.id}-${index}-${event.isRecurring ? 'recurring' : 'regular'}`} className="w-full">
+                              <div key={`event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}`} className="w-full">
                                 <div className={`text-xs px-1 py-0.5 rounded text-black truncate ${
-                                  event.isRecurring ? 'bg-purple-500/80' : 'bg-yellow-500/80'
+                                  event.recurrencePattern !== 'ninguno' ? 'bg-purple-500/80' : 'bg-yellow-500/80'
                                 }`}>
-                                  {event.isRecurring && '🔄 '}{event.title}
+                                  {event.recurrencePattern !== 'ninguno' && '🔄 '}{event.title}
                                 </div>
                               </div>
                             ))}
@@ -434,6 +378,7 @@ const Calendar: React.FC = () => {
                     })}
                   </div>
                 </div>
+                {/* Cierre correcto del bloque de lista de eventos */}
 
                 {/* Panel de Eventos del Día */}
                 <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
@@ -452,15 +397,15 @@ const Calendar: React.FC = () => {
                     ) : selectedDayEvents.length > 0 ? (
                       <div className="space-y-3">
                         {selectedDayEvents.map((event, index) => (
-                          <div key={`selected-event-${event.id}-${index}-${event.isRecurring ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
+                          <div key={`selected-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
                                 <span className="text-blue-400">
-                                  {event.isRecurring ? '🔄' : <FaCalendarAlt />}
+                                  {event.recurrencePattern !== 'ninguno' ? '🔄' : <FaCalendarAlt />}
                                 </span>
                                 <h5 className="font-semibold text-white text-sm">{event.title}</h5>
                               </div>
-                              {event.isRecurring && (
+                              {event.recurrencePattern !== 'ninguno' && (
                                 <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10">
                                   Recurrente
                                 </span>
@@ -473,7 +418,7 @@ const Calendar: React.FC = () => {
                             <div className="space-y-2 text-xs">
                               <div className="flex items-center justify-between">
                                 <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                                  {event.isRecurring ? 'Evento Recurrente' : 'Evento'}
+                                  {event.recurrencePattern !== 'ninguno' ? 'Evento Recurrente' : 'Evento'}
                                 </span>
                                 <span className="text-gray-400">
                                   {new Date(event.startDate).toLocaleTimeString('es-ES', { 
@@ -558,80 +503,148 @@ const Calendar: React.FC = () => {
                 <h2 className="text-2xl font-bold text-accent mb-4 flex items-center gap-2">
                   <FaFileAlt /> Lista de Eventos ({events.length + recurringEvents.length})
                 </h2>
-                <div className="space-y-3 max-h-[70vh] overflow-y-auto">
-                  {[...events, ...recurringEvents]
-                    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-                    .map((event, index) => (
-                      <div key={`list-event-${event.id}-${index}-${event.isRecurring ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-blue-400">
-                              {event.isRecurring ? '🔄' : <FaCalendarAlt />}
-                            </span>
-                            <h5 className="font-semibold text-white text-sm">{event.title}</h5>
-                          </div>
-                          {event.isRecurring && (
-                            <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10">
-                              Recurrente
-                            </span>
-                          )}
-                        </div>
-                        {event.description && (
-                          <p className="text-gray-300 text-xs mb-2">{event.description}</p>
-                        )}
-                        <div className="space-y-2 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                              {event.isRecurring ? 'Evento Recurrente' : 'Evento'}
-                            </span>
-                            <span className="text-gray-400">
-                              {new Date(event.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
-                              {' '}
-                              {new Date(event.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                              {event.endDate && (
-                                <span> - {new Date(event.endDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                              )}
-                            </span>
-                          </div>
-                          {event.location && (
-                            <div className="text-gray-400">
-                              📍 <span className="font-medium">Ubicación:</span> {event.location}
-                            </div>
-                          )}
-                          {event.recurrencePattern && (
-                            <div className="text-blue-400">
-                              🔄 <span className="font-medium">Patrón:</span> {event.recurrencePattern}
-                            </div>
-                          )}
-                          {event.validador && (
-                            <div className="text-gray-400">
-                              ✅ <span className="font-medium">Validador:</span> {event.validador}
-                            </div>
-                          )}
-                          {event.modo && (
-                            <div className="text-gray-400">
-                              � <span className="font-medium">Modo:</span> {event.modo}
-                            </div>
-                          )}
-                          {event.codigoDana && (
-                            <div className="text-gray-400">
-                              🏷️ <span className="font-medium">Código DANA:</span> {event.codigoDana}
-                            </div>
-                          )}
-                          {event.nombreNotificacion && (
-                            <div className="text-gray-400">
-                              � <span className="font-medium">Notificación:</span> {event.nombreNotificacion}
-                            </div>
-                          )}
-                          {event.diaEnvio && (
-                            <div className="text-gray-400">
-                              📅 <span className="font-medium">Día de Envío:</span> {event.diaEnvio}
-                            </div>
-                          )}
+                {/* Botón para mostrar/ocultar filtros */}
+                <div className="mb-4">
+                  <button
+                    className="px-4 py-2 bg-accent text-white rounded-lg font-medium shadow hover:bg-accent/80 transition-colors"
+                    onClick={() => setShowFilters(f => !f)}
+                  >
+                    {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+                  </button>
+                </div>
+                {/* Panel de filtros, visible solo si showFilters es true */}
+                {showFilters && (
+                  <div className="mb-4 p-4 bg-primary/20 rounded-lg border border-accent/10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">Buscar</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="w-full pl-2 pr-2 py-1 bg-primary border border-accent/30 rounded text-white text-xs"
+                            placeholder="Buscar por título o descripción..."
+                          />
                         </div>
                       </div>
-                    ))}
-                  {events.length + recurringEvents.length === 0 && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-300 mb-1">Tipo</label>
+                        <select
+                          value={filterType}
+                          onChange={e => setFilterType(e.target.value)}
+                          className="w-full px-2 py-1 bg-primary border border-accent/30 rounded text-white text-xs"
+                        >
+                          <option value="all">Todos</option>
+                          <option value="incidente">Incidente</option>
+                          <option value="mantenimiento">Mantenimiento</option>
+                          <option value="reunion">Reunión</option>
+                          <option value="capacitacion">Capacitación</option>
+                          <option value="otro">Otro</option>
+                          <option value="recurrente">Recurrente</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                  {([...events, ...recurringEvents]
+                    .filter(event => {
+                      const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+                      let matchesType = true;
+                      if (filterType === 'recurrente') {
+                        matchesType = event.recurrencePattern !== 'ninguno';
+                      } else if (filterType !== 'all') {
+                        // Si el filtro es un tipo de evento específico
+                        matchesType = event.eventType === filterType;
+                      }
+                      return matchesSearch && matchesType;
+                    })
+                    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                    .map((event, index) => {
+                      return (
+                        <div key={`list-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-blue-400">
+                                {event.recurrencePattern !== 'ninguno' ? '🔄' : <FaCalendarAlt />}
+                              </span>
+                              <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                            </div>
+                            {event.recurrencePattern !== 'ninguno' && (
+                              <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10">
+                                Recurrente
+                              </span>
+                            )}
+                          </div>
+                          {event.description && (
+                            <p className="text-gray-300 text-xs mb-2">{event.description}</p>
+                          )}
+                          <div className="space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
+                                {event.recurrencePattern !== 'ninguno' ? 'Evento Recurrente' : 'Evento'}
+                              </span>
+                              <span className="text-gray-400">
+                                {new Date(event.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                {' '}
+                                {new Date(event.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                {event.endDate && (
+                                  <span> - {new Date(event.endDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                                )}
+                              </span>
+                            </div>
+                            {event.location && (
+                              <div className="text-gray-400">
+                                📍 <span className="font-medium">Ubicación:</span> {event.location}
+                              </div>
+                            )}
+                            {event.recurrencePattern && (
+                              <div className="text-blue-400">
+                                🔄 <span className="font-medium">Patrón:</span> {event.recurrencePattern}
+                              </div>
+                            )}
+                            {event.validador && (
+                              <div className="text-gray-400">
+                                ✅ <span className="font-medium">Validador:</span> {event.validador}
+                              </div>
+                            )}
+                            {event.modo && (
+                              <div className="text-gray-400">
+                                � <span className="font-medium">Modo:</span> {event.modo}
+                              </div>
+                            )}
+                            {event.codigoDana && (
+                              <div className="text-gray-400">
+                                🏷️ <span className="font-medium">Código DANA:</span> {event.codigoDana}
+                              </div>
+                            )}
+                            {event.nombreNotificacion && (
+                              <div className="text-gray-400">
+                                � <span className="font-medium">Notificación:</span> {event.nombreNotificacion}
+                              </div>
+                            )}
+                            {event.diaEnvio && (
+                              <div className="text-gray-400">
+                                📅 <span className="font-medium">Día de Envío:</span> {event.diaEnvio}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }))}
+                  {([...events, ...recurringEvents].filter(event => {
+                    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                      (event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+                    let matchesType = true;
+                    if (filterType === 'recurrente') {
+                      matchesType = event.recurrencePattern !== 'ninguno';
+                    } else if (filterType !== 'all') {
+                      matchesType = event.eventType === filterType;
+                    }
+                    return matchesSearch && matchesType;
+                  }).length === 0) && (
                     <div className="text-center py-6">
                       <FaCalendarAlt className="mx-auto text-3xl text-gray-600 mb-2" />
                       <p className="text-gray-400 text-sm">No hay eventos programados para este mes</p>

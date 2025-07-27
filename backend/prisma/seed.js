@@ -128,7 +128,8 @@ async function main() {
       title: "Validar si se cae - Jose Arce",
       description: "Validar si se cae - Jose Arce - INCLUSION ACUMULADA (CLIENTE)",
       location: "",
-      // Se generarán fechas para cada mes en el ciclo de abajo
+      eventType: "mantenimiento",
+      recurrencePattern: "mensual",
       recurrentDay: 7
     },
     {
@@ -141,6 +142,8 @@ async function main() {
       title: "Validar si se cae - Jose Arce",
       description: "Validar si se cae - Jose Arce - INCLUSION ACUMULADA (BROKER)",
       location: "",
+      eventType: "mantenimiento",
+      recurrencePattern: "mensual",
       recurrentDay: 6
     },
     {
@@ -153,6 +156,8 @@ async function main() {
       title: "Jose Arce",
       description: "VG Cobranzas Borker  - 20.06 5pm",
       location: "",
+      eventType: "incidente",
+      recurrencePattern: "mensual",
       recurrentDay: 20
     },
     {
@@ -165,6 +170,8 @@ async function main() {
       title: "Jose Arce",
       description: "VG Cobranzas Cliente - 19.06 5pm",
       location: "",
+      eventType: "incidente",
+      recurrencePattern: "mensual",
       recurrentDay: 19
     },
     {
@@ -177,6 +184,8 @@ async function main() {
       title: "Notificación Poliza Suspendiad 1º Envio",
       description: "Notificación Poliza Suspendiad 1º Envio",
       location: "",
+      eventType: "incidente",
+      recurrencePattern: "mensual",
       recurrentDay: 2
     },
     {
@@ -189,6 +198,8 @@ async function main() {
       title: "Notificación Poliza Suspendiad 2º Envio",
       description: "Notificación Poliza Suspendiad 2º Envio",
       location: "",
+      eventType: "incidente",
+      recurrencePattern: "mensual",
       recurrentDay: 21
     },
     {
@@ -201,6 +212,8 @@ async function main() {
       title: "Posible suspension de Cobertura",
       description: "Posible suspension de Cobertura",
       location: "",
+      eventType: "incidente",
+      recurrencePattern: "mensual",
       recurrentDay: 22
     },
     {
@@ -213,6 +226,8 @@ async function main() {
       title: "Mailling",
       description: "Mailling",
       location: "",
+      eventType: "otro",
+      recurrencePattern: "mensual",
       recurrentDay: 2
     },
     {
@@ -225,6 +240,8 @@ async function main() {
       title: "WSM Mailing Liquidaciones Pendiendtes de pago",
       description: "WSM Mailing Liquidaciones Pendiendtes de pago",
       location: "",
+      eventType: "otro",
+      recurrencePattern: "mensual",
       recurrentDay: 22
     },
     {
@@ -237,6 +254,8 @@ async function main() {
       title: "LIQUIDACIONES WSM",
       description: "LIQUIDACIONES WSM",
       location: "",
+      eventType: "otro",
+      recurrencePattern: "mensual",
       recurrentDay: 7
     },
     {
@@ -249,6 +268,8 @@ async function main() {
       title: "Vida Ley ex empleados",
       description: "Vida Ley ex empleados",
       location: "",
+      eventType: "incidente",
+      recurrencePattern: "mensual",
       recurrentDay: 9
     },
     {
@@ -261,6 +282,8 @@ async function main() {
       title: "Reportes integrales de agencia",
       description: "Reportes integrales de agencia",
       location: "",
+      eventType: "otro",
+      recurrencePattern: "mensual",
       recurrentDay: 1
     }
   ];

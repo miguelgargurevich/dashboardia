@@ -249,7 +249,23 @@ router.get('/api/events/upcoming', async (req, res) => {
       where: { startDate: { gte: now } },
       orderBy: { startDate: 'asc' },
       take: limit,
-      skip
+      skip,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startDate: true,
+        endDate: true,
+        location: true,
+        validador: true,
+        modo: true,
+        codigoDana: true,
+        nombreNotificacion: true,
+        diaEnvio: true,
+        query: true,
+        eventType: true,
+        recurrencePattern: true
+      }
     });
     res.json(events);
   } catch (err) {
@@ -278,9 +294,24 @@ router.get('/api/events/calendar', async (req, res) => {
       where: {
         startDate: { gte: start, lt: end }
       },
-      orderBy: { startDate: 'asc' }
+      orderBy: { startDate: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startDate: true,
+        endDate: true,
+        location: true,
+        validador: true,
+        modo: true,
+        codigoDana: true,
+        nombreNotificacion: true,
+        diaEnvio: true,
+        query: true,
+        eventType: true,
+        recurrencePattern: true
+      }
     });
-    
     res.json(events);
   } catch (err) {
     res.status(500).json({ error: 'Error obteniendo eventos para calendario', details: err.message });
@@ -292,7 +323,25 @@ router.get('/api/events/calendar', async (req, res) => {
 router.get('/api/events/:id', async (req, res) => {
   const id = req.params.id;
   try {
-    const event = await prisma.event.findUnique({ where: { id } });
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startDate: true,
+        endDate: true,
+        location: true,
+        validador: true,
+        modo: true,
+        codigoDana: true,
+        nombreNotificacion: true,
+        diaEnvio: true,
+        query: true,
+        eventType: true,
+        recurrencePattern: true
+      }
+    });
     if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
     res.json(event);
   } catch (err) {
