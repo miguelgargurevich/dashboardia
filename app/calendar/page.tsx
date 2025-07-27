@@ -9,7 +9,16 @@ import {
   FaRegCalendarAlt, 
   FaFileAlt, 
   FaRegStickyNote, 
-  FaPlus
+  FaPlus,
+  FaMapMarkerAlt,
+  FaSyncAlt,
+  FaCheckCircle,
+  FaUserCog,
+  FaTag,
+  FaBell,
+  FaRegClock,
+  FaEye,
+  FaEyeSlash
 } from "react-icons/fa";
 
 
@@ -283,27 +292,13 @@ const Calendar: React.FC = () => {
   return (
     <div className="min-h-screen bg-primary text-white p-6">
       <div className="max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-accent mb-2">Calendario de Eventos</h1>
+          <p className="text-gray-400">Eventos recurrentes en el mes y registro de notas diarias</p>
+        </div>
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-accent mb-2 flex items-center gap-2">
-              <FaCalendarAlt />
-              Calendario de Actividades Diarias
-            </h1>
-            {isUsingMockData && (
-              <div className="bg-yellow-600/20 border border-yellow-600/40 rounded-lg px-3 py-1">
-                <span className="text-yellow-400 text-sm font-medium">
-                  ⚠️ Modo sin conexión - Usando datos de muestra
-                </span>
-              </div>
-            )}
-          </div>
-          <p className="text-gray-400">Gestión y seguimiento de actividades diarias del equipo de soporte</p>
-        </div>
-
-        {/* Controles superiores */}
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-2 bg-secondary border border-accent/20 rounded-xl shadow-lg p-1">
               <button
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
@@ -328,7 +323,17 @@ const Calendar: React.FC = () => {
                 Lista
               </button>
             </div>
-            
+            {/* Fecha seleccionada alineada a la derecha */}
+            <div className="flex-1 flex justify-end items-center min-w-[220px]">
+              <span className="text-accent text-base font-semibold bg-primary/40 px-4 py-2 rounded-lg border border-accent/10 shadow">
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </span>
+            </div>
             {/* Control de eventos recurrentes */}
             <div className="flex items-center gap-2">
               <button
@@ -340,8 +345,7 @@ const Calendar: React.FC = () => {
                 onClick={() => setShowRecurringEvents(!showRecurringEvents)}
                 title={showRecurringEvents ? 'Ocultar eventos recurrentes' : 'Mostrar eventos recurrentes'}
               >
-                <FaCalendarAlt />
-                {showRecurringEvents ? 'Ocultar' : 'Mostrar'} Recurrentes
+                {showRecurringEvents ? <FaEyeSlash /> : <FaEye />}
                 {loadingEvents && (
                   <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
                 )}
@@ -484,77 +488,77 @@ const Calendar: React.FC = () => {
                       <div className="space-y-3">
                         {selectedDayEvents.map((event, index) => (
                           <div key={`selected-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-blue-400">
-                                  {event.recurrencePattern !== 'ninguno' ? '🔄' : <FaCalendarAlt />}
-                                </span>
-                                <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-blue-400 flex items-center gap-1">
+                                    {event.recurrencePattern !== 'ninguno' ? <FaSyncAlt className="inline-block" /> : <FaCalendarAlt />}
+                                  </span>
+                                  <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                                </div>
+                                {event.recurrencePattern !== 'ninguno' && (
+                                  <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10 flex items-center gap-1">
+                                    <FaSyncAlt className="inline-block" /> Recurrente
+                                  </span>
+                                )}
                               </div>
-                              {event.recurrencePattern !== 'ninguno' && (
-                                <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10">
-                                  Recurrente
-                                </span>
-                              )}
-                            </div>
                             {event.description && (
                               <p className="text-gray-300 text-xs mb-2">{event.description}</p>
                             )}
                             {/* Información detallada del evento */}
-                            <div className="space-y-2 text-xs">
-                              <div className="flex items-center justify-between">
-                                <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                                  {event.recurrencePattern !== 'ninguno' ? 'Evento Recurrente' : 'Evento'}
-                                </span>
-                                <span className="text-gray-400">
-                                  {new Date(event.startDate).toLocaleTimeString('es-ES', { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                  })}
-                                  {event.endDate && (
-                                    <span> - {new Date(event.endDate).toLocaleTimeString('es-ES', { 
+                              <div className="space-y-2 text-xs">
+                                <div className="flex items-center justify-between">
+                                  <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300 flex items-center gap-1">
+                                    {event.recurrencePattern !== 'ninguno' ? <><FaSyncAlt className="inline-block" /> Evento Recurrente</> : <> <FaCalendarAlt className="inline-block" /> Evento</>}
+                                  </span>
+                                  <span className="text-gray-400">
+                                    {new Date(event.startDate).toLocaleTimeString('es-ES', { 
                                       hour: '2-digit', 
                                       minute: '2-digit' 
-                                    })}</span>
-                                  )}
-                                </span>
+                                    })}
+                                    {event.endDate && (
+                                      <span> - {new Date(event.endDate).toLocaleTimeString('es-ES', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}</span>
+                                    )}
+                                  </span>
+                                </div>
+                                {event.location && (
+                                  <div className="text-gray-400 flex items-center gap-1">
+                                    <FaMapMarkerAlt className="inline-block text-green-400" /> <span className="font-medium">Ubicación:</span> {event.location}
+                                  </div>
+                                )}
+                                {event.recurrencePattern && (
+                                  <div className="text-blue-400 flex items-center gap-1">
+                                    <FaSyncAlt className="inline-block text-blue-400" /> <span className="font-medium">Patrón:</span> {event.recurrencePattern}
+                                  </div>
+                                )}
+                                {event.validador && (
+                                  <div className="text-gray-400 flex items-center gap-1">
+                                    <FaCheckCircle className="inline-block text-green-300" /> <span className="font-medium">Validador:</span> {event.validador}
+                                  </div>
+                                )}
+                                {event.modo && (
+                                  <div className="text-gray-400 flex items-center gap-1">
+                                    <FaUserCog className="inline-block text-yellow-300" /> <span className="font-medium">Modo:</span> {event.modo}
+                                  </div>
+                                )}
+                                {event.codigoDana && (
+                                  <div className="text-gray-400 flex items-center gap-1">
+                                    <FaTag className="inline-block text-pink-300" /> <span className="font-medium">Código DANA:</span> {event.codigoDana}
+                                  </div>
+                                )}
+                                {event.nombreNotificacion && (
+                                  <div className="text-gray-400 flex items-center gap-1">
+                                    <FaBell className="inline-block text-blue-200" /> <span className="font-medium">Notificación:</span> {event.nombreNotificacion}
+                                  </div>
+                                )}
+                                {event.diaEnvio && (
+                                  <div className="text-gray-400 flex items-center gap-1">
+                                    <FaRegClock className="inline-block text-orange-300" /> <span className="font-medium">Día de Envío:</span> {event.diaEnvio}
+                                  </div>
+                                )}
                               </div>
-                              {event.location && (
-                                <div className="text-gray-400">
-                                  📍 <span className="font-medium">Ubicación:</span> {event.location}
-                                </div>
-                              )}
-                              {event.recurrencePattern && (
-                                <div className="text-blue-400">
-                                  🔄 <span className="font-medium">Patrón:</span> {event.recurrencePattern}
-                                </div>
-                              )}
-                              {event.validador && (
-                                <div className="text-gray-400">
-                                  ✅ <span className="font-medium">Validador:</span> {event.validador}
-                                </div>
-                              )}
-                              {event.modo && (
-                                <div className="text-gray-400">
-                                  � <span className="font-medium">Modo:</span> {event.modo}
-                                </div>
-                              )}
-                              {event.codigoDana && (
-                                <div className="text-gray-400">
-                                  🏷️ <span className="font-medium">Código DANA:</span> {event.codigoDana}
-                                </div>
-                              )}
-                              {event.nombreNotificacion && (
-                                <div className="text-gray-400">
-                                  � <span className="font-medium">Notificación:</span> {event.nombreNotificacion}
-                                </div>
-                              )}
-                              {event.diaEnvio && (
-                                <div className="text-gray-400">
-                                  📅 <span className="font-medium">Día de Envío:</span> {event.diaEnvio}
-                                </div>
-                              )}
-                            </div>
                           </div>
                         ))}
                       </div>
@@ -570,16 +574,6 @@ const Calendar: React.FC = () => {
 
               {/* Panel lateral derecho: Fecha seleccionada */}
               <div className="space-y-6">
-                <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-accent mb-2">
-                    {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </h2>
-                </div>
                 {/* Panel de Notas del Día */}
                 <div className="bg-secondary border border-green-400/30 rounded-xl shadow-lg p-6">
                   <h3 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2">
@@ -589,30 +583,30 @@ const Calendar: React.FC = () => {
                   <div className="mb-4 space-y-2">
                     <input
                       type="text"
-                      className="w-full px-2 py-1 rounded bg-primary border border-green-400/30 text-white text-xs"
+                      className="w-full px-4 py-3 rounded-lg bg-primary border border-green-400/30 text-white text-base"
                       placeholder="Título de la nota (opcional)"
                       value={noteTitle}
                       onChange={e => setNoteTitle(e.target.value)}
                       disabled={creatingNote}
                     />
                     <textarea
-                      className="w-full px-2 py-1 rounded bg-primary border border-green-400/30 text-white text-xs"
+                      className="w-full px-4 py-3 rounded-lg bg-primary border border-green-400/30 text-white text-base"
                       placeholder="Contenido de la nota..."
                       value={noteContent}
                       onChange={e => setNoteContent(e.target.value)}
-                      rows={2}
+                      rows={5}
                       disabled={creatingNote}
                     />
                     <input
                       type="text"
-                      className="w-full px-2 py-1 rounded bg-primary border border-green-400/30 text-white text-xs"
+                      className="w-full px-4 py-3 rounded-lg bg-primary border border-green-400/30 text-white text-base"
                       placeholder="Tags (separados por coma)"
                       value={noteTags}
                       onChange={e => setNoteTags(e.target.value)}
                       disabled={creatingNote}
                     />
                     <button
-                      className="px-3 py-1 bg-green-500 text-white rounded font-medium text-xs hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+                      className="w-full px-6 py-3 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-3 shadow-lg mt-2"
                       onClick={createNote}
                       disabled={creatingNote || (!noteTitle.trim() && !noteContent.trim())}
                     >
@@ -631,33 +625,41 @@ const Calendar: React.FC = () => {
                   {loadingNotes ? (
                     <div className="text-center text-xs text-gray-400">Cargando notas...</div>
                   ) : selectedDayNotes.length > 0 ? (
-                    <ul className="space-y-2">
+                    <ul className="space-y-4">
                       {selectedDayNotes.map(note => (
-                        <li key={note.id} className="bg-primary/40 border border-green-400/20 rounded p-2">
-                          <div className="font-semibold text-green-300 text-xs mb-1">{note.title || 'Sin título'}</div>
-                          <div className="text-white text-xs whitespace-pre-line">{note.content}</div>
-                          {/* Mostrar tema y tags siempre en el listado */}
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {note.tema && (
-                              <span className="bg-green-700/40 text-green-200 text-[10px] px-2 py-0.5 rounded-full">Tema: {note.tema}</span>
-                            )}
-                            {note.tags && note.tags.length > 0 && (
-                              <span className="bg-green-700/40 text-green-200 text-[10px] px-2 py-0.5 rounded-full">Tags: {note.tags.join(', ')}</span>
-                            )}
+                        <li key={note.id} className="bg-primary/40 border border-green-400/30 rounded-xl p-4 shadow flex flex-col gap-2">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-green-300 text-base">{note.title || 'Sin título'}</span>
+                              <span className="text-[11px] text-gray-400 ml-auto">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                            <div className="text-white text-sm whitespace-pre-line mb-1">{note.content}</div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
+                                Tags: {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
+                              </span>
+                              {note.tema && (
+                                <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">Tema: {note.tema}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex justify-between items-center mt-1">
-                            <div className="text-[10px] text-gray-400">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div className="flex justify-end">
                             <button
-                              className="text-green-300 text-[10px] underline hover:text-green-200 focus:outline-none"
+                              className="text-green-300 text-xs underline hover:text-green-200 focus:outline-none"
                               onClick={() => toggleShowMore(note.id)}
                             >
                               {showMoreNotes[note.id] ? 'Ver menos' : 'Ver más'}
                             </button>
                           </div>
                           {showMoreNotes[note.id] && (
-                            <div className="mt-2 text-xs text-green-200">
-                              <div><span className="font-bold">Tema:</span> {note.tema || 'Sin tema'}</div>
+                            <div className="mt-2 p-3 rounded-lg bg-green-900/40 border border-green-400/30 text-xs text-green-100 space-y-2 shadow-inner">
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                <span className="bg-green-700/60 text-green-100 text-[11px] px-2 py-0.5 rounded-full">Creado: {new Date(note.createdAt).toLocaleString('es-ES')}</span>
+                              </div>
+                              <div><span className="font-bold">Título:</span> {note.title || 'Sin título'}</div>
+                              <div><span className="font-bold">Contenido:</span> <span className="whitespace-pre-line">{note.content}</span></div>
                               <div><span className="font-bold">Tags:</span> {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}</div>
+                              <div><span className="font-bold">Tema:</span> {note.tema || 'Sin tema'}</div>
                             </div>
                           )}
                         </li>
