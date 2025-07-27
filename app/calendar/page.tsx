@@ -19,7 +19,8 @@ import {
   FaBell,
   FaRegClock,
   FaEye,
-  FaEyeSlash
+  FaEyeSlash,
+  FaPaperclip
 } from "react-icons/fa";
 
 
@@ -87,15 +88,16 @@ const Calendar: React.FC = () => {
   const [isUsingMockData] = useState(false); // Solo lectura, para mostrar banner si aplica
 
   // --- Notas diarias ---
-  interface Note {
-    id: string;
-    title: string;
-    content: string;
-    date: string;
-    createdAt: string;
-    tags?: string[];
-    tema?: string;
-  }
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  createdAt: string;
+  tags?: string[];
+  tema?: string;
+  relatedResources?: string[];
+}
   const [notes, setNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
@@ -103,6 +105,29 @@ const Calendar: React.FC = () => {
   const [noteTags, setNoteTags] = useState(''); // tags separados por coma
   const [noteTema, setNoteTema] = useState('');
   const [creatingNote, setCreatingNote] = useState(false);
+  const [noteFiles, setNoteFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Drag and drop handlers para archivos
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setNoteFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+    }
+  };
+  const [uploadingFiles, setUploadingFiles] = useState(false);
   // Cargar notas del mes visible
   const fetchNotes = async () => {
     setLoadingNotes(true);
@@ -124,8 +149,34 @@ const Calendar: React.FC = () => {
   const createNote = async () => {
     if (!noteTitle.trim() && !noteContent.trim()) return;
     setCreatingNote(true);
+    setUploadingFiles(false);
     try {
       const token = getToken();
+      let relatedResources: string[] = [];
+      // Subir archivos si hay
+      if (noteFiles.length > 0) {
+        setUploadingFiles(true);
+        for (const file of noteFiles) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('titulo', file.name);
+          formData.append('tema', noteTema || 'actividades-diarias');
+          formData.append('tags', JSON.stringify(noteTags.split(',').map(t => t.trim()).filter(Boolean)));
+          const resUpload = await fetch('/api/resources/upload', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+          if (resUpload.ok) {
+            const data = await resUpload.json();
+            if (data.recurso && data.recurso.id) {
+              relatedResources.push(data.recurso.id);
+            }
+          }
+        }
+        setUploadingFiles(false);
+      }
+      // Crear la nota con los recursos asociados
       const res = await fetch('/api/daily-notes', {
         method: 'POST',
         headers: {
@@ -138,6 +189,7 @@ const Calendar: React.FC = () => {
           date: selectedDate,
           tags: noteTags.split(',').map(t => t.trim()).filter(Boolean),
           tema: noteTema,
+          relatedResources
         }),
       });
       if (!res.ok) throw new Error('Error al crear nota');
@@ -145,9 +197,11 @@ const Calendar: React.FC = () => {
       setNoteContent('');
       setNoteTags('');
       setNoteTema('');
+      setNoteFiles([]);
       fetchNotes();
     } catch {}
     setCreatingNote(false);
+    setUploadingFiles(false);
   };
   // Notas del día seleccionado
   const selectedDayNotes = notes.filter(n => n.date === selectedDate);
@@ -575,7 +629,12 @@ const Calendar: React.FC = () => {
               {/* Panel lateral derecho: Fecha seleccionada */}
               <div className="space-y-6">
                 {/* Panel de Notas del Día */}
-                <div className="bg-secondary border border-green-400/30 rounded-xl shadow-lg p-6">
+                <div
+                  className={`bg-secondary border border-green-400/30 rounded-xl shadow-lg p-6 transition-all duration-200 ${isDragging ? 'ring-4 ring-green-400/60 bg-green-900/30' : ''}`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <h3 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2">
                     <FaRegStickyNote className="text-green-400" /> Notas del Día
                   </h3>
@@ -605,14 +664,37 @@ const Calendar: React.FC = () => {
                       onChange={e => setNoteTags(e.target.value)}
                       disabled={creatingNote}
                     />
-                    <button
-                      className="w-full px-6 py-3 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-3 shadow-lg mt-2"
-                      onClick={createNote}
-                      disabled={creatingNote || (!noteTitle.trim() && !noteContent.trim())}
+                    <div
+                      className={`transition-all duration-200 ${isDragging ? 'bg-green-900/30 border-green-400/80' : ''}`}
                     >
-                      {creatingNote ? (
+                      
+                      <input
+                        type="file"
+                        multiple
+                        onChange={e => setNoteFiles(e.target.files ? Array.from(e.target.files) : [])}
+                        className="w-full bg-primary border border-green-400/30 rounded-lg px-4 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-secondary hover:file:bg-accent/80 transition-all"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov"
+                        disabled={creatingNote}
+                      />
+                      <div className="text-xs text-green-200 mt-1">
+                        {isDragging ? 'Suelta los archivos aquí para adjuntarlos' : 'También puedes arrastrar y soltar archivos aquí'}
+                      </div>
+                      {noteFiles.length > 0 && (
+                        <ul className="mt-2 text-xs text-accent space-y-1">
+                          {noteFiles.map((file, idx) => (
+                            <li key={idx}>📎 {file.name} ({(file.size/1024/1024).toFixed(2)} MB)</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <button
+                      className="w-full px-6 py-3 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-3 shadow-lg mt-4"
+                      onClick={createNote}
+                      disabled={creatingNote || uploadingFiles || (!noteTitle.trim() && !noteContent.trim())}
+                    >
+                      {creatingNote || uploadingFiles ? (
                         <>
-                          <FaPlus className="animate-spin" /> Guardando...
+                          <FaPlus className="animate-spin" /> {uploadingFiles ? 'Subiendo archivos...' : 'Guardando...'}
                         </>
                       ) : (
                         <>
@@ -636,10 +718,10 @@ const Calendar: React.FC = () => {
                             <div className="text-white text-sm whitespace-pre-line mb-1">{note.content}</div>
                             <div className="flex flex-wrap gap-2 mt-1">
                               <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
-                                Tags: {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
+                                {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
                               </span>
                               {note.tema && (
-                                <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">Tema: {note.tema}</span>
+                                <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">{note.tema}</span>
                               )}
                             </div>
                           </div>
@@ -653,13 +735,34 @@ const Calendar: React.FC = () => {
                           </div>
                           {showMoreNotes[note.id] && (
                             <div className="mt-2 p-3 rounded-lg bg-green-900/40 border border-green-400/30 text-xs text-green-100 space-y-2 shadow-inner">
-                              <div className="flex flex-wrap gap-2 mb-2">
-                                <span className="bg-green-700/60 text-green-100 text-[11px] px-2 py-0.5 rounded-full">Creado: {new Date(note.createdAt).toLocaleString('es-ES')}</span>
-                              </div>
+                             
                               <div><span className="font-bold">Título:</span> {note.title || 'Sin título'}</div>
                               <div><span className="font-bold">Contenido:</span> <span className="whitespace-pre-line">{note.content}</span></div>
                               <div><span className="font-bold">Tags:</span> {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}</div>
                               <div><span className="font-bold">Tema:</span> {note.tema || 'Sin tema'}</div>
+                              {/* Recursos asociados */}
+                              {Array.isArray(note.relatedResources) && note.relatedResources.length > 0 && (
+                                <div className="mt-2">
+                                  <span className="font-bold">Archivos adjuntos:</span>
+                                  <ul className="list-disc ml-5 mt-1 space-y-1">
+                                    {note.relatedResources.map((resId: string, idx: number) => (
+                                      <li key={resId+idx}>
+                                        <a
+                                          href={`/api/resources/${resId}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-300 underline hover:text-blue-200"
+                                        >
+                                          Archivo adjunto #{idx+1}
+                                        </a>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                               <div className="flex flex-wrap gap-2 mb-2">
+                                <span className="bg-yellow-700/60 text-green-100 text-[11px] px-2 py-0.5 rounded-full">Creado: {new Date(note.createdAt).toLocaleString('es-ES')}</span>
+                              </div>
                             </div>
                           )}
                         </li>
@@ -827,19 +930,7 @@ const Calendar: React.FC = () => {
                   )}
                 </div>
               </div>
-              {/* Panel lateral derecho: Fecha seleccionada (opcionalmente se puede ocultar en modo lista) */}
-              <div className="space-y-6">
-                <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-accent mb-2">
-                    {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </h2>
-                </div>
-              </div>
+  
             </div>
           )}
         </div>
