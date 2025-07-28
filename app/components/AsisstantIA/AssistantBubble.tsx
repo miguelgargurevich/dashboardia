@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { FaFileAlt, FaLink, FaVideo, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from "react-icons/fa";
 // Simple Markdown a HTML (bold, listas, saltos de línea, tablas)
 function markdownToHtml(text: string): string {
   if (!text) return '';
@@ -36,18 +37,52 @@ function markdownToHtml(text: string): string {
 import { motion, AnimatePresence } from "framer-motion";
 import { FaRobot } from "react-icons/fa";
 import { usePathname } from 'next/navigation';
+// Importa los temas desde knowledge/page.tsx
 
-type MessageContent =
-  | string
-  | { type: 'cancel', text: string }
-  | { type: 'login-options', text: string }
-  | { type: 'note-wizard', step: string, data?: any }
-  | { type: 'url-wizard', step: string, data?: any }
-  | { type: 'resource-wizard', step: string, files?: File[], data?: any };
-type Message = { role: string; content: MessageContent };
+// Carga dinámica de temas desde public/temas.json
+
+type TipoRecurso = { id: string; nombre: string; descripcion: string; color: string; icono?: React.ReactNode };
+
+type Message = { role: string; content: string };
 
 export default function AssistantBubble() {
+  // Flag para sugerencia de temas solo una vez por conversación
+  const [temaSugerido, setTemaSugerido] = useState(false);
   const pathname = usePathname();
+  // Temas actuales de la app (dinámicos)
+  const [temasActuales, setTemasActuales] = useState<string[]>([]);
+  // Guardar temas completos para obtener el id dinámico
+  const [temasFull, setTemasFull] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/temas.json')
+      .then(res => res.json())
+      .then((data: any[]) => {
+        setTemasFull(data);
+        setTemasActuales(data.map(t => t.nombre));
+      })
+      .catch(() => {
+        setTemasFull([]);
+        setTemasActuales([]);
+      });
+  }, []);
+
+  // Tipos de recursos desde JSON centralizado
+  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
+  useEffect(() => {
+    fetch('/tiposRecursos.json')
+      .then(res => res.json())
+      .then((data) => {
+        const iconMap: Record<string, React.ReactNode> = {
+          'url': <FaLink className="text-accent" />,
+          'archivo': <FaFileAlt className="text-accent" />,
+          'video': <FaVideo className="text-accent" />,
+          'ia-automatizacion': <FaBrain className="text-accent" />,
+          'contactos-externos': <FaAddressBook className="text-accent" />,
+          'plantillas-formularios': <FaClipboardList className="text-accent" />
+        };
+        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
+      });
+  }, []);
   // Cierra el chat IA si recibe el evento personalizado 'close-assistant-bubble'
   useEffect(() => {
     const handler = () => setOpen(false);
@@ -63,44 +98,16 @@ export default function AssistantBubble() {
   }, []);
   // Detecta si está en la página de login
   const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+  // Conversational, text-only initial prompt
   const initialPrompt = isLoginPage
-    ? `¡Hola! Soy tu asistente IA para el Dashboard de Soporte Técnico.\n¿Quieres crear una cuenta nueva, iniciar sesión o saber más sobre el dashboard?`
-    : `<div style='font-family:Poppins,sans-serif;'>
-        <h2 style='font-size:1.15em;font-weight:bold;color:#f7b787;margin-bottom:0.3em;'>¡Hola! Soy tu asistente IA para el Dashboard de Soporte Técnico.</h2>
-        <div style='font-size:0.98em;color:#fff;margin-bottom:0.4em;'>Puedo ayudarte con:</div>
-        <ul style='margin-left:1.2em;margin-bottom:0.5em;color:#fff;line-height:1.3;'>
-          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
-            <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M3 3h12v2H3V3zm0 4h12v2H3V7zm0 4h8v2H3v-2z'/></svg>
-            <span style='display:block;'>Crear y gestionar notas, URLs y recursos con IA</span>
-          </li>
-          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
-            <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M9 2a7 7 0 1 1 0 14A7 7 0 0 1 9 2zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 9 4zm1 2v4l3 2-1 1-4-2V6h2z'/></svg>
-            <span style='display:block;'>Sugerir artículos y soluciones</span>
-          </li>
-          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
-            <svg width='18' height='18' fill='#f7b787' style='display:block;'><circle cx='9' cy='9' r='7'/><rect x='8' y='4' width='2' height='6' fill='#fff'/><rect x='8' y='10' width='2' height='4' fill='#fff'/></svg>
-            <span style='display:block;'>Buscar información por texto, tags, tipo, fecha</span>
-          </li>
-          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
-            <svg width='18' height='18' fill='#f7b787' style='display:block;'><path d='M4 9h10v2H4V9zm0-4h10v2H4V5zm0 8h6v2H4v-2z'/></svg>
-            <span style='display:block;'>Relacionar elementos entre sí</span>
-          </li>
-          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
-            <svg width='18' height='18' fill='#f7b787' style='display:block;'><circle cx='9' cy='9' r='7'/><text x='9' y='13' text-anchor='middle' font-size='8' fill='#fff'>?</text></svg>
-            <span style='display:block;'>Responder preguntas técnicas y de productividad</span>
-          </li>
-          <li style='margin-bottom:0.15em;display:flex;align-items:center;gap:0.5em;'>
-            <svg width='18' height='18' fill='#f7b787' style='display:block;'><rect x='3' y='3' width='12' height='12' rx='2'/><rect x='6' y='6' width='6' height='6' fill='#fff'/></svg>
-            <span style='display:block;'>Crear eventos, tickets y registros</span>
-          </li>
-        </ul>
-        <div style='font-size:0.98em;color:#f7b787;font-weight:bold;'>¡Escríbeme "crear nota", "agregar URL" o "subir recurso" para empezar!</div>
-      </div>`;
+    ? '🤖 ¡Hola! Soy tu asistente experto en soporte. Puedes preguntarme cómo registrarte, iniciar sesión o qué puedes hacer en el dashboard. Ejemplo: "¿Cómo me registro?"'
+    : `🤖 ¡Hola! Soy tu asistente experto. Puedes pedirme que cree notas, suba recursos, agregue URLs, consulte eventos, o cualquier otra tarea.\n\nAl crear una nota o recurso, te sugeriré los temas actuales: (cargando temas...). El tag se colocará automáticamente según el tema seleccionado, pero puedes agregar otros tags si lo deseas.\n\nEjemplo: "Crea una nota para el evento de hoy y adjunta estos archivos".`;
   const [open, setOpen] = useState(false);
   // Eliminado: const [closing, setClosing] = useState(false);
+  // Al abrir el chat, siempre muestra la propuesta inicial como primer mensaje
   const [messages, setMessages] = useState<Message[]>([
-  { role: 'system', content: initialPrompt }
-]);
+    { role: 'assistant', content: initialPrompt }
+  ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -116,224 +123,13 @@ export default function AssistantBubble() {
     }
   }, [messages, open]);
 
-  // Estado para registro guiado
-  // Registro guiado: nombre, email, rol/departamento
-  const [signupStep, setSignupStep] = useState<'none'|'email'|'confirm'|'done'|'confirm-resend'|'login'>('none');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
+  // Conversational: remove all wizard and step state
   
-  // Estados para wizards de creación
-  const [noteWizardStep, setNoteWizardStep] = useState<'none'|'collecting'|'generating'>('none');
-  const [urlWizardStep, setUrlWizardStep] = useState<'none'|'collecting'|'processing'>('none');
-  const [resourceWizardStep, setResourceWizardStep] = useState<'none'|'categorizing'|'uploading'>('none');
-  
-  // Funciones para manejar comandos específicos
-  async function handleCreateNote(_userMessage: string) {
-    try {
-      setNoteWizardStep('collecting');
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '🤖 ¡Perfecto! Voy a ayudarte a crear una nota con IA. Por favor proporciona:\n\n**Título:** ¿Cómo quieres llamar a la nota?\n**Tema:** ¿A qué categoría pertenece? (notificaciones, polizas, tickets, etc.)\n**Descripción:** ¿Qué tipo de contenido necesitas?\n**Tipo:** ¿Es un procedimiento, manual, guía o checklist?\n\nPuedes escribir todo junto o yo te voy preguntando paso a paso.' }]);
-      
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al iniciar la creación de nota. Intenta de nuevo.' }]);
-    }
-  }
-
-  async function processNoteGeneration(data: any) {
-    try {
-      setNoteWizardStep('generating');
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '🔄 Generando nota con IA, esto puede tomar unos segundos...' }]);
-      
-      const response = await fetch('/api/ai/content-generator', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setMessages(msgs => [...msgs, { 
-          role: 'assistant', 
-          content: `✅ **¡Nota creada exitosamente!**\n\n**Título:** ${result.nota.title}\n**Tema:** ${result.nota.tema}\n**Tipo:** ${result.nota.tipo}\n\nLa nota ha sido guardada en la base de conocimiento y está disponible en la sección de **Knowledge**.`
-        }]);
-      } else {
-        const error = await response.json();
-        setMessages(msgs => [...msgs, { role: 'assistant', content: `❌ Error al generar la nota: ${error.error || 'Error desconocido'}` }]);
-      }
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al conectar con el servicio de generación de notas.' }]);
-    } finally {
-      setNoteWizardStep('none');
-    }
-  }
-
-  async function handleNoteWizardResponse(userInput: string) {
-    try {
-      // Intentar extraer información de la respuesta del usuario
-      const data = extractNoteDataFromText(userInput);
-      
-      // Validar si tenemos información suficiente
-      if (data.titulo && data.tema && data.descripcion && data.tipo) {
-        // Tenemos toda la información, proceder a generar
-        await processNoteGeneration(data);
-      } else {
-        // Pedir información faltante
-        const missing: string[] = [];
-        if (!data.titulo) missing.push('título');
-        if (!data.tema) missing.push('tema/categoría');
-        if (!data.descripcion) missing.push('descripción del contenido');
-        if (!data.tipo) missing.push('tipo (procedimiento/manual/guía/checklist)');
-        
-        setMessages(msgs => [...msgs, { 
-          role: 'assistant', 
-          content: `📝 Gracias por la información. Aún necesito:\n\n**${missing.join(', ')}**\n\nPor favor proporciona estos datos para continuar.` 
-        }]);
-      }
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error procesando la información. Intenta de nuevo.' }]);
-    }
-  }
-
-  async function handleUrlWizardResponse(userInput: string) {
-    try {
-      const data = extractUrlDataFromText(userInput);
-      
-      if (data.url && data.titulo && data.tema) {
-        // Procesar la URL
-        setUrlWizardStep('processing');
-        setMessages(msgs => [...msgs, { role: 'assistant', content: '🔗 Procesando URL...' }]);
-        
-        const response = await fetch('/api/ai/url-processor', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: JSON.stringify(data)
-        });
-
-        if (response.ok) {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: '✅ URL agregada exitosamente al sistema.' }]);
-        } else {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al procesar la URL.' }]);
-        }
-        
-        setUrlWizardStep('none');
-      } else {
-        const missing: string[] = [];
-        if (!data.url) missing.push('URL');
-        if (!data.titulo) missing.push('título');
-        if (!data.tema) missing.push('tema/categoría');
-        
-        setMessages(msgs => [...msgs, { 
-          role: 'assistant', 
-          content: `🔗 Aún necesito: **${missing.join(', ')}**` 
-        }]);
-      }
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error procesando la URL. Intenta de nuevo.' }]);
-    }
-  }
-
-  async function handleResourceWizardResponse(userInput: string) {
-    try {
-      const tema = userInput.trim();
-      
-      if (attachedFiles.length > 0) {
-        setResourceWizardStep('uploading');
-        setMessages(msgs => [...msgs, { role: 'assistant', content: '📁 Subiendo archivos...' }]);
-        
-        for (const file of attachedFiles) {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('tema', tema);
-          formData.append('titulo', file.name.split('.')[0]);
-          
-          const response = await fetch('/api/resources/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: formData
-          });
-
-          if (!response.ok) {
-            setMessages(msgs => [...msgs, { role: 'assistant', content: `❌ Error subiendo ${file.name}` }]);
-          }
-        }
-        
-        setMessages(msgs => [...msgs, { role: 'assistant', content: '✅ Recursos subidos exitosamente.' }]);
-        setAttachedFiles([]);
-        setResourceWizardStep('none');
-      } else {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: '📁 No hay archivos para subir. Adjunta archivos primero.' }]);
-      }
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error subiendo recursos. Intenta de nuevo.' }]);
-    }
-  }
+  // Remove all wizard and step-based flows. All logic will be conversational and context-aware.
 
   // Funciones auxiliares para extraer datos
-  function extractNoteDataFromText(text: string) {
-    const data: any = {};
-    
-    // Buscar patrones comunes
-    const tituloMatch = text.match(/t[íi]tulo:?\s*(.+?)(?:\n|$|tema|tipo|descripci[óo]n)/i);
-    const temaMatch = text.match(/tema:?\s*(.+?)(?:\n|$|t[íi]tulo|tipo|descripci[óo]n)/i);
-    const descripcionMatch = text.match(/descripci[óo]n:?\s*(.+?)(?:\n|$|tema|tipo|t[íi]tulo)/i);
-    const tipoMatch = text.match(/tipo:?\s*(procedimiento|manual|gu[íi]a|checklist|nota)(?:\n|$|tema|t[íi]tulo|descripci[óo]n)/i);
-    
-    if (tituloMatch) data.titulo = tituloMatch[1].trim();
-    if (temaMatch) data.tema = temaMatch[1].trim();
-    if (descripcionMatch) data.descripcion = descripcionMatch[1].trim();
-    if (tipoMatch) data.tipo = tipoMatch[1].trim().toLowerCase();
-    
-    return data;
-  }
 
-  function extractUrlDataFromText(text: string) {
-    const data: any = {};
-    
-    const urlMatch = text.match(/(https?:\/\/[^\s]+)/i);
-    const tituloMatch = text.match(/t[íi]tulo:?\s*(.+?)(?:\n|$|tema|url|descripci[óo]n)/i);
-    const temaMatch = text.match(/tema:?\s*(.+?)(?:\n|$|t[íi]tulo|url|descripci[óo]n)/i);
-    const descripcionMatch = text.match(/descripci[óo]n:?\s*(.+?)(?:\n|$|tema|url|t[íi]tulo)/i);
-    
-    if (urlMatch) data.url = urlMatch[1];
-    if (tituloMatch) data.titulo = tituloMatch[1].trim();
-    if (temaMatch) data.tema = temaMatch[1].trim();
-    if (descripcionMatch) data.descripcion = descripcionMatch[1].trim();
-    
-    return data;
-  }
-
-  async function handleAddUrl(_userMessage: string) {
-    try {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '🔗 ¡Excelente! Para agregar una URL, necesito:\n\n**URL:** ¿Cuál es la dirección web?\n**Título:** ¿Cómo quieres llamarla?\n**Tema:** ¿A qué categoría pertenece?\n**Descripción:** (Opcional) ¿Qué contiene?\n\nPuedes escribir todo junto o paso a paso.' }]);
-      
-      setMessages(msgs => [...msgs, { role: 'assistant', content: { type: 'url-wizard', step: 'start' } }]);
-      
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al iniciar la adición de URL. Intenta de nuevo.' }]);
-    }
-  }
-
-  async function handleUploadResource(_userMessage: string) {
-    try {
-      if (attachedFiles.length > 0) {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: `📎 Veo que ya tienes archivos adjuntos: ${attachedFiles.map(f => f.name).join(', ')}\n\n¿En qué tema/categoría quieres clasificar estos recursos?` }]);
-        setMessages(msgs => [...msgs, { role: 'assistant', content: { type: 'resource-wizard', step: 'categorize', files: attachedFiles } }]);
-      } else {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: '📁 Para subir un recurso, puedes:\n\n1. **Arrastrar y soltar** archivos aquí\n2. **Hacer clic en "Adjuntar archivo"** abajo\n3. Después te ayudo a categorizarlo\n\nFormatos soportados: PDF, Word, Excel, imágenes, videos, etc.' }]);
-      }
-    } catch (error) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: '❌ Error al procesar el recurso. Intenta de nuevo.' }]);
-    }
-  }
+  // Remove handleAddUrl and handleUploadResource. All handled in sendMessage.
 
   async function sendMessage(e: any) {
     e.preventDefault();
@@ -347,8 +143,11 @@ export default function AssistantBubble() {
         for (const file of attachedFiles) {
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('topic', value || 'Sin tema');
+          // Usar el primer tema dinámico como fallback
+          const temaFallback = temasFull[0]?.nombre || 'Sin tema';
+          formData.append('topic', value || temaFallback);
           const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+          // Subir archivo
           const res = await fetch(`${apiUrl}/api/upload`, {
             method: 'POST',
             body: formData
@@ -356,7 +155,37 @@ export default function AssistantBubble() {
           if (!res.ok) {
             setMessages(msgs => [...msgs, { role: 'assistant', content: `Error al subir el archivo: ${file.name}` }]);
           } else {
+            // Obtener ruta del archivo subido si la respuesta la incluye
+            let filePath = null;
+            try {
+              const data = await res.json();
+              filePath = data.filePath || null;
+            } catch {}
             setMessages(msgs => [...msgs, { role: 'assistant', content: `Archivo adjuntado correctamente: ${file.name}` }]);
+            // Crear recurso automáticamente
+            const temaDetectado = temasActuales.find(t => (value || '').toLowerCase().includes(t.toLowerCase())) || temasFull[0]?.nombre || 'General';
+            const resourcePayload = {
+              tipo: 'archivo',
+              titulo: file.name,
+              descripcion: value || '',
+              filePath,
+              tags: [temaDetectado],
+              categoria: temaDetectado
+            };
+            try {
+              const resResource = await fetch(`${apiUrl}/api/resources`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(resourcePayload)
+              });
+              if (resResource.ok) {
+                setMessages(msgs => [...msgs, { role: 'assistant', content: `Recurso creado automáticamente para el archivo: ${file.name}` }]);
+              } else {
+                setMessages(msgs => [...msgs, { role: 'assistant', content: `Archivo subido pero no se pudo crear el recurso para: ${file.name}` }]);
+              }
+            } catch {
+              setMessages(msgs => [...msgs, { role: 'assistant', content: `Archivo subido pero falló la creación del recurso para: ${file.name}` }]);
+            }
           }
         }
       } catch (err) {
@@ -368,287 +197,89 @@ export default function AssistantBubble() {
       return;
     }
 
-    // Flujo especial para registro guiado SOLO en login
+    // Conversational login/registration: all via free-form text, no buttons or step state
     if (isLoginPage) {
-      // Paso inicial: usuario pide registrarse
-      if (signupStep === 'none' && value.toLowerCase().includes('registr')) {
-        setMessages(msgs => [
-          ...msgs,
-          { role: 'user', content: value },
-          { role: 'assistant', content: '¡Excelente! Para crear tu cuenta, ingresa tu correo electrónico.' }
-        ]);
-        setSignupStep('email');
-        setInput('');
-        setLoading(false);
-        return;
+      setMessages(msgs => [...msgs, { role: 'user', content: value }]);
+      // Try to detect registration or login intent
+      if (/registr/i.test(value)) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Por favor, ingresa tu correo electrónico para registrarte.' }]);
+      } else if (/login|iniciar sesi/i.test(value)) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Por favor, ingresa tu correo electrónico para iniciar sesión.' }]);
+      } else if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
+        // If email, ask for password
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Ahora ingresa tu clave.' }]);
+      } else if (/^.{6,}$/.test(value)) {
+        // If password (very basic check), try login
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Intentando iniciar sesión o registrar... (esto es un ejemplo, implementa lógica real aquí)' }]);
+      } else if (/nota|recurso|crear|subir|agregar|nuevo|nueva|adjuntar|tag|etiqueta|tema/i.test(value)) {
+        const recursosSugeridos = tiposRecursos.length > 0
+          ? tiposRecursos.map(t => `${t.icono ? '' : ''}${t.nombre}`).join(', ')
+          : 'archivo, url, video, etc.';
+        setMessages(msgs => [...msgs, { role: 'assistant', content: `Temas sugeridos: ${temasActuales.join(', ')}. Tipos de recursos disponibles: ${recursosSugeridos}. El tag se colocará automáticamente según el tema seleccionado, pero puedes agregar otros tags si lo deseas.` }]);
+      } else {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '¿En qué más puedo ayudarte? Puedes preguntarme sobre registro, login, funcionalidades del dashboard, o cómo agrupar notas y recursos por temas/tags.' }]);
       }
-      // Paso inicial: usuario pide login
-      if (signupStep === 'none' && value.toLowerCase().includes('login')) {
-        setMessages(msgs => [
-          ...msgs,
-          { role: 'user', content: value },
-          { role: 'assistant', content: 'Por favor, ingresa tu correo electrónico para iniciar sesión.' }
-        ]);
-        setSignupStep('login');
-        setInput('');
-        setLoading(false);
-        return;
-      }
-      // Paso login: pedir correo
-      if (signupStep === 'login' && !loginEmail) {
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-          setMessages(msgs => [...msgs, { role: 'user', content: value }, { role: 'assistant', content: 'El correo no es válido. Intenta de nuevo.' }]);
-          setInput('');
-          setLoading(false);
-          return;
-        }
-        setLoginEmail(value.trim());
-        setMessages(msgs => [
-          ...msgs,
-          { role: 'user', content: value },
-          { role: 'assistant', content: 'Ahora ingresa tu clave.' }
-        ]);
-        setInput('');
-        setLoading(false);
-        return;
-      }
-      // Paso login: pedir clave y validar
-      if (signupStep === 'login' && loginEmail && !loginPassword) {
-        setLoginPassword(value.trim());
-        setMessages(msgs => [
-          ...msgs,
-          { role: 'user', content: '••••••••' },
-          { role: 'assistant', content: 'Validando credenciales...' }
-        ]);
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-          const res = await fetch(`${apiUrl}/api/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: loginEmail, password: value.trim() })
-          });
-          const data = await res.json();
-          if (res.ok && data.token) {
-            setMessages(msgs => [...msgs, { role: 'assistant', content: '¡Login exitoso! Bienvenido al dashboard.' }]);
-            // Guardar el token en localStorage
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('token', data.token);
-            }
-            setTimeout(() => {
-              window.location.href = '/dashboard';
-            }, 1200);
-          } else {
-            setMessages(msgs => [
-              ...msgs,
-              { role: 'assistant', content: 'Credenciales incorrectas. Intenta de nuevo.' },
-              { role: 'assistant', content: { type: 'login-options', text: '¿Qué deseas hacer ahora?' } }
-            ]);
-          }
-        } catch (err) {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el backend.' }]);
-        }
-        setSignupStep('none');
-        setLoginEmail('');
-        setLoginPassword('');
-        setInput('');
-        setLoading(false);
-        return;
-      }
-      // Paso único: correo electrónico
-      if (signupStep === 'email') {
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) {
-          setMessages(msgs => [...msgs, { role: 'user', content: value }, { role: 'assistant', content: 'El correo no es válido. Intenta de nuevo.' }]);
-          setInput('');
-          setLoading(false);
-          return;
-        }
-        setSignupEmail(value.trim());
-        setMessages(msgs => [
-          ...msgs,
-          { role: 'user', content: value },
-          { role: 'assistant', content: '¿Confirmas que tu correo es correcto?' }
-        ]);
-        setSignupStep('confirm');
-        setInput('');
-        setLoading(false);
-        return;
-      }
-      // Paso 2: confirmación con botones
-      if (signupStep === 'confirm') {
-        if (/^s[ií]$/i.test(value.trim()) || value === 'Sí') {
-          const clave = Math.random().toString(36).slice(-8);
-          setSignupPassword(clave);
-          setMessages(msgs => [
-            ...msgs,
-            { role: 'user', content: 'Sí' },
-            { role: 'assistant', content: 'Creando tu cuenta y enviando el correo de acceso. Un momento por favor...' }
-          ]);
-          try {
-            const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-            const res = await fetch(`${apiUrl}/api/signup`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: signupEmail,
-                password: clave
-              })
-            });
-            if (!res.ok) {
-              const data = await res.json();
-              if (data.error && /existe|existente|registrado/i.test(data.error)) {
-                setMessages(msgs => [...msgs, { role: 'assistant', content: 'Este correo ya está registrado. ¿Deseas que te reenvíe la clave temporal a tu correo?'}]);
-                setSignupStep('confirm-resend');
-                setLoading(false);
-                return;
-              } else {
-                setMessages(msgs => [...msgs, { role: 'assistant', content: 'Hubo un error creando el usuario: ' + (data.error || 'Error desconocido') }]);
-                setSignupStep('done');
-                setLoading(false);
-                return;
-              }
-            }
-            await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(signupEmail), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: signupEmail,
-                message: `¡Bienvenido/a!\nTu cuenta para el Dashboard IA ha sido creada.\nTu clave temporal es: ${clave}\nPor seguridad, cámbiala al iniciar sesión.`
-              })
-            });
-            setMessages(msgs => [...msgs, { role: 'assistant', content: '¡Listo! Ya te enviamos tus credenciales por correo electrónico. Revisa tu bandeja de entrada.' }]);
-          } catch (error) {
-            setMessages(msgs => [...msgs, { role: 'assistant', content: 'Hubo un error creando el usuario o enviando el correo.' }]);
-          }
-          setSignupStep('done');
-          setLoading(false);
-          return;
-        } else if (/^n[o]?$/i.test(value.trim()) || value === 'No') {
-        setMessages(msgs => [
-          ...msgs,
-          { role: 'user', content: 'No' },
-          { role: 'assistant', content: { type: 'cancel', text: 'Registro cancelado.' } }
-        ]);
-        setSignupStep('none');
-        setInput('');
-        setLoading(false);
-        return;
-        }
-      }
-      // Paso 3: reenviar clave si usuario ya existe
-      if (signupStep === 'confirm-resend') {
-        if (/^s[ií]$/i.test(value.trim())) {
-          await fetch('https://formsubmit.co/ajax/' + encodeURIComponent(signupEmail), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: signupEmail,
-              name: 'User',
-              message: `Hola,\nTu clave temporal para el Dashboard IA es: ${signupPassword}\nRecuerda cambiarla al iniciar sesión.`
-            })
-          });
-          setMessages(msgs => [...msgs, { role: 'user', content: value }, { role: 'assistant', content: 'La clave ha sido reenviada a tu correo electrónico. Revisa tu bandeja de entrada.' }]);
-          setSignupStep('done');
-          setInput('');
-          setLoading(false);
-          return;
-        } else {
-          setMessages(msgs => [...msgs, { role: 'user', content: value }, { role: 'assistant', content: 'No se ha reenviado la clave. Si necesitas ayuda, escribe "login" o consulta las opciones.' }]);
-          setSignupStep('done');
-          setInput('');
-          setLoading(false);
-          return;
-        }
-      }
-      // Paso final: cuenta creada
-      if (signupStep === 'done') {
-        setMessages(msgs => [...msgs, { role: 'user', content: value }, { role: 'assistant', content: 'Ya tienes tu cuenta creada. Puedes iniciar sesión con tu correo y la clave enviada.' }]);
-        setInput('');
-        setLoading(false);
-        return;
-      }
-      // Si no es registro guiado, PERMITIR chat IA normal
-      if (signupStep === 'none') {
-        setMessages(msgs => [...msgs, { role: 'user', content: value }]);
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-          const res = await fetch(`${apiUrl}/api/assistant`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messages: [...messages.filter(m => m.role !== 'system'), { role: 'user', content: value }] })
-          });
-          const data = await res.json();
-          setMessages(msgs => [...msgs, { role: 'assistant', content: data.reply }]);
-        } catch (err) {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el asistente IA.' }]);
-        }
-        setInput('');
-        setLoading(false);
-        return;
-      }
-      // Si no es registro guiado y no entra en ningún caso, ignora
+      setInput('');
       setLoading(false);
       return;
     }
 
-    // Flujo normal de chat IA (dashboard)
+    // Flujos inteligentes para crear nota y recursos
     setMessages(msgs => [...msgs, { role: 'user', content: value }]);
-    
-    // Detectar si estamos en un wizard activo
-    if (noteWizardStep === 'collecting') {
-      await handleNoteWizardResponse(value);
+
+    // Detectar si el usuario quiere crear una nota
+    if (/nota|crear nota|nueva nota|agregar nota/i.test(value) && !/descrip/i.test(value)) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: 'Por favor, escribe la descripción de la nota. El título, tema y tags se generarán automáticamente.' }]);
       setInput('');
       setLoading(false);
       return;
     }
-    
-    if (urlWizardStep === 'collecting') {
-      await handleUrlWizardResponse(value);
+
+    // Si el mensaje es la descripción de la nota (después de pedirla)
+    if (messages.length > 0 && /Por favor, escribe la descripción de la nota/.test(messages[messages.length-1].content)) {
+      // Generar título automático: "Nota de Hoy - [tema]"
+      const hoy = new Date();
+      const fechaStr = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      // Extraer tema y tags de la descripción usando palabras clave de temas
+      let temaDetectado = temasActuales.find(t => value.toLowerCase().includes(t.toLowerCase())) || temasFull[0]?.nombre || 'General';
+      let tagsDetectados = [temaDetectado];
+      // Título automático
+      const tituloAuto = `Nota de Hoy - ${temaDetectado}`;
+      // Si hay archivos adjuntos, crear recursos también
+      if (attachedFiles.length > 0) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: `Se detectaron archivos adjuntos. Se crearán recursos automáticamente con el tema y tags por defecto: ${temaDetectado}.` }]);
+        // Aquí podrías llamar a la lógica de subida de recursos si lo deseas
+      }
+      // Enviar a backend la nota ya estructurada
+      const notaPayload = `Título: ${tituloAuto}\nTema: ${temaDetectado}\nContenido: ${value}\nEtiquetas: ${tagsDetectados.join(', ')}`;
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+        const res = await fetch(`${apiUrl}/api/assistant`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [...messages, { role: 'user', content: notaPayload }] })
+        });
+        if (res.status === 401) {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: 'No tienes acceso a esa función. Por favor inicia sesión para continuar.' }]);
+        } else {
+          const data = await res.json();
+          setMessages(msgs => [...msgs, { role: 'assistant', content: data.reply }]);
+        }
+      } catch (err) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el asistente IA.' }]);
+      }
       setInput('');
       setLoading(false);
       return;
     }
-    
-    if (resourceWizardStep === 'categorizing') {
-      await handleResourceWizardResponse(value);
-      setInput('');
-      setLoading(false);
-      return;
-    }
-    
-    // Detectar comandos específicos antes del chat general
-    const lowerValue = value.toLowerCase().trim();
-    
-    // Comando: Crear nota con IA
-    if (lowerValue.includes('crear nota') || lowerValue.includes('generar nota') || lowerValue.includes('nueva nota')) {
-      await handleCreateNote(value);
-      setInput('');
-      setLoading(false);
-      return;
-    }
-    
-    // Comando: Agregar URL
-    if (lowerValue.includes('agregar url') || lowerValue.includes('nueva url') || lowerValue.includes('añadir url')) {
-      await handleAddUrl(value);
-      setInput('');
-      setLoading(false);
-      return;
-    }
-    
-    // Comando: Subir recurso
-    if (lowerValue.includes('subir recurso') || lowerValue.includes('nuevo recurso') || lowerValue.includes('cargar archivo')) {
-      await handleUploadResource(value);
-      setInput('');
-      setLoading(false);
-      return;
-    }
-    
-    // Chat IA general para otras consultas
+
+    // Flujo normal: enviar mensaje al backend
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
       const res = await fetch(`${apiUrl}/api/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages.filter(m => m.role !== 'system'), { role: 'user', content: value }] })
+        body: JSON.stringify({ messages: [...messages, { role: 'user', content: value }] })
       });
       if (res.status === 401) {
         setMessages(msgs => [...msgs, { role: 'assistant', content: 'No tienes acceso a esa función. Por favor inicia sesión para continuar.' }]);
@@ -661,7 +292,10 @@ export default function AssistantBubble() {
     }
     setInput('');
     setLoading(false);
-    
+  // Reinicia sugerencia de temas al abrir nueva conversación
+  useEffect(() => {
+    if (open) setTemaSugerido(false);
+  }, [open]);
   }
 
   return (
@@ -715,73 +349,7 @@ export default function AssistantBubble() {
               {messages.map((msg, i) => (
                 <div key={i} className={`mb-2 flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`rounded-lg p-3 text-sm font-inter max-w-[80%] ${msg.role === 'user' ? 'bg-accent text-primary' : 'bg-accent/10 text-white'}`}>
-                    {msg.role === 'system' && isLoginPage ? (
-                      <>
-                        <div dangerouslySetInnerHTML={{ __html: markdownToHtml(initialPrompt) }} />
-                        <div className="flex gap-4 mt-4">
-                          <button
-                            className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                            onClick={() => {
-                              setLoading(true);
-                              sendMessage({ preventDefault: () => {}, target: { value: 'registrarme' } } as any);
-                            }}
-                          >
-                            Registrarme
-                          </button>
-                          <button
-                            className="px-6 py-3 rounded-lg bg-gray-500 text-white font-bold font-poppins hover:bg-gray-400 transition-colors shadow-md"
-                            onClick={() => {
-                              setLoading(true);
-                              sendMessage({ preventDefault: () => {}, target: { value: 'login' } } as any);
-                            }}
-                          >
-                            Login
-                          </button>
-                        </div>
-                        <div className="mt-2 text-xs text-gray-300">También puedes preguntar sobre las capacidades del dashboard.</div>
-                      </>
-                    ) : typeof msg.content === 'object' && 'type' in msg.content && msg.content.type === 'cancel' ? (
-                      <>
-                        <div>{msg.content.text}</div>
-                        <button
-                          className="mt-2 px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                          onClick={() => {
-                            setLoading(true);
-                            sendMessage({ preventDefault: () => {}, target: { value: 'registrarme' } } as any);
-                          }}
-                        >
-                          Registrarme
-                        </button>
-                      </>
-                    ) : typeof msg.content === 'object' && 'type' in msg.content && msg.content.type === 'login-options' ? (
-                      <>
-                        <div>{msg.content.text}</div>
-                        <div className="flex gap-4 mt-2">
-                          <button
-                            className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                            onClick={() => {
-                              setLoading(true);
-                              sendMessage({ preventDefault: () => {}, target: { value: 'registrarme' } } as any);
-                            }}
-                          >
-                            Registrarme
-                          </button>
-                          <button
-                            className="px-6 py-3 rounded-lg bg-gray-500 text-white font-bold font-poppins hover:bg-gray-400 transition-colors shadow-md"
-                            onClick={() => {
-                              setLoading(true);
-                              sendMessage({ preventDefault: () => {}, target: { value: 'login' } } as any);
-                            }}
-                          >
-                            Login
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      typeof msg.content === 'string'
-                        ? <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
-                        : null
-                    )}
+                    <div dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content) }} />
                   </div>
                 </div>
               ))}
@@ -822,87 +390,29 @@ export default function AssistantBubble() {
             )}
             </div>
             {/* Formulario adaptativo para el wizard */}
-            {isLoginPage && signupStep === 'email' ? (
-              <form
-                key="email-form"
-                className="flex gap-2 p-4 border-t border-accent"
-                onSubmit={sendMessage}
+            {/* Only show the main conversational input form for all cases */}
+            <form
+              key="main-form"
+              className="flex gap-2 p-4 border-t border-accent"
+              onSubmit={sendMessage}
+            >
+              <input
+                key="main-input"
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder={isLoginPage ? "Escribe tu consulta, correo o clave..." : "Escribe tu consulta..."}
+                className="flex-1 px-4 py-3 rounded-lg bg-[#1a2636]/80 text-white border border-accent focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-gray-300 font-inter"
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                className="px-4 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
+                disabled={loading || !input.trim()}
               >
-                <input
-                  key="email-input"
-                  type="text"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Ingresa tu correo electrónico..."
-                  className="flex-1 px-4 py-3 rounded-lg bg-[#1a2636]/80 text-white border border-accent focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-gray-300 font-inter"
-                  disabled={loading}
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                  disabled={loading || !input.trim()}
-                >
-                  Enviar
-                </button>
-              </form>
-            ) : isLoginPage && signupStep === 'confirm' ? (
-              <div key="confirm-buttons" className="flex gap-4 p-4 border-t border-accent">
-                <button
-                  className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                  disabled={loading}
-                  onClick={() => { sendMessage({ preventDefault: () => {}, target: { value: 'Sí' } } as any); }}
-                >
-                  Sí
-                </button>
-                <button
-                  className="px-6 py-3 rounded-lg bg-gray-500 text-white font-bold font-poppins hover:bg-gray-400 transition-colors shadow-md"
-                  disabled={loading}
-                  onClick={() => { sendMessage({ preventDefault: () => {}, target: { value: 'No' } } as any); }}
-                >
-                  No
-                </button>
-              </div>
-            ) : isLoginPage && signupStep === 'confirm-resend' ? (
-              <div key="confirm-resend-buttons" className="flex gap-4 p-4 border-t border-accent">
-                <button
-                  className="px-6 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                  disabled={loading}
-                  onClick={() => { sendMessage({ preventDefault: () => {}, target: { value: 'Sí' } } as any); }}
-                >
-                  Sí
-                </button>
-                <button
-                  className="px-6 py-3 rounded-lg bg-gray-500 text-white font-bold font-poppins hover:bg-gray-400 transition-colors shadow-md"
-                  disabled={loading}
-                  onClick={() => { sendMessage({ preventDefault: () => {}, target: { value: 'No' } } as any); }}
-                >
-                  No
-                </button>
-              </div>
-            ) : (
-              <form
-                key="main-form"
-                className="flex gap-2 p-4 border-t border-accent"
-                onSubmit={sendMessage}
-              >
-                <input
-                  key="main-input"
-                  type="text"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Escribe tu consulta..."
-                  className="flex-1 px-4 py-3 rounded-lg bg-[#1a2636]/80 text-white border border-accent focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-gray-300 font-inter"
-                  disabled={loading}
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-3 rounded-lg bg-accent text-primary font-bold font-poppins hover:bg-[#f7b787] transition-colors shadow-md"
-                  disabled={loading || !input.trim()}
-                >
-                  Enviar
-                </button>
-              </form>
-            )}
+                Enviar
+              </button>
+            </form>
           </motion.div>
         )}
       </AnimatePresence>

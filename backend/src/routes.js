@@ -775,36 +775,8 @@ El recurso ha sido agregado a la base de conocimiento y está disponible en la s
       const url = urls[0];
       
       // Crear una respuesta interactiva para recopilar información
-      const respuesta = `🔗 **He detectado una URL en tu mensaje**: ${url}
-
-¡Perfecto! Te ayudo a agregarla a la base de conocimiento. Necesito algunos datos adicionales:
-
-**Por favor, proporciona la siguiente información:**
-
-1. **Título**: ¿Cómo quieres que se llame este enlace?
-2. **Descripción**: ¿Puedes describir brevemente el contenido?
-3. **Tema**: ¿A qué tema pertenece?
-   - 🔔 Notificaciones
-   - 📄 Pólizas y Reimpresión  
-   - 🎫 Gestión de Tickets
-   - ⏰ Actividades Diarias
-   - 🚨 Procedimientos de Emergencia
-4. **Tipo de contenido**: ¿Qué tipo de contenido es?
-   - 🎥 Video
-   - 📋 Documento
-   - 📁 Página de contenidos
-   - 📚 Tutorial
-   - 📖 Referencia
-5. **Prioridad**: ¿Qué prioridad tiene? (alta/media/baja)
-
-Responde con el formato:
-\`\`\`
-Título: [Tu título aquí]
-Descripción: [Tu descripción aquí]
-Tema: [notificaciones/polizas/tickets/actividades-diarias/emergencias]
-Tipo: [video/documento/pagina-contenidos/tutorial/referencia]
-Prioridad: [alta/media/baja]
-\`\`\``;
+      const respuesta = `🔗 **He detectado una URL en tu mensaje**: ${url}  
+        ¡Perfecto! Te ayudo a agregarla a la base de conocimiento. Necesito algunos datos adicionales:`;
 
       return res.json({ reply: respuesta });
     }
@@ -913,27 +885,12 @@ Para ver todas las URLs o agregar nuevas, ve a la sección "Enlaces y URLs" en l
     }
 
     // Respuesta general para otros mensajes
-    const respuestaGeneral = `¡Hola! Soy tu asistente IA del Dashboard de Soporte. 
-
-🤖 **¿En qué puedo ayudarte hoy?**
-
-📋 **Funcionalidades disponibles:**
-- � **Crear Notas**: Te guío paso a paso para crear notas organizadas
-- 📁 **Gestionar Recursos**: Te ayudo a agregar archivos, videos y documentos
-- �🔗 **Gestión de URLs**: Envíame cualquier enlace y te ayudo a agregarlo
-- 📊 **Estadísticas**: Pregúntame sobre el estado de URLs, tickets o eventos
-- 📚 **Base de conocimiento**: Te puedo orientar sobre cómo usar las diferentes secciones
-- 🎫 **Soporte**: Preguntas sobre procedimientos y procesos
-
-**Ejemplos de lo que puedes hacer:**
-- 📝 "Crear nota", "Nueva nota sobre procedimientos"
-- 📁 "Agregar recurso", "Subir documento de emergencias"
-- 🔗 "Agrega este enlace: https://example.com"
-- 📊 "¿Cuántas URLs tenemos pendientes?"
-- 🚨 "Ayúdame con los procedimientos de emergencia"
-
-¡Solo escribe tu consulta y te ayudo a crear contenido paso a paso!`;
-
+    // Si el usuario ya preguntó por nota, recurso, url, etc., intenta continuar el flujo
+    if (messages.some(m => /nota|recurso|url|evento|adjuntar|tema|tag|crear|subir|agregar/i.test(m.content))) {
+      return res.json({ reply: '¿Puedes darme más detalles o la información que falta para completar tu solicitud? Por ejemplo: título, tema, contenido, o adjuntos.' });
+    }
+    // Si no, responde de forma más humana y abierta
+    const respuestaGeneral = '¡Estoy aquí para ayudarte con notas, recursos, eventos, URLs y más! ¿Qué necesitas hacer?';
     return res.json({ reply: respuestaGeneral });
     
   } catch (err) {
@@ -1144,7 +1101,7 @@ router.get('/api/tickets/tendencia-semanal', requireAuth, async (req, res) => {
   }
 });
 
-// ===== RUTAS PARA NOTAS GENERALES (REEMPLAZA ARCHIVOS .MD) =====
+// ===== RUTAS PARA NOTAS GENERALES =====
 
 // GET /api/daily-notes?month=YYYY-MM - LEGACY: Redirige al modelo unificado
 router.get('/api/daily-notes', requireAuth, async (req, res) => {
@@ -1308,7 +1265,6 @@ router.delete('/api/daily-notes/:id', requireAuth, async (req, res) => {
 });
 
 // GET /api/daily-notes/stats - Obtener estadísticas de notas diarias
-// GET /api/daily-notes/stats - Estadísticas de notas diarias
 router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
   try {
     const { month } = req.query;
@@ -1402,7 +1358,6 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/daily-notes/search - Buscar notas diarias
 // GET /api/daily-notes/search - Búsqueda avanzada de notas diarias
 router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
   try {

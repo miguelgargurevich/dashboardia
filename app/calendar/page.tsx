@@ -20,7 +20,8 @@ import {
   FaRegClock,
   FaEye,
   FaEyeSlash,
-  FaPaperclip
+  FaPaperclip,
+  FaExternalLinkAlt
 } from "react-icons/fa";
 
 
@@ -98,6 +99,40 @@ interface Note {
   tema?: string;
   relatedResources?: string[];
 }
+
+interface TipoRecurso {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+  icono?: React.ReactNode;
+}
+
+  // Estado para tipos de recursos
+  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
+  useEffect(() => {
+    fetch('/tiposRecursos.json')
+      .then(res => res.json())
+      .then((data) => {
+        const iconMap: Record<string, React.ReactNode> = {
+          'url': <FaPaperclip className="text-accent" />,
+          'archivo': <FaFileAlt className="text-accent" />,
+          'video': <FaRegCalendarAlt className="text-accent" />,
+          'ia-automatizacion': <FaSyncAlt className="text-accent" />,
+          'contactos-externos': <FaUserCog className="text-accent" />,
+          'plantillas-formularios': <FaTag className="text-accent" />
+        };
+        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaPaperclip className="text-accent" /> })));
+      });
+  }, []);
+
+  // Estado global para temas
+  const [temas, setTemas] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/temas.json')
+      .then(res => res.json())
+      .then((data) => setTemas(data));
+  }, []);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
@@ -160,7 +195,9 @@ interface Note {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('titulo', file.name);
-          formData.append('tema', noteTema || 'actividades-diarias');
+          // Usar el primer tema dinámico como fallback
+          const temaFallback = temas[0]?.id || 'actividades-diarias';
+          formData.append('tema', noteTema || temaFallback);
           formData.append('tags', JSON.stringify(noteTags.split(',').map(t => t.trim()).filter(Boolean)));
           const resUpload = await fetch('/api/resources/upload', {
             method: 'POST',
@@ -704,73 +741,66 @@ interface Note {
                     </button>
                   </div>
                   {/* Listado de notas del día */}
+                  <div className="mt-6">
                   {loadingNotes ? (
                     <div className="text-center text-xs text-gray-400">Cargando notas...</div>
                   ) : selectedDayNotes.length > 0 ? (
                     <ul className="space-y-4">
-                      {selectedDayNotes.map(note => (
-                        <li key={note.id} className="bg-primary/40 border border-green-400/30 rounded-xl p-4 shadow flex flex-col gap-2">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-green-300 text-base">{note.title || 'Sin título'}</span>
-                              <span className="text-[11px] text-gray-400 ml-auto">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                            <div className="text-white text-sm whitespace-pre-line mb-1">{note.content}</div>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
-                                {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
-                              </span>
-                              {note.tema && (
-                                <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">{note.tema}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              className="text-green-300 text-xs underline hover:text-green-200 focus:outline-none"
-                              onClick={() => toggleShowMore(note.id)}
-                            >
-                              {showMoreNotes[note.id] ? 'Ver menos' : 'Ver más'}
-                            </button>
-                          </div>
-                          {showMoreNotes[note.id] && (
-                            <div className="mt-2 p-3 rounded-lg bg-green-900/40 border border-green-400/30 text-xs text-green-100 space-y-2 shadow-inner">
-                             
-                              <div><span className="font-bold">Título:</span> {note.title || 'Sin título'}</div>
-                              <div><span className="font-bold">Contenido:</span> <span className="whitespace-pre-line">{note.content}</span></div>
-                              <div><span className="font-bold">Tags:</span> {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}</div>
-                              <div><span className="font-bold">Tema:</span> {note.tema || 'Sin tema'}</div>
-                              {/* Recursos asociados */}
-                              {Array.isArray(note.relatedResources) && note.relatedResources.length > 0 && (
-                                <div className="mt-2">
-                                  <span className="font-bold">Archivos adjuntos:</span>
-                                  <ul className="list-disc ml-5 mt-1 space-y-1">
-                                    {note.relatedResources.map((resId: string, idx: number) => (
-                                      <li key={resId+idx}>
-                                        <a
-                                          href={`/api/resources/${resId}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-300 underline hover:text-blue-200"
-                                        >
-                                          Archivo adjunto #{idx+1}
-                                        </a>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                               <div className="flex flex-wrap gap-2 mb-2">
-                                <span className="bg-yellow-700/60 text-green-100 text-[11px] px-2 py-0.5 rounded-full">Creado: {new Date(note.createdAt).toLocaleString('es-ES')}</span>
+                      {selectedDayNotes.map(note => {
+                        const temaObj = temas.find((t: any) => t.id === note.tema);
+                        const temaClass = temaObj?.color || 'bg-gray-700/40 text-gray-200';
+                        const recursosCount = Array.isArray(note.relatedResources) ? note.relatedResources.length : 0;
+                        return (
+                          <li key={note.id} className="bg-primary/40 border border-green-400/30 rounded-xl p-4 shadow flex flex-col gap-2">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-green-300 text-base">{note.title || 'Sin título'}</span>
+                                {/* Mostrar número de recursos asociados */}
+                                <span className="ml-2 text-xs font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full" title="Recursos asociados">
+                                  {recursosCount} archivos
+                                </span>
+                                <span className="text-[11px] text-gray-400 ml-auto">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
+                                  {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
+                                </span>
+                                {note.tema && (
+                                  <span className={`text-xs px-3 py-1 rounded-full font-semibold border border-white/10 shadow-sm ${temaClass}`}>{note.tema}</span>
+                                )}
                               </div>
                             </div>
-                          )}
-                        </li>
-                      ))}
+                            {/* Contenido de la nota: recortado, con link a base de conocimientos */}
+                            <div className="text-white text-sm whitespace-pre-line mb-1 max-h-24 overflow-hidden relative">
+                              {note.content.length > 120 ? (
+                                <>
+                                  {note.content.slice(0, 120)}...
+                                </>
+                              ) : (
+                                note.content
+                              )}
+                             
+                            </div>
+                            {/* Quitar Ver más y panel expandible. Mejorar link de nota completa */}
+                            <div className="flex justify-end">
+                              <a
+                                href={`/knowledge/${note.id}`}
+                                className="flex items-center gap-1 text-blue-300 underline bg-primary/80 px-2 py-1 rounded w-fit ml-auto hover:bg-primary/60 transition"
+                                title="Ver nota completa en base de conocimientos"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <FaExternalLinkAlt className="inline-block" /> 
+                              </a>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <div className="text-xs text-gray-400">No hay notas para este día.</div>
                   )}
+                  </div>
                 </div>
               </div>
             </>

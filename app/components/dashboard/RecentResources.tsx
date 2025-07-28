@@ -1,6 +1,13 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { FaFileAlt, FaVideo, FaStickyNote, FaLink } from "react-icons/fa";
+import { FaFileAlt, FaVideo, FaStickyNote, FaLink, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from "react-icons/fa";
+interface TipoRecurso {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+  icono?: React.ReactNode;
+}
 
 interface Resource {
   id: string;
@@ -20,6 +27,24 @@ interface Props {
 const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
+
+  // Cargar tipos de recursos desde JSON centralizado y asignar iconos
+  useEffect(() => {
+    fetch('/tiposRecursos.json')
+      .then(res => res.json())
+      .then((data) => {
+        const iconMap: Record<string, React.ReactNode> = {
+          'url': <FaLink className="text-accent" />,
+          'archivo': <FaFileAlt className="text-accent" />,
+          'video': <FaVideo className="text-accent" />,
+          'ia-automatizacion': <FaBrain className="text-accent" />,
+          'contactos-externos': <FaAddressBook className="text-accent" />,
+          'plantillas-formularios': <FaClipboardList className="text-accent" />
+        };
+        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
+      });
+  }, []);
 
   useEffect(() => {
     async function fetchResources() {
@@ -39,22 +64,22 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
       {/* <h3 className="text-lg font-bold mb-4 text-accent">Recursos recientes</h3> */}
       {loading ? <div>Cargando...</div> : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {resources.map(resource => (
-            <div key={resource.id} className="bg-accent/10 rounded-lg p-3 flex flex-col gap-2 animate-fade-in">
-              <span className="font-bold text-accent flex items-center gap-2">
-                {resource.tipo === 'archivo' && <FaFileAlt className="text-accent" />}
-                {resource.tipo === 'video' && <FaVideo className="text-accent" />}
-                {resource.tipo === 'nota' && <FaStickyNote className="text-accent" />}
-                {resource.tipo === 'enlace' && <FaLink className="text-accent" />}
-                {resource.tipo}
-              </span>
-              <span className="font-semibold">{resource.titulo}</span>
-              <span className="text-sm text-gray-300">{resource.descripcion}</span>
-              <span className="text-xs text-gray-400">{new Date(resource.fechaCarga).toLocaleString()}</span>
-              {resource.filePath && <a href={resource.filePath} className="text-xs text-blue-400 underline">Descargar</a>}
-              {resource.url && <a href={resource.url} className="text-xs text-blue-400 underline">Ver recurso</a>}
-            </div>
-          ))}
+          {resources.map(resource => {
+            // Buscar tipo de recurso por id
+            const tipo = tiposRecursos.find(t => t.id === resource.tipo);
+            return (
+              <div key={resource.id} className="bg-accent/10 rounded-lg p-3 flex flex-col gap-2 animate-fade-in">
+                <span className="font-bold text-accent flex items-center gap-2">
+                  {tipo?.icono || <FaLayerGroup className="text-accent" />} {tipo?.nombre || resource.tipo}
+                </span>
+                <span className="font-semibold">{resource.titulo}</span>
+                <span className="text-sm text-gray-300">{resource.descripcion}</span>
+                <span className="text-xs text-gray-400">{new Date(resource.fechaCarga).toLocaleString()}</span>
+                {resource.filePath && <a href={resource.filePath} className="text-xs text-blue-400 underline">Descargar</a>}
+                {resource.url && <a href={resource.url} className="text-xs text-blue-400 underline">Ver recurso</a>}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

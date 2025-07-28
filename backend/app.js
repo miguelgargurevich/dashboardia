@@ -36,7 +36,7 @@ app.post('/api/login', async (req, res) => {
     console.log('Contraseña incorrecta para:', email);
     return res.status(401).json({ error: 'Contraseña incorrecta' });
   }
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
@@ -121,7 +121,7 @@ app.post('/api/login', async (req, res) => {
     console.log('Contraseña incorrecta para:', email);
     return res.status(401).json({ error: 'Contraseña incorrecta' });
   }
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '8h' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 

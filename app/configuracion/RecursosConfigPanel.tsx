@@ -1,25 +1,22 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaEdit, FaTrash, FaLayerGroup } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaFolderOpen } from "react-icons/fa";
 
-interface Tema {
+interface TipoRecurso {
   id: string;
   nombre: string;
   descripcion: string;
   color: string;
 }
 
-interface TemasConfigPanelProps {
-  temas: Tema[];
-  onChange: (temas: Tema[]) => void;
+interface RecursosConfigPanelProps {
+  tiposRecursos: TipoRecurso[];
+  onChange: (tiposRecursos: TipoRecurso[]) => void;
 }
 
-
-
-// Cargar temas desde el JSON centralizado en public/temas.json
-
-const fetchTemasJson = async (): Promise<Tema[]> => {
-  const res = await fetch("/temas.json");
+// Cargar tipos de recursos desde el JSON centralizado en public/tiposRecursos.json
+const fetchTiposRecursosJson = async (): Promise<TipoRecurso[]> => {
+  const res = await fetch("/tiposRecursos.json");
   if (!res.ok) return [];
   return await res.json();
 };
@@ -35,52 +32,48 @@ const colores = [
   "bg-orange-500/20 text-orange-400 border-orange-400/30"
 ];
 
-
-// Si no se reciben temas, usar los base
-
-const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onChange }) => {
-  const [temasState, setTemasState] = useState<Tema[]>(temas && temas.length > 0 ? temas : []);
-  const [editando, setEditando] = useState<Tema | null>(null);
+const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tiposRecursos, onChange }) => {
+  const [tiposState, setTiposState] = useState<TipoRecurso[]>(tiposRecursos && tiposRecursos.length > 0 ? tiposRecursos : []);
+  const [editando, setEditando] = useState<TipoRecurso | null>(null);
   const [form, setForm] = useState({ nombre: "", descripcion: "", color: colores[0] });
 
-  // Cargar temas desde el JSON centralizado al montar
+  // Cargar tipos de recursos desde el JSON centralizado al montar
   useEffect(() => {
-    if (!temas || temas.length === 0) {
-      fetchTemasJson().then(json => {
-        setTemasState(json);
+    if (!tiposRecursos || tiposRecursos.length === 0) {
+      fetchTiposRecursosJson().then(json => {
+        setTiposState(json);
         onChange && onChange(json);
       });
     }
   }, []);
 
-
-  const handleEdit = (tema: Tema) => {
-    setEditando(tema);
-    setForm({ nombre: tema.nombre, descripcion: tema.descripcion, color: tema.color });
+  const handleEdit = (tipo: TipoRecurso) => {
+    setEditando(tipo);
+    setForm({ nombre: tipo.nombre, descripcion: tipo.descripcion, color: tipo.color });
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm("¿Eliminar este tema?")) return;
-    const nuevos = temasState.filter(t => t.id !== id);
-    setTemasState(nuevos);
+    if (!confirm("¿Eliminar este tipo de recurso?")) return;
+    const nuevos = tiposState.filter(t => t.id !== id);
+    setTiposState(nuevos);
     onChange && onChange(nuevos);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let nuevos: Tema[];
+    let nuevos: TipoRecurso[];
     if (editando) {
-      nuevos = temasState.map(t =>
+      nuevos = tiposState.map(t =>
         t.id === editando.id ? { ...t, nombre: form.nombre, descripcion: form.descripcion, color: form.color } : t
       );
       setEditando(null);
     } else {
       nuevos = [
-        ...temasState,
+        ...tiposState,
         { id: Date.now().toString(), nombre: form.nombre, descripcion: form.descripcion, color: form.color }
       ];
     }
-    setTemasState(nuevos);
+    setTiposState(nuevos);
     onChange && onChange(nuevos);
     setForm({ nombre: "", descripcion: "", color: colores[0] });
   };
@@ -88,21 +81,21 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <FaLayerGroup className="text-lg text-accent" />
-        <h2 className="text-lg font-bold text-accent">Temas</h2>
+        <FaFolderOpen className="text-lg text-accent" />
+        <h2 className="text-lg font-bold text-accent">Tipos de Recursos</h2>
       </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-        {temasState.map(tema => (
-          <li key={tema.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 shadow bg-primary/60 ${tema.color} transition-all`}> 
+        {tiposState.map(tipo => (
+          <li key={tipo.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 shadow bg-primary/60 ${tipo.color} transition-all`}>
             <div className="flex-1">
               <div className="font-bold text-base flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-full border border-white/30 mr-1" style={{background: tema.color.split(' ')[0].replace('bg-','').replace('-500/20','')}}></span>
-                {tema.nombre}
+                <span className="inline-block w-3 h-3 rounded-full border border-white/30 mr-1" style={{background: tipo.color.split(' ')[0].replace('bg-','').replace('-500/20','')}}></span>
+                {tipo.nombre}
               </div>
-              <div className="text-xs opacity-70 mt-1">{tema.descripcion}</div>
+              <div className="text-xs opacity-70 mt-1">{tipo.descripcion}</div>
             </div>
-            <button onClick={() => handleEdit(tema)} className="text-blue-400 hover:text-blue-200"><FaEdit /></button>
-            <button onClick={() => handleDelete(tema.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
+            <button onClick={() => handleEdit(tipo)} className="text-blue-400 hover:text-blue-200"><FaEdit /></button>
+            <button onClick={() => handleDelete(tipo.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
           </li>
         ))}
       </ul>
@@ -110,7 +103,7 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Nombre del tema"
+            placeholder="Nombre del tipo de recurso"
             value={form.nombre}
             onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
             className="flex-1 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
@@ -134,11 +127,11 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
           className="w-full bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
         />
         <button type="submit" className="w-full bg-accent text-secondary font-semibold py-2 rounded-lg hover:bg-accent/80 transition-all">
-          {editando ? "Actualizar Tema" : "Agregar Tema"}
+          {editando ? "Actualizar Tipo" : "Agregar Tipo"}
         </button>
       </form>
     </div>
   );
 };
 
-export default TemasConfigPanel;
+export default RecursosConfigPanel;

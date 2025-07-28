@@ -4,22 +4,7 @@ import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrin
 import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
-interface NotasMD {
-  id?: string; // ID para notas de la base de datos
-  nombre: string;
-  contenido: string;
-  tema: string;
-  tipo: 'nota' | 'documento' | 'video' | 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';
-  etiquetas?: string[];
-  // Campos adicionales del modelo unificado
-  descripcion?: string;
-  status?: string;
-  priority?: string;
-  date?: string; // Para notas diarias
-  relatedResources?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
+// Eliminada la versión duplicada de NotasMD para evitar conflicto de tipos
 
 interface Recurso {
   id: string;
@@ -33,9 +18,37 @@ interface Recurso {
   tema: string;
   fechaCarga: string;
   tipoArchivo?: string;
+
   tamaño?: number;
   nombreOriginal?: string;
   estado?: string;
+}
+
+type NotaTipo = 'nota' | 'documento' | 'video' | 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';
+
+interface NotasMD {
+  id?: string; // ID para notas de la base de datos
+  nombre: string;
+  contenido: string;
+  tema: string;
+  tipo: NotaTipo;
+  etiquetas?: string[];
+  // Campos adicionales del modelo unificado
+  descripcion?: string;
+  status?: string;
+  priority?: string;
+  date?: string; // Para notas diarias
+  relatedResources?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface TipoRecurso {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  icono: React.ReactNode;
+  color: string;
 }
 
 interface Tema {
@@ -51,7 +64,7 @@ const KnowledgePage: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [seccionActiva, setSeccionActiva] = useState('temas');
+  const [seccionActiva, setSeccionActiva] = useState('todos');
   const [temaSeleccionado, setTemaSeleccionado] = useState<string | null>(null);
   const [notasMD, setNotasMD] = useState<NotasMD[]>([]);
   const [notaSeleccionada, setNotaSeleccionada] = useState<NotasMD | null>(null);
@@ -76,97 +89,45 @@ const KnowledgePage: React.FC = () => {
   const [etiquetasDisponiblesRecursos, setEtiquetasDisponiblesRecursos] = useState<string[]>([]);
   const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);
 
-  // Definición de tipos de recursos
-  const tiposRecursos = [
-    {
-      id: 'url',
-      nombre: 'Enlaces / URLs',
-      descripcion: 'Enlaces web, páginas de referencia y recursos en línea',
-      icono: <FaLink className="text-xl" />,
-      color: 'bg-blue-500/20 text-blue-400 border-blue-400/30'
-    },
-    {
-      id: 'archivo',
-      nombre: 'Archivos',
-      descripcion: 'Documentos PDF, Word, Excel, ZIP, SQL y otros archivos descargables',
-      icono: <FaFileAlt className="text-xl" />,
-      color: 'bg-green-500/20 text-green-400 border-green-400/30'
-    },
-    {
-      id: 'video',
-      nombre: 'Videos',
-      descripcion: 'Tutoriales en video, capacitaciones y presentaciones',
-      icono: <FaVideo className="text-xl" />,
-      color: 'bg-purple-500/20 text-purple-400 border-purple-400/30'
-    },
-    {
-      id: 'ia-automatizacion',
-      nombre: 'IA y Automatización',
-      descripcion: 'Scripts, prompts para IA, flujos automatizados y herramientas de productividad',
-      icono: <FaBrain className="text-xl" />,
-      color: 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30'
-    },
-    {
-      id: 'contactos-externos',
-      nombre: 'Contactos y Recursos Externos',
-      descripcion: 'Contactos de proveedores, recursos externos, números de emergencia',
-      icono: <FaAddressBook className="text-xl" />,
-      color: 'bg-orange-500/20 text-orange-400 border-orange-400/30'
-    },
-    {
-      id: 'plantillas-formularios',
-      nombre: 'Plantillas y Formularios',
-      descripcion: 'Plantillas reutilizables, formularios estándar, documentos tipo',
-      icono: <FaClipboardList className="text-xl" />,
-      color: 'bg-pink-500/20 text-pink-400 border-pink-400/30'
-    }
-  ];
+  // Definición de tipos de recursos desde JSON centralizado
+  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
+  useEffect(() => {
+    fetch('/tiposRecursos.json')
+      .then(res => res.json())
+      .then((data) => {
+        // Asignar iconos según el id
+        const iconMap: Record<string, React.ReactNode> = {
+          'url': <FaLink className="text-xl" />,
+          'archivo': <FaFileAlt className="text-xl" />,
+          'video': <FaVideo className="text-xl" />,
+          'ia-automatizacion': <FaBrain className="text-xl" />,
+          'contactos-externos': <FaAddressBook className="text-xl" />,
+          'plantillas-formularios': <FaClipboardList className="text-xl" />
+        };
+        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-xl" /> })));
+      });
+  }, []);
 
-  // Definición de temas basados en las actividades de soporte
-  const temas: Tema[] = [
-    {
-      id: 'notificaciones',
-      nombre: 'Notificaciones',
-      descripcion: 'Envío y programación de notificaciones automáticas',
-      icono: <FaBell className="text-xl" />,
-      color: 'bg-blue-500/20 text-blue-400 border-blue-400/30'
-    },
-    {
-      id: 'polizas',
-      nombre: 'Pólizas y Reimpresión',
-      descripcion: 'Gestión de pólizas, copias y reimpresiones',
-      icono: <FaPrint className="text-xl" />,
-      color: 'bg-purple-500/20 text-purple-400 border-purple-400/30'
-    },
-    {
-      id: 'tickets',
-      nombre: 'Gestión de Tickets',
-      descripcion: 'Manejo de tickets de soporte y requerimientos',
-      icono: <FaTicketAlt className="text-xl" />,
-      color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30'
-    },
-    {
-      id: 'actividades-diarias',
-      nombre: 'Actividades Diarias',
-      descripcion: 'Rutinas y procesos diarios del equipo de soporte',
-      icono: <FaClock className="text-xl" />,
-      color: 'bg-green-500/20 text-green-400 border-green-400/30'
-    },
-    {
-      id: 'emergencias',
-      nombre: 'Procedimientos de Emergencia',
-      descripcion: 'Acciones para situaciones críticas y resolución de problemas',
-      icono: <FaExclamationTriangle className="text-xl" />,
-      color: 'bg-red-500/20 text-red-400 border-red-400/30'
-    },
-    {
-      id: 'kb-conocidos',
-      nombre: 'KB Conocidos',
-      descripcion: 'Base de conocimiento de problemas conocidos y soluciones documentadas',
-      icono: <FaBrain className="text-xl" />,
-      color: 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30'
-    }
-  ];
+  // Cargar temas desde el JSON centralizado y asignar iconos
+  const [temas, setTemas] = useState<Tema[]>([]);
+  useEffect(() => {
+    fetch('/temas.json')
+      .then(res => res.json())
+      .then((data) => {
+        // Asignar iconos según el id
+        const iconMap: Record<string, React.ReactNode> = {
+          'notificaciones': <FaBell className="text-xl" />,
+          'polizas': <FaPrint className="text-xl" />,
+          'tickets': <FaTicketAlt className="text-xl" />,
+          'actividades-diarias': <FaClock className="text-xl" />,
+          'emergencias': <FaExclamationTriangle className="text-xl" />,
+          'kb-conocidos': <FaBrain className="text-xl" />
+        };
+        setTemas(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-xl" /> })));
+      });
+  }, []);
+  // Helper para obtener el id del primer tema
+  const primerTemaId = temas[0]?.id || '';
 
   // Efecto para inicializar autenticación
   useEffect(() => {
@@ -615,11 +576,14 @@ const KnowledgePage: React.FC = () => {
   };
 
   const FormularioNuevaNota = () => {
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().split('T')[0];
     const [formData, setFormData] = useState({
       titulo: '',
-      tema: temaSeleccionado || 'notificaciones',
+      tema: temaSeleccionado || primerTemaId,
       contenido: '',
-      etiquetas: ''
+      etiquetas: '',
+      fecha: fechaHoy
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -629,6 +593,9 @@ const KnowledgePage: React.FC = () => {
           ? formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
           : [];
 
+        // Usar la fecha del formulario, o la de hoy si está vacía
+        const fechaNota = formData.fecha || fechaHoy;
+
         // Crear el contenido markdown para guardar en la base de datos
         const contenidoMarkdown = `# ${formData.titulo}
 
@@ -636,18 +603,21 @@ ${formData.contenido}
 
 **Etiquetas:** ${etiquetas.join(', ')}`;
 
+        const body = {
+          nombre: formData.titulo,
+          tema: formData.tema,
+          contenido: contenidoMarkdown,
+          etiquetas,
+          date: fechaNota
+        };
+
         const response = await fetch('/api/content/knowledge', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({
-            nombre: formData.titulo,
-            tema: formData.tema,
-            contenido: contenidoMarkdown,
-            etiquetas
-          })
+          body: JSON.stringify(body)
         });
 
         if (response.ok) {
@@ -695,6 +665,16 @@ ${formData.contenido}
                   onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
                   className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
                   placeholder="Ej: Procedimiento para resolver incidencias de notificaciones"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Fecha *</label>
+                <input
+                  type="date"
+                  value={formData.fecha}
+                  onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
+                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
                   required
                 />
               </div>
@@ -765,7 +745,7 @@ ${formData.contenido}
       tipo: (recursoEditando?.tipo as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios') || 'url',
       descripcion: recursoEditando?.descripcion || '',
       url: recursoEditando?.url || '',
-      tema: recursoEditando?.tema || temaSeleccionado || 'notificaciones',
+      tema: recursoEditando?.tema || temaSeleccionado || primerTemaId,
       etiquetas: recursoEditando?.tags?.join(', ') || ''
     });
     const [archivo, setArchivo] = useState<File | null>(null);
@@ -1025,7 +1005,7 @@ ${formData.contenido}
         {/* Navegación por secciones */}
         <div className="flex flex-wrap gap-4 mb-8">
           <button
-            onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
+            onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               seccionActiva === 'temas' || seccionActiva === 'todos'
                 ? 'bg-accent text-secondary' 
@@ -1036,7 +1016,7 @@ ${formData.contenido}
             Notas y Documentos
           </button>
           <button
-            onClick={() => { setSeccionActiva('tipos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
+            onClick={() => { setSeccionActiva('recursos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               seccionActiva === 'tipos' || seccionActiva === 'recursos'
                 ? 'bg-accent text-secondary' 
@@ -1051,6 +1031,17 @@ ${formData.contenido}
         {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'temas' || seccionActiva === 'todos') && (
           <div className="flex flex-wrap gap-3 mb-6">
+             <button
+              onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                seccionActiva === 'todos'
+                  ? 'bg-accent/20 text-accent border border-accent/30'
+                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              <FaFileAlt className="text-sm" />
+              Todas las Notas
+            </button>
             <button
               onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); }}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
@@ -1062,23 +1053,24 @@ ${formData.contenido}
               <FaLayerGroup className="text-sm" />
               Por Temas
             </button>
-            <button
-              onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                seccionActiva === 'todos'
-                  ? 'bg-accent/20 text-accent border border-accent/30'
-                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-              }`}
-            >
-              <FaFileAlt className="text-sm" />
-              Todas las Notas
-            </button>
+           
           </div>
         )}
 
         {/* Subnavegación para Recursos y Archivos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'tipos' || seccionActiva === 'recursos') && (
           <div className="flex flex-wrap gap-3 mb-6">
+             <button
+              onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                seccionActiva === 'recursos'
+                  ? 'bg-accent/20 text-accent border border-accent/30'
+                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+              }`}
+            >
+              <FaVideo className="text-sm" />
+              Todos los Recursos
+            </button>
             <button
               onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
@@ -1090,17 +1082,7 @@ ${formData.contenido}
               <FaLayerGroup className="text-sm" />
               Por Tipos
             </button>
-            <button
-              onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                seccionActiva === 'recursos'
-                  ? 'bg-accent/20 text-accent border border-accent/30'
-                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-              }`}
-            >
-              <FaVideo className="text-sm" />
-              Todos los Recursos
-            </button>
+           
           </div>
         )}
 
