@@ -34,6 +34,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
+  const [busqueda, setBusqueda] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -135,7 +136,8 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     <div className="flex bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px]">
       {/* Panel lateral: lista de eventos */}
       <div className="w-1/3 min-w-[280px] max-w-xs bg-secondary/80 border-r border-accent/20 p-0 flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-accent/10">
+        {/* Header y botón agregar */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-accent/10 bg-secondary/90 sticky top-0 z-10">
           <h2 className="text-lg font-bold text-accent flex items-center gap-2"><FaCalendarAlt /> Eventos del Mes</h2>
           <button
             onClick={() => {
@@ -145,16 +147,33 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', nombreNotificacion: '', isRecurring: false, recurrencePattern: '', eventType: ''
               });
             }}
-            className="flex items-center gap-2 bg-accent text-secondary px-3 py-1 rounded-lg hover:bg-accent/80 text-sm"
+            className="flex items-center gap-2 bg-accent text-secondary px-3 py-1 rounded-lg hover:bg-accent/80 text-sm font-semibold shadow"
           >
-            <FaPlus /> Nuevo
+            <FaPlus className="text-base" /> Agregar evento
           </button>
         </div>
+        {/* Buscador */}
+        <div className="px-4 py-2 bg-secondary/80 border-b border-accent/10 sticky top-[56px] z-10">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            placeholder="Buscar evento..."
+            className="w-full bg-primary/60 border border-accent/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm"
+          />
+        </div>
+        {/* Lista de eventos filtrada */}
         <div className="flex-1 overflow-y-auto divide-y divide-accent/10">
-          {eventos.length === 0 && (
+          {eventos.filter(ev =>
+            ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+            (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+          ).length === 0 && (
             <div className="p-4 text-gray-400">No hay eventos este mes.</div>
           )}
-          {eventos.map(ev => (
+          {eventos.filter(ev =>
+            ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+            (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+          ).map(ev => (
             <div
               key={ev.id}
               className={`p-4 cursor-pointer hover:bg-accent/10 ${eventoSeleccionado?.id === ev.id ? 'bg-accent/10 border-l-4 border-accent' : ''}`}
@@ -167,8 +186,20 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
           ))}
         </div>
       </div>
-      {/* Panel derecho: detalle/calendario */}
+      {/* Panel derecho: calendario arriba y detalle abajo */}
       <div className="flex-1 flex flex-col bg-primary/80">
+        {/* Calendario arriba */}
+        <div className="border-b border-accent/10 bg-primary/90 p-4 sticky top-0 z-10">
+          {token && (
+            <EventosMantenimientoCalendar
+              token={token}
+              layout="split"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
+        </div>
+        {/* Detalle del evento seleccionado */}
         <div className="flex-1 p-6 overflow-y-auto">
           {eventoSeleccionado ? (
             <>
@@ -196,17 +227,6 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
               <FaCalendarAlt className="text-5xl mb-4 text-accent/40" />
               Selecciona un evento para ver detalles.
             </div>
-          )}
-        </div>
-        {/* Calendario siempre visible abajo */}
-        <div className="border-t border-accent/10 bg-primary/90 p-4">
-          {token && (
-            <EventosMantenimientoCalendar
-              token={token}
-              layout="split"
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
           )}
         </div>
       </div>
