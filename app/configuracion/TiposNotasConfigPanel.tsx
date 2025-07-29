@@ -64,7 +64,7 @@ const TiposNotasConfigPanel: React.FC = () => {
       <div className="flex items-center gap-2 mb-4 justify-between">
         <div className="flex items-center gap-2">
           <FaStickyNote className="text-2xl text-accent" />
-          <h1 className="text-3xl font-bold text-accent">Configuración Tipos de Notas</h1>
+          <h1 className="text-3xl font-bold text-accent">Configuración de Tipos de Notas</h1>
         </div>
         <button
           onClick={() => {
@@ -78,56 +78,17 @@ const TiposNotasConfigPanel: React.FC = () => {
         </button>
       </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-        {tiposState.filter(tipo => tipo.id !== 'mantenimiento' && tipo.id !== 'video').map((tipo) => {
-          // Unificar lógica de color (robusta y DRY)
-          let colorString = 'bg-blue-500/20 text-blue-400 border-blue-400/30';
-          if (typeof tipo.color === 'string' && tipo.color.trim().length > 0) {
-            colorString = tipo.color;
-          }
-          const colorParts = colorString.split(' ');
-          // Extraer clases
-          let bgClass = colorParts.find(c => c.startsWith('bg-')) || 'bg-blue-500/20';
-          let textClass = colorParts.find(c => c.startsWith('text-')) || '';
-          let borderClass = colorParts.find(c => c.startsWith('border-')) || '';
-          // Si no hay borde, generarlo a partir del fondo
-          if (!borderClass) {
-            const bgMatch = bgClass.match(/bg-([a-z]+)-(\d+)/);
-            if (bgMatch) borderClass = `border-${bgMatch[1]}-${bgMatch[2]}`;
-            else borderClass = 'border-blue-400';
-          }
-          // Fondo del card: si tiene opacidad, usar /10, si no, usar bgClass + /10
-          let cardBgClass = '';
-          if (/\/\d+$/.test(bgClass)) {
-            // Si ya tiene opacidad, reemplazar por /10
-            cardBgClass = bgClass.replace(/\/\d+$/, '/10');
-          } else if (bgClass.match(/bg-[a-z]+-\d+$/)) {
-            cardBgClass = bgClass + '/10';
-          } else {
-            cardBgClass = bgClass;
-          }
-
-          // Dot: extraer el color base (bg-...-500) aunque tenga opacidad o variante
-          let dotBgClass = 'bg-gray-400';
-          const dotMatch = bgClass.match(/bg-[a-z]+-\d{3}/);
-          if (dotMatch && dotMatch[0]) {
-            dotBgClass = dotMatch[0];
-          }
-          // Borde del dot: usar el color base (border-...-500)
-          let borderDotClass = 'border-gray-400';
-          const borderMatch = borderClass.match(/border-[a-z]+-\d+/);
-          if (borderMatch && borderMatch[0]) borderDotClass = borderMatch[0];
-
+        {tiposState.map(tipo => {
+          // Extraer color de fondo y texto desde la propiedad color del tipo
+          const [bgColor, textColor] = tipo.color.split(' ');
           return (
-            <li
-              key={tipo.id}
-              className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg ${cardBgClass} ${borderClass} transition-all`}
-            >
+            <li key={tipo.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 ${bgColor.replace('/20','/10')} transition-all`}>
               <div className="flex-1">
-                <div className={`font-bold text-base flex items-center gap-2${textClass ? ` ${textClass}` : ''}`}> 
-                  <span className={`inline-block w-3 h-3 rounded-full border mr-1 ${dotBgClass} ${borderDotClass}`}></span>
+                <div className={`font-bold text-base flex items-center gap-2 ${textColor}`}>
+                  <span className={`inline-block w-3 h-3 rounded-full border border-white/30 mr-1 ${bgColor}`}></span>
                   {tipo.nombre}
                 </div>
-                <div className={`text-xs opacity-70 mt-1${textClass ? ` ${textClass}` : ''}`}>{tipo.descripcion}</div>
+                 <div className={`text-xs opacity-70 mt-1 ${textColor}`}>{tipo.descripcion}</div>
               </div>
               <button onClick={() => handleEdit(tipo)} className="text-blue-400 hover:text-blue-200"><FaEdit /></button>
               <button onClick={() => handleDelete(tipo.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
