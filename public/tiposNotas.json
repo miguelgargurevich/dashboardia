@@ -1,0 +1,50 @@
+[
+  {
+    "id": "nota",
+    "nombre": "Nota",
+    "descripcion": "Nota general o apunte breve.",
+    "color": "bg-blue-500 text-white"
+  },
+  {
+    "id": "documento",
+    "nombre": "Documento",
+    "descripcion": "Documento formal, manual o instructivo.",
+    "color": "bg-green-500 text-white"
+  },
+  {
+    "id": "video",
+    "nombre": "Video",
+    "descripcion": "Video explicativo o grabación relevante.",
+    "color": "bg-purple-500 text-white"
+  },
+  {
+    "id": "incidente",
+    "nombre": "Incidente",
+    "descripcion": "Registro de incidente o problema.",
+    "color": "bg-red-500 text-white"
+  },
+  {
+    "id": "mantenimiento",
+    "nombre": "Mantenimiento",
+    "descripcion": "Nota de mantenimiento o tarea programada.",
+    "color": "bg-yellow-500 text-black"
+  },
+  {
+    "id": "reunion",
+    "nombre": "Reunión",
+    "descripcion": "Acta o resumen de reunión.",
+    "color": "bg-pink-500 text-white"
+  },
+  {
+    "id": "capacitacion",
+    "nombre": "Capacitación",
+    "descripcion": "Material de capacitación o aprendizaje.",
+    "color": "bg-teal-500 text-white"
+  },
+  {
+    "id": "otro",
+    "nombre": "Otro",
+    "descripcion": "Otro tipo de nota o documento.",
+    "color": "bg-gray-500 text-white"
+  }
+]

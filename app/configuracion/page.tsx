@@ -7,14 +7,16 @@ interface Tema {
 }
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaCog, FaLayerGroup, FaCalendarAlt, FaChevronRight, FaFolderOpen } from 'react-icons/fa';
-import TemasConfigPanel from './TemasConfigPanel';
 
+import { FaCog, FaLayerGroup, FaCalendarAlt, FaChevronRight, FaFolderOpen, FaStickyNote } from 'react-icons/fa';
+import TemasConfigPanel from './TemasConfigPanel';
 import RecursosConfigPanel from './RecursosConfigPanel';
+import TiposNotasConfigPanel from './TiposNotasConfigPanel';
 
 
 const ConfiguracionPage: React.FC = () => {
-  const [panel, setPanel] = useState<'temas' | 'recursos' | 'otros'>('temas');
+  const [panel, setPanel] = useState<'temas' | 'recursos' | 'tiposNotas' | 'otros'>('temas');
+  // Eliminado: tiposNotas y su useEffect, ahora en TiposNotasConfigPanel
 
   // EventosConfigPanel maneja su propio estado
   const [temas, setTemas] = useState<Tema[]>([]);
@@ -66,6 +68,13 @@ const ConfiguracionPage: React.FC = () => {
             {panel === 'recursos' && <FaChevronRight className="ml-auto" />}
           </button>
           <button
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'tiposNotas' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
+            onClick={() => setPanel('tiposNotas')}
+          >
+            <FaStickyNote /> Tipos de Notas
+            {panel === 'tiposNotas' && <FaChevronRight className="ml-auto" />}
+          </button>
+          <button
             className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'otros' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
             onClick={() => setPanel('otros')}
           >
@@ -80,6 +89,9 @@ const ConfiguracionPage: React.FC = () => {
           )}
           {panel === 'recursos' && (
             <RecursosConfigPanel tiposRecursos={tiposRecursos} onChange={setTiposRecursos} />
+          )}
+          {panel === 'tiposNotas' && (
+            <TiposNotasConfigPanel />
           )}
           {panel === 'otros' && (
             <div className="mt-4">
