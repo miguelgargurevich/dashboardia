@@ -62,7 +62,19 @@ async function main() {
     { tipo: 'nota', titulo: 'Nota rápida', descripcion: 'Recordatorio importante', tags: ['personal'], categoria: 'General' },
     { tipo: 'archivo', titulo: 'Manual PDF', filePath: '/uploads/manual.pdf', tags: ['manual'], categoria: 'Documentos' },
     { tipo: 'video', titulo: 'Capacitación Teams', url: 'https://youtube.com/teams', tags: ['teams', 'capacitación'], categoria: 'Colaboración' },
-    { tipo: 'enlace', titulo: 'Guía VPN', url: 'https://intranet/vpn', tags: ['vpn', 'manual'], categoria: 'Redes' }
+    { tipo: 'enlace', titulo: 'Guía VPN', url: 'https://intranet/vpn', tags: ['vpn', 'manual'], categoria: 'Redes' },
+    // Recursos extra para pruebas
+    { tipo: 'archivo', titulo: 'Política Seguridad', filePath: '/uploads/politica-seguridad.pdf', tags: ['seguridad', 'pdf'], categoria: 'Seguridad' },
+    { tipo: 'url', titulo: 'Portal de Soporte', url: 'https://soporte.empresa.com', tags: ['soporte', 'web'], categoria: 'Soporte' },
+    { tipo: 'video', titulo: 'Onboarding IT', url: 'https://youtube.com/onboarding', tags: ['onboarding', 'it'], categoria: 'Recursos Humanos' },
+    { tipo: 'ia-automatizacion', titulo: 'Bot de Tickets', descripcion: 'Automatiza la gestión de tickets', tags: ['ia', 'automatización'], categoria: 'Automatización' },
+    { tipo: 'contactos-externos', titulo: 'Proveedor de Hosting', descripcion: 'Contacto de soporte hosting', tags: ['hosting', 'contacto'], categoria: 'Infraestructura' },
+    { tipo: 'plantillas-formularios', titulo: 'Plantilla Solicitud Acceso', filePath: '/uploads/solicitud-acceso.docx', tags: ['plantilla', 'acceso'], categoria: 'Formularios' },
+    { tipo: 'archivo', titulo: 'Manual de Usuario', filePath: '/uploads/manual-usuario.pdf', tags: ['manual', 'usuario'], categoria: 'Documentos' },
+    { tipo: 'url', titulo: 'Wiki Interna', url: 'https://wiki.empresa.com', tags: ['wiki', 'documentación'], categoria: 'Documentación' },
+    { tipo: 'archivo', titulo: 'Procedimiento Backup', filePath: '/uploads/backup.pdf', tags: ['backup', 'procedimiento'], categoria: 'Infraestructura' },
+    { tipo: 'video', titulo: 'Capacitación Seguridad', url: 'https://youtube.com/seguridad', tags: ['seguridad', 'capacitacion'], categoria: 'Seguridad' },
+    { tipo: 'url', titulo: 'Panel de Control', url: 'https://panel.empresa.com', tags: ['panel', 'control'], categoria: 'Administración' }
   ];
   for (const r of resources) {
     const exists = await prisma.resource.findMany({ where: { titulo: r.titulo }, take: 1 });

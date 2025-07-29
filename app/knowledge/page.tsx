@@ -63,10 +63,31 @@ interface Tema {
 }
 
 const KnowledgePage: React.FC = () => {
+  const [token, setToken] = useState<string | null>(null);
+  // Eventos para TodoConocimientoPanel (eventos del mes actual)
+  const [eventosParaTodoConocimiento, setEventosParaTodoConocimiento] = useState<any[]>([]);
+  useEffect(() => {
+    async function fetchEventos() {
+      if (!token) return;
+      try {
+        const now = new Date();
+        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const res = await fetch(`/api/events/calendar?month=${month}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setEventosParaTodoConocimiento(Array.isArray(data) ? data : []);
+        }
+      } catch (e) {
+        setEventosParaTodoConocimiento([]);
+      }
+    }
+    fetchEventos();
+  }, [token]);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [seccionActiva, setSeccionActiva] = useState('todo');
   const [temaSeleccionado, setTemaSeleccionado] = useState<string | null>(null);
   const [notasMD, setNotasMD] = useState<NotasMD[]>([]);
@@ -1056,13 +1077,17 @@ ${formData.contenido}
 
 
 
+
+        {/* Panel Todo el conocimiento */}
+
         {/* Panel Todo el conocimiento */}
         {seccionActiva === 'todo' && (
           <div>
             {/* Panel unificado: notas, recursos, eventos */}
-            <TodoConocimientoPanel notas={notasMD} recursos={recursos} eventos={[]} />
+            <TodoConocimientoPanel notas={notasMD} recursos={recursos} eventos={eventosParaTodoConocimiento} />
           </div>
         )}
+
 
         {/* Panel de eventos de conocimiento, como sección independiente */}
         {seccionActiva === 'eventos' && (

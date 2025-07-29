@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaCalendarAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaCalendarAlt, FaListUl, FaTools, FaExclamationTriangle, FaUsers, FaChalkboardTeacher, FaRegCalendarAlt } from 'react-icons/fa';
 import EventosMantenimientoCalendar from '../components/eventos/EventosMantenimientoCalendar';
 import Modal from '../components/Modal';
 
@@ -35,6 +35,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [seccionActiva, setSeccionActiva] = useState<'calendario' | 'lista'>('calendario');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -132,103 +133,161 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     cargarEventos(token);
   };
 
-  return (
-    <div className="flex bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px]">
-      {/* Panel lateral: lista de eventos */}
-      <div className="w-1/3 min-w-[280px] max-w-xs bg-secondary/80 border-r border-accent/20 p-0 flex flex-col">
-        {/* Header y botón agregar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-accent/10 bg-secondary/90 sticky top-0 z-10">
-          <h2 className="text-lg font-bold text-accent flex items-center gap-2"><FaCalendarAlt /> Eventos del Mes</h2>
-          <button
-            onClick={() => {
-              setMostrarFormulario(true);
-              setEventoEditando(null);
-              setFormData({
-                title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', nombreNotificacion: '', isRecurring: false, recurrencePattern: '', eventType: ''
-              });
-            }}
-            className="flex items-center gap-2 bg-accent text-secondary px-3 py-1 rounded-lg hover:bg-accent/80 text-sm font-semibold shadow"
-          >
-            <FaPlus className="text-base" /> Agregar evento
-          </button>
+
+
+  // Icono y color por tipo de evento
+  const tipoEventoInfo: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
+    incidente: { icon: <FaExclamationTriangle className="text-red-400" />, color: 'bg-red-900/60 text-red-300', label: 'Incidente' },
+    mantenimiento: { icon: <FaTools className="text-blue-400" />, color: 'bg-blue-900/60 text-blue-300', label: 'Mantenimiento' },
+    reunion: { icon: <FaUsers className="text-green-400" />, color: 'bg-green-900/60 text-green-300', label: 'Reunión' },
+    capacitacion: { icon: <FaChalkboardTeacher className="text-yellow-400" />, color: 'bg-yellow-900/60 text-yellow-300', label: 'Capacitación' },
+    otro: { icon: <FaRegCalendarAlt className="text-gray-400" />, color: 'bg-gray-800/60 text-gray-300', label: 'Otro' },
+  };
+
+  const EventoCard: React.FC<{ evento: Evento; onEdit?: () => void; onDelete?: () => void; onSelect?: () => void; selected?: boolean }> = ({ evento, onEdit, onDelete, onSelect, selected }) => {
+    return (
+      <div
+        className={`bg-primary rounded-xl shadow-md border border-accent/20 mb-4 p-4 flex flex-col gap-2 cursor-pointer transition-all ${selected ? 'ring-2 ring-accent' : 'hover:ring-1 hover:ring-accent/50'}`}
+        onClick={onSelect}
+      >
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-bold text-accent text-lg">{evento.title}</span>
         </div>
-        {/* Buscador */}
-        <div className="px-4 py-2 bg-secondary/80 border-b border-accent/10 sticky top-[56px] z-10">
-          <input
-            type="text"
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            placeholder="Buscar evento..."
-            className="w-full bg-primary/60 border border-accent/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm"
-          />
+        <div className="text-sm text-gray-300 mb-1">
+          <span className="font-semibold">Descripción:</span> {evento.description || <span className="italic text-gray-500">Sin descripción</span>}
         </div>
-        {/* Lista de eventos filtrada */}
-        <div className="flex-1 overflow-y-auto divide-y divide-accent/10">
-          {eventos.filter(ev =>
-            ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-            (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-          ).length === 0 && (
-            <div className="p-4 text-gray-400">No hay eventos este mes.</div>
-          )}
-          {eventos.filter(ev =>
-            ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-            (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-          ).map(ev => (
-            <div
-              key={ev.id}
-              className={`p-4 cursor-pointer hover:bg-accent/10 ${eventoSeleccionado?.id === ev.id ? 'bg-accent/10 border-l-4 border-accent' : ''}`}
-              onClick={() => setEventoSeleccionado(ev)}
-            >
-              <div className="font-semibold text-accent text-base">{ev.title}</div>
-              <div className="text-xs text-gray-400">{new Date(ev.startDate).toLocaleDateString()} - {ev.endDate ? new Date(ev.endDate).toLocaleDateString() : ''}</div>
-              <div className="text-xs mt-1 text-gray-300 line-clamp-2">{ev.description}</div>
-            </div>
-          ))}
+        <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
+          <span className="font-semibold">Fecha:</span> {evento.startDate ? `${new Date(evento.startDate).toLocaleDateString()}${evento.endDate ? ' - ' + new Date(evento.endDate).toLocaleDateString() : ''}` : <span className="italic text-gray-500">Sin fecha</span>}
+        </div>
+        <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
+          <span className="font-semibold">Validador:</span> <span className="inline-flex items-center">👤 {evento.validador || <span className="italic text-gray-500">Sin validador</span>}</span>
+        </div>
+        <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
+          <span className="font-semibold">Código Dana:</span> <span className="inline-flex items-center">🏢 {evento.codigoDana || <span className="italic text-gray-500">Sin código</span>}</span>
+        </div>
+        {evento.nombreNotificacion && (
+          <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
+            <span className="font-semibold">Notificación:</span> <span className="inline-flex items-center">🔔 {evento.nombreNotificacion}</span>
+          </div>
+        )}
+        <div className="flex justify-end gap-2 mt-2">
+          {onEdit && <button onClick={e => { e.stopPropagation(); onEdit(); }} className="px-3 py-1 rounded bg-accent/80 text-secondary font-semibold hover:bg-accent">Editar</button>}
+          {onDelete && <button onClick={e => { e.stopPropagation(); onDelete(); }} className="px-3 py-1 rounded bg-red-600/80 text-white font-semibold hover:bg-red-700">Eliminar</button>}
         </div>
       </div>
-      {/* Panel derecho: calendario arriba y detalle abajo */}
+    );
+  };
+
+  return (
+    <div className="bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px] flex flex-col">
+      {/* Tabs de navegación */}
+      
+
+      <div className="flex flex-wrap gap-3 mb-6">
+        <button
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            seccionActiva === 'calendario'
+              ? 'bg-accent/20 text-accent border border-accent/30'
+              : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+          }`}
+          onClick={() => setSeccionActiva('calendario')}
+        >
+          <FaCalendarAlt className="inline mr-2" /> Calendario
+        </button>
+        <button
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            seccionActiva === 'lista'
+              ? 'bg-accent/20 text-accent border border-accent/30'
+              : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+          }`}
+          onClick={() => setSeccionActiva('lista')}
+        >
+          <FaListUl className="inline mr-2" /> Lista de eventos
+        </button>
+      </div>
+    <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-accent">Gestión de Eventos</h2>
+        <button
+        onClick={() => setMostrarFormulario(true)}
+        className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+        >
+        <FaPlus />
+        Agregar Evento
+        </button>
+    </div> 
+      
+      {/* Panel principal: cambia según tab */}
       <div className="flex-1 flex flex-col bg-primary/80">
-        {/* Calendario arriba */}
-        <div className="border-b border-accent/10 bg-primary/90 p-4 sticky top-0 z-10">
-          {token && (
-            <EventosMantenimientoCalendar
-              token={token}
-              layout="split"
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          )}
-        </div>
-        {/* Detalle del evento seleccionado */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          {eventoSeleccionado ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-accent flex items-center gap-2"><FaCalendarAlt /> {eventoSeleccionado.title}</h3>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(eventoSeleccionado)} className="px-3 py-1 rounded bg-accent/80 text-secondary hover:bg-accent"><FaEdit /></button>
-                  <button onClick={() => handleDelete(eventoSeleccionado.id)} className="px-3 py-1 rounded bg-red-600/80 text-white hover:bg-red-700"><FaTrash /></button>
-                </div>
-              </div>
-              <div className="mb-2 text-gray-300"><span className="font-semibold">Descripción:</span> {eventoSeleccionado.description || 'Sin descripción'}</div>
-              <div className="mb-2 text-gray-300"><span className="font-semibold">Fecha:</span> {new Date(eventoSeleccionado.startDate).toLocaleString()} - {eventoSeleccionado.endDate ? new Date(eventoSeleccionado.endDate).toLocaleString() : ''}</div>
-              {eventoSeleccionado.nombreNotificacion && (
-                <div className="mb-2 text-gray-300"><span className="font-semibold">Notificación:</span> <span className="text-yellow-400">🔔</span> {eventoSeleccionado.nombreNotificacion}</div>
+        {seccionActiva === 'calendario' ? (
+          <>
+            {/* Calendario arriba */}
+            <div className="border-b border-accent/10 bg-primary/90 p-4 sticky top-0 z-10">
+              {token && (
+                <EventosMantenimientoCalendar
+                  token={token}
+                  layout="split"
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
               )}
-              <div className="mb-2 text-gray-300"><span className="font-semibold">Tipo:</span> {eventoSeleccionado.eventType || 'Sin tipo'}</div>
-              <div className="mb-2 text-gray-300"><span className="font-semibold">Modo:</span> {eventoSeleccionado.modo || 'Sin modo'}</div>
-              <div className="mb-2 text-gray-300"><span className="font-semibold">Validador:</span> {eventoSeleccionado.validador || 'Sin validador'}</div>
-              <div className="mb-2 text-gray-300"><span className="font-semibold">Código Dana:</span> {eventoSeleccionado.codigoDana || 'Sin código'}</div>
-              {/* Aquí puedes agregar recursos y notas relacionadas si lo deseas */}
-              <div className="mt-6 text-gray-400 italic">(Aquí irán recursos y notas relacionadas...)</div>
-            </>
-          ) : (
-            <div className="text-gray-400 text-lg flex flex-col items-center justify-center h-full">
-              <FaCalendarAlt className="text-5xl mb-4 text-accent/40" />
-              Selecciona un evento para ver detalles.
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex-1 p-6 overflow-y-auto min-h-[420px] bg-secondary rounded-lg">
+            {/* Buscador */}
+            <div className="mb-4">
+              <input
+                type="text"
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+                placeholder="Buscar evento..."
+                className="w-full bg-primary/60 border border-accent/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm"
+              />
+            </div>
+            {/* Lista de eventos como cards */}
+            {eventos.filter(ev =>
+              ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+              (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+            ).length === 0 && (
+              <div className="p-4 text-gray-400">No hay eventos este mes.</div>
+            )}
+            {eventos.filter(ev =>
+              ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+              (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+            ).map(ev => {
+              // Colores y estilos igual que NotasDocumentosPanel
+              const tipoInfo = tipoEventoInfo[ev.eventType || 'otro'] || tipoEventoInfo['otro'];
+              const isSelected = eventoSeleccionado?.id === ev.id;
+              return (
+                <button
+                  key={ev.id}
+                  onClick={() => setEventoSeleccionado(ev)}
+                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 border ${
+                    isSelected
+                      ? 'bg-secondary border-accent ring-2 ring-accent shadow-lg'
+                      : 'bg-secondary border border-accent/20 hover:border-accent/40 shadow-md hover:shadow-lg'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${isSelected ? tipoInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('300', '300/30') : tipoInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('300', '300/20')}`}>{tipoInfo.icon}</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{ev.title}</h3>
+                      <p className={`text-xs mb-1 font-medium ${tipoInfo.color.split(' ')[1] || 'text-accent'}`}>{tipoInfo.label}</p>
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {ev.modo && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/60 text-gray-300">{ev.modo}</span>}
+                        {ev.validador && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/60 text-gray-300">{ev.validador}</span>}
+                        {ev.codigoDana && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/60 text-gray-300">{ev.codigoDana}</span>}
+                        {ev.nombreNotificacion && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/60 text-yellow-300">{ev.nombreNotificacion}</span>}
+                      </div>
+                      <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{ev.description || <span className="italic text-gray-500">Sin descripción</span>}</p>
+                      <p className="text-xs text-gray-400 mt-1">{ev.startDate ? `${new Date(ev.startDate).toLocaleDateString()}${ev.endDate ? ' - ' + new Date(ev.endDate).toLocaleDateString() : ''}` : <span className="italic text-gray-500">Sin fecha</span>}</p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
       {/* Modal para crear/editar evento */}
       {mostrarFormulario && (
