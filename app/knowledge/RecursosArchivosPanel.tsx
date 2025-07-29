@@ -1,20 +1,22 @@
 "use client";
-import React from "react";
-import { FaSearch, FaVideo, FaLayerGroup, FaEye, FaEdit, FaTrash } from "react-icons/fa";
 
+
+import { FaSearch, FaEye, FaEdit, FaTrash } from "react-icons/fa";
+
+// Tipos auxiliares
 interface Recurso {
   id: string;
   tipo: string;
+  tipoArchivo?: string;
   titulo: string;
-  descripcion?: string;
+  tema?: string;
+  tamaño?: number;
   url?: string;
   filePath?: string;
-  tags: string[];
-  tema: string;
-  fechaCarga: string;
-  tipoArchivo?: string;
-  tamaño?: number;
   nombreOriginal?: string;
+  descripcion?: string;
+  tags?: string[];
+  fechaCarga?: string;
 }
 
 interface Tema {
@@ -25,57 +27,54 @@ interface Tema {
 interface TipoRecurso {
   id: string;
   nombre: string;
-  descripcion: string;
-  icono: React.ReactNode;
-  color: string;
 }
 
 interface RecursosArchivosPanelProps {
   recursos: Recurso[];
-  temas: Tema[];
-  tiposRecursos: TipoRecurso[];
+  cargando?: boolean;
   recursoSeleccionado: Recurso | null;
-  setRecursoSeleccionado: (r: Recurso | null) => void;
+  setRecursoSeleccionado: (recurso: Recurso | null) => void;
+  setRecursoEditando: (recurso: Recurso) => void;
+  setMostrarFormularioRecurso: (mostrar: boolean) => void;
+  eliminarRecurso: (id: string) => void;
   busqueda: string;
-  setBusqueda: (v: string) => void;
+  setBusqueda: (valor: string) => void;
   filtroTipo: string;
-  setFiltroTipo: (v: string) => void;
+  setFiltroTipo: (valor: string) => void;
+  tiposRecursos: TipoRecurso[];
   etiquetasDisponibles: string[];
   filtroEtiqueta: string;
-  setFiltroEtiqueta: (v: string) => void;
-  cargando: boolean;
+  setFiltroEtiqueta: (valor: string) => void;
+  temas: Tema[];
   getIconoTipoRecurso: (tipo: string, tipoArchivo?: string) => React.ReactNode;
   getTipoRecursoLabel: (tipo: string, tipoArchivo?: string) => string;
-  formatFileSize: (bytes: number) => string;
-  eliminarRecurso: (id: string) => void;
-  setRecursoEditando: (r: Recurso) => void;
-  setMostrarFormularioRecurso: (v: boolean) => void;
+  formatFileSize: (size: number) => string;
 }
 
 const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
-  recursos,
-  temas,
-  tiposRecursos,
+  recursos = [],
+  cargando = false,
   recursoSeleccionado,
   setRecursoSeleccionado,
+  setRecursoEditando,
+  setMostrarFormularioRecurso,
+  eliminarRecurso,
   busqueda,
   setBusqueda,
   filtroTipo,
   setFiltroTipo,
-  etiquetasDisponibles,
+  tiposRecursos = [],
+  etiquetasDisponibles = [],
   filtroEtiqueta,
   setFiltroEtiqueta,
-  cargando,
+  temas = [],
   getIconoTipoRecurso,
   getTipoRecursoLabel,
-  formatFileSize,
-  eliminarRecurso,
-  setRecursoEditando,
-  setMostrarFormularioRecurso
+  formatFileSize
 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Panel de filtros y lista */}
+      {/* Lista y filtros */}
       <div className="lg:col-span-1">
         <div className="bg-secondary rounded-lg p-4">
           <div className="space-y-4 mb-4">
@@ -94,10 +93,10 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
-                className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
               >
                 <option value="">Todos los tipos</option>
-                {tiposRecursos.map(tipo => (
+                {tiposRecursos.map((tipo) => (
                   <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
                 ))}
               </select>
@@ -108,10 +107,10 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                 <select
                   value={filtroEtiqueta}
                   onChange={(e) => setFiltroEtiqueta(e.target.value)}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
                 >
                   <option value="">Todas las etiquetas</option>
-                  {etiquetasDisponibles.map(etiqueta => (
+                  {etiquetasDisponibles.map((etiqueta) => (
                     <option key={etiqueta} value={etiqueta} className="bg-primary text-white">{etiqueta}</option>
                   ))}
                 </select>
@@ -125,21 +124,17 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {recursos.map((recurso) => (
-                <div
+                <button
                   key={recurso.id}
                   onClick={() => setRecursoSeleccionado(recurso)}
-                  className={`p-4 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
+                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                     recursoSeleccionado?.id === recurso.id
-                      ? 'bg-gradient-to-r from-accent/20 to-accent/10 border border-accent shadow-lg shadow-accent/20'
+                      ? 'bg-accent/30 text-accent shadow-lg shadow-current/20 border-accent'
                       : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      recursoSeleccionado?.id === recurso.id 
-                        ? 'bg-accent/30' 
-                        : 'bg-accent/20'
-                    }`}>
+                    <div className={`p-2 rounded-lg bg-accent/20 text-accent`}>
                       {getIconoTipoRecurso(recurso.tipo, recurso.tipoArchivo)}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -156,13 +151,13 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </div>
       </div>
-      {/* Panel de detalles */}
+      {/* Panel lateral de detalle */}
       <div className="lg:col-span-2">
         <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
           {recursoSeleccionado ? (
@@ -231,6 +226,12 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                     <FaTrash className="text-xs" />
                     Eliminar
                   </button>
+                  <button
+                    onClick={() => setRecursoSeleccionado(null)}
+                    className="flex items-center gap-1 px-3 py-1 bg-gray-600/20 text-gray-300 rounded hover:bg-gray-700/30 transition-colors"
+                  >
+                    Cerrar
+                  </button>
                 </div>
               </div>
               <div className="space-y-4">
@@ -253,7 +254,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                     </a>
                   </div>
                 )}
-                {recursoSeleccionado.tags.length > 0 && (
+                {recursoSeleccionado.tags && recursoSeleccionado.tags.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-gray-300 mb-2">Etiquetas</h4>
                     <div className="flex flex-wrap gap-2">
@@ -269,7 +270,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                   </div>
                 )}
                 <div className="text-sm text-gray-500 space-y-1">
-                  <p>Subido: {new Date(recursoSeleccionado.fechaCarga).toLocaleDateString()}</p>
+                  <p>Subido: {new Date(recursoSeleccionado.fechaCarga || 0).toLocaleDateString()}</p>
                   {recursoSeleccionado.nombreOriginal && (
                     <p>Archivo original: {recursoSeleccionado.nombreOriginal}</p>
                   )}

@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaCalendarAlt, FaListUl, FaTools, FaUsers, FaChalkboardTeacher, FaRobot, FaClipboardList, FaLaptop } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaCalendarAlt, FaListUl, FaTools, FaUsers, FaChalkboardTeacher, FaRobot, FaClipboardList, FaLaptop, FaEye } from 'react-icons/fa';
 import EventosMantenimientoCalendar from '../components/eventos/EventosMantenimientoCalendar';
 import Modal from '../components/Modal';
 
@@ -204,110 +204,144 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 className="w-full bg-primary/60 border border-accent/20 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent text-sm"
               />
             </div>
-            {/* Lista de eventos como cards */}
-            {eventos.filter(ev =>
-              ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-              (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-            ).length === 0 && (
-              <div className="p-4 text-gray-400">No hay eventos este mes.</div>
-            )}
-            {eventos.filter(ev =>
-              ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-              (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-            ).length === 0 ? null : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {eventos.filter(ev =>
-                  ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-                  (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-                ).map((event) => {
-                  const isSelected = eventoSeleccionado?.id === event.id;
-                  return (
-                    <div
-                      key={event.id}
-                      className={`bg-primary/40 rounded-lg p-3 border border-yellow-400/30 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-accent' : 'hover:ring-1 hover:ring-accent/50'}`}
-                      onClick={() => setEventoSeleccionado(event)}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-400">
-                            {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                            {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                            {event.title.toLowerCase().includes('reunión') && <FaUsers />}
-                            {event.title.toLowerCase().includes('webinar') && <FaRobot />}
-                            {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                            {event.title.toLowerCase().includes('demo') && <FaLaptop />}
-                            {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
-                          </span>
-                          <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {event.title}</h5>
+            {/* Panel unificado: lista y detalle lateral */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Lista de eventos (cards) */}
+              <div className="lg:col-span-1">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {eventos.filter(ev =>
+                    ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+                    (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+                  ).length === 0 ? (
+                    <div className="p-4 text-gray-400">No hay eventos este mes.</div>
+                  ) : (
+                    eventos.filter(ev =>
+                      ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+                      (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+                    ).map((event) => {
+                      const isSelected = eventoSeleccionado?.id === event.id;
+                      return (
+                        <button
+                          key={event.id}
+                          onClick={() => setEventoSeleccionado(event)}
+                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
+                            isSelected
+                              ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
+                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
+                              {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
+                              {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
+                              {event.title.toLowerCase().includes('reunión') && <FaUsers />}
+                              {event.title.toLowerCase().includes('webinar') && <FaRobot />}
+                              {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
+                              {event.title.toLowerCase().includes('demo') && <FaLaptop />}
+                              {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
+                              {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+              {/* Panel lateral de detalle */}
+              <div className="lg:col-span-2">
+                <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
+                  {eventoSeleccionado ? (
+                    <div>
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
+                            {eventoSeleccionado.title.toLowerCase().includes('mantenimiento') && <FaTools />}
+                            {eventoSeleccionado.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
+                            {eventoSeleccionado.title.toLowerCase().includes('reunión') && <FaUsers />}
+                            {eventoSeleccionado.title.toLowerCase().includes('webinar') && <FaRobot />}
+                            {eventoSeleccionado.title.toLowerCase().includes('revisión') && <FaClipboardList />}
+                            {eventoSeleccionado.title.toLowerCase().includes('demo') && <FaLaptop />}
+                            {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => eventoSeleccionado.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
+                          </div>
+                          <h2 className="text-xl font-bold text-accent">{eventoSeleccionado.title}</h2>
                         </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={e => { e.stopPropagation(); handleEdit(event); }}
-                            className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
-                            title="Editar evento"
+                            onClick={() => handleEdit(eventoSeleccionado)}
+                            className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
                           >
-                            <FaEdit /> Editar
+                            <FaEdit className="text-sm" />
+                            Editar
                           </button>
                           <button
-                            onClick={e => { e.stopPropagation(); handleDelete(event.id); }}
-                            className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
-                            title="Eliminar evento"
+                            onClick={() => handleDelete(eventoSeleccionado.id)}
+                            className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
                           >
-                            <FaTrash /> Eliminar
+                            <FaTrash className="text-sm" />
+                            Eliminar
+                          </button>
+                          <button
+                            onClick={() => setEventoSeleccionado(null)}
+                            className="flex items-center gap-2 px-3 py-1 bg-gray-600/20 text-gray-300 rounded hover:bg-gray-700/30 transition-colors"
+                          >
+                            Cerrar
                           </button>
                         </div>
                       </div>
-                      {event.description && (
-                        <p className="text-gray-300 text-xs mb-2 line-clamp-2"><span className="font-bold text-gray-400 mr-1">Descripción:</span> {event.description}</p>
+                      {eventoSeleccionado.description && (
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-gray-300 mb-2">Descripción</h3>
+                          <p className="text-gray-400">{eventoSeleccionado.description}</p>
+                        </div>
                       )}
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-400">
-                            <span className="font-bold text-gray-400 mr-1">Fecha:</span> {new Date(event.startDate).toLocaleDateString('es-ES')}
-                            {event.endDate && <span> - {new Date(event.endDate).toLocaleDateString('es-ES')}</span>}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {event.location && (
-                            <span className="text-gray-400">
-                              <span className="font-bold text-gray-400 mr-1">Ubicación:</span> 📍 {event.location}
-                            </span>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-4 mb-4 text-sm text-gray-400">
+                        <span><span className="font-bold">Fecha:</span> {new Date(eventoSeleccionado.startDate).toLocaleDateString('es-ES')}{eventoSeleccionado.endDate && <> - {new Date(eventoSeleccionado.endDate).toLocaleDateString('es-ES')}</>}</span>
+                        {eventoSeleccionado.location && <span><span className="font-bold">Ubicación:</span> 📍 {eventoSeleccionado.location}</span>}
                       </div>
-                      {(event.validador || event.codigoDana || event.nombreNotificacion || event.modo) && (
+                      {(eventoSeleccionado.validador || eventoSeleccionado.codigoDana || eventoSeleccionado.nombreNotificacion || eventoSeleccionado.modo) && (
                         <div className="mt-2 pt-2 border-t border-yellow-400/20">
                           <div className="flex items-center justify-between w-full text-xs">
                             <div className="flex flex-wrap gap-2">
-                              {event.validador && (
+                              {eventoSeleccionado.validador && (
                                 <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                                  <span className="font-bold text-blue-300 mr-1">Validador:</span> 👤 {event.validador}
+                                  <span className="font-bold text-blue-300 mr-1">Validador:</span> 👤 {eventoSeleccionado.validador}
                                 </span>
                               )}
-                              {event.codigoDana && (
+                              {eventoSeleccionado.codigoDana && (
                                 <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
-                                  <span className="font-bold text-green-300 mr-1">Código Dana:</span> 🏢 {event.codigoDana}
+                                  <span className="font-bold text-green-300 mr-1">Código Dana:</span> 🏢 {eventoSeleccionado.codigoDana}
                                 </span>
                               )}
-                              {event.nombreNotificacion && (
+                              {eventoSeleccionado.nombreNotificacion && (
                                 <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
-                                  <span className="font-bold text-purple-300 mr-1">Notificación:</span> 🔔 {event.nombreNotificacion}
+                                  <span className="font-bold text-purple-300 mr-1">Notificación:</span> 🔔 {eventoSeleccionado.nombreNotificacion}
                                 </span>
                               )}
                             </div>
-                            {event.modo && (
+                            {eventoSeleccionado.modo && (
                               <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10 ml-2">
-                                <span className="font-bold text-yellow-400 mr-1">Modo:</span> {event.modo}
+                                <span className="font-bold text-yellow-400 mr-1">Modo:</span> {eventoSeleccionado.modo}
                               </span>
                             )}
                           </div>
                         </div>
                       )}
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <FaEye className="text-4xl mb-4 mx-auto" />
+                        <p>Selecciona un evento para ver sus detalles</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

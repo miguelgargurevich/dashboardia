@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { FaSearch, FaFileAlt, FaBook, FaVideo, FaEye } from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaBook, FaVideo, FaEye, FaEdit } from "react-icons/fa";
 
 interface Nota {
   id?: string;
@@ -35,6 +35,7 @@ interface NotasDocumentosPanelProps {
   cargando: boolean;
   descargarNota: (nota: Nota) => void;
   eliminarNota: (nota: Nota) => void;
+  onEditarNota?: (nota: Nota) => void;
 }
 
 const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
@@ -49,7 +50,8 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   setFiltroEtiqueta,
   cargando,
   descargarNota,
-  eliminarNota
+  eliminarNota,
+  onEditarNota
 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -90,7 +92,27 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {notas.map((nota, index) => {
-                const temaInfo = temas.find(t => t.id === nota.tema);
+                // Unificar iconos y colores como en TodoConocimientoPanel
+                let icono = <FaFileAlt className={`text-accent`} />;
+                let color = 'bg-accent/20 text-accent';
+                let nombreTipo = 'Nota';
+                if (nota.tipo === 'nota') {
+                  icono = <FaFileAlt className="text-accent" />;
+                  color = 'bg-accent/20 text-accent';
+                  nombreTipo = 'Nota';
+                } else if (nota.tipo === 'documento') {
+                  icono = <FaBook className="text-green-300" />;
+                  color = 'bg-green-900/20 text-green-300';
+                  nombreTipo = 'Documento';
+                } else if (nota.tipo === 'video') {
+                  icono = <FaVideo className="text-yellow-300" />;
+                  color = 'bg-yellow-900/20 text-yellow-300';
+                  nombreTipo = 'Video';
+                } else if (['incidente','mantenimiento','reunion','capacitacion','otro'].includes(nota.tipo)) {
+                  icono = <FaFileAlt className="text-accent" />;
+                  color = 'bg-accent/20 text-accent';
+                  nombreTipo = nota.tipo.charAt(0).toUpperCase() + nota.tipo.slice(1);
+                }
                 const isSelected = notaSeleccionada?.nombre === nota.nombre;
                 return (
                   <button
@@ -98,29 +120,27 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                     onClick={() => setNotaSeleccionada(nota)}
                     className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
                       isSelected
-                        ? `${temaInfo?.color} shadow-lg shadow-current/20`
-                        : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo?.color?.replace('text-', 'from-').replace('border-', 'from-').split(' ')[1]?.replace('400', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                        ? `${color} shadow-lg shadow-current/20`
+                        : `bg-gradient-to-r from-primary to-secondary/50 hover:${color.replace('text-', 'from-').replace('border-', 'from-').split(' ')[0]?.replace('900/20', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-lg ${
                         isSelected 
-                          ? `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/30') || 'bg-accent/30'}`
-                          : `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'}`
+                          ? color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/30') || 'bg-accent/30'
+                          : color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'
                       }`}>
-                        {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`} /> : 
-                         nota.tipo === 'documento' ? <FaBook className={`text-sm ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`} /> :
-                         <FaVideo className={`text-sm ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`} />}
+                        {icono}
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
-                        <p className={`text-xs mb-1 font-medium ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`}>{temaInfo?.nombre}</p>
+                        <p className={`text-xs mb-1 font-medium ${color.split(' ')[1] || 'text-accent'}`}>{nombreTipo}</p>
                         {nota.etiquetas && nota.etiquetas.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-1">
                             {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
                               <span
                                 key={etIndex}
-                                className={`px-1.5 py-0.5 rounded text-xs ${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'} ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`}
+                                className={`px-1.5 py-0.5 rounded text-xs ${color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'} ${color.split(' ')[1] || 'text-accent'}`}
                               >
                                 {etiqueta}
                               </span>
@@ -155,6 +175,14 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  <button 
+                    onClick={() => onEditarNota && notaSeleccionada && onEditarNota(notaSeleccionada)}
+                    className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
+                    disabled={!onEditarNota}
+                  >
+                    <FaEdit className="text-sm" />
+                    Editar
+                  </button>
                   <button 
                     onClick={() => descargarNota(notaSeleccionada)}
                     className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
