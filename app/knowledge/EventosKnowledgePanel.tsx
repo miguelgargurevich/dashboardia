@@ -1,6 +1,7 @@
+
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaSyncAlt, FaCalendarAlt } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaCalendarAlt } from 'react-icons/fa';
 import EventosMantenimientoCalendar from '../components/eventos/EventosMantenimientoCalendar';
 import Modal from '../components/Modal';
 
@@ -32,6 +33,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [cargando, setCargando] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -129,56 +131,90 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     cargarEventos(token);
   };
 
-
-
   return (
-    <>
-      <div className="flex items-center gap-3 mb-8 justify-between">
-        <div className="flex items-center gap-3">
-          <FaCalendarAlt className="text-2xl text-accent" />
-          <h1 className="text-3xl font-bold text-accent">Configuración de Eventos</h1>
+    <div className="flex bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px]">
+      {/* Panel lateral: lista de eventos */}
+      <div className="w-1/3 min-w-[280px] max-w-xs bg-secondary/80 border-r border-accent/20 p-0 flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-accent/10">
+          <h2 className="text-lg font-bold text-accent flex items-center gap-2"><FaCalendarAlt /> Eventos del Mes</h2>
+          <button
+            onClick={() => {
+              setMostrarFormulario(true);
+              setEventoEditando(null);
+              setFormData({
+                title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', nombreNotificacion: '', isRecurring: false, recurrencePattern: '', eventType: ''
+              });
+            }}
+            className="flex items-center gap-2 bg-accent text-secondary px-3 py-1 rounded-lg hover:bg-accent/80 text-sm"
+          >
+            <FaPlus /> Nuevo
+          </button>
         </div>
-        <button
-          onClick={() => {
-            setMostrarFormulario(true);
-            setEventoEditando(null);
-            setFormData({
-              title: '',
-              description: '',
-              startDate: '',
-              endDate: '',
-              location: '',
-              modo: '',
-              validador: '',
-              codigoDana: '',
-              nombreNotificacion: '',
-              isRecurring: false,
-              recurrencePattern: '',
-              eventType: ''
-            });
-          }}
-          className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-        >
-          <FaPlus /> Nuevo Evento
-        </button>
+        <div className="flex-1 overflow-y-auto divide-y divide-accent/10">
+          {eventos.length === 0 && (
+            <div className="p-4 text-gray-400">No hay eventos este mes.</div>
+          )}
+          {eventos.map(ev => (
+            <div
+              key={ev.id}
+              className={`p-4 cursor-pointer hover:bg-accent/10 ${eventoSeleccionado?.id === ev.id ? 'bg-accent/10 border-l-4 border-accent' : ''}`}
+              onClick={() => setEventoSeleccionado(ev)}
+            >
+              <div className="font-semibold text-accent text-base">{ev.title}</div>
+              <div className="text-xs text-gray-400">{new Date(ev.startDate).toLocaleDateString()} - {ev.endDate ? new Date(ev.endDate).toLocaleDateString() : ''}</div>
+              <div className="text-xs mt-1 text-gray-300 line-clamp-2">{ev.description}</div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mb-8">
-        {token && (
-          <EventosMantenimientoCalendar
-            token={token}
-            layout="split"
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        )}
+      {/* Panel derecho: detalle/calendario */}
+      <div className="flex-1 flex flex-col bg-primary/80">
+        <div className="flex-1 p-6 overflow-y-auto">
+          {eventoSeleccionado ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-accent flex items-center gap-2"><FaCalendarAlt /> {eventoSeleccionado.title}</h3>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEdit(eventoSeleccionado)} className="px-3 py-1 rounded bg-accent/80 text-secondary hover:bg-accent"><FaEdit /></button>
+                  <button onClick={() => handleDelete(eventoSeleccionado.id)} className="px-3 py-1 rounded bg-red-600/80 text-white hover:bg-red-700"><FaTrash /></button>
+                </div>
+              </div>
+              <div className="mb-2 text-gray-300"><span className="font-semibold">Descripción:</span> {eventoSeleccionado.description || 'Sin descripción'}</div>
+              <div className="mb-2 text-gray-300"><span className="font-semibold">Fecha:</span> {new Date(eventoSeleccionado.startDate).toLocaleString()} - {eventoSeleccionado.endDate ? new Date(eventoSeleccionado.endDate).toLocaleString() : ''}</div>
+              {eventoSeleccionado.nombreNotificacion && (
+                <div className="mb-2 text-gray-300"><span className="font-semibold">Notificación:</span> <span className="text-yellow-400">🔔</span> {eventoSeleccionado.nombreNotificacion}</div>
+              )}
+              <div className="mb-2 text-gray-300"><span className="font-semibold">Tipo:</span> {eventoSeleccionado.eventType || 'Sin tipo'}</div>
+              <div className="mb-2 text-gray-300"><span className="font-semibold">Modo:</span> {eventoSeleccionado.modo || 'Sin modo'}</div>
+              <div className="mb-2 text-gray-300"><span className="font-semibold">Validador:</span> {eventoSeleccionado.validador || 'Sin validador'}</div>
+              <div className="mb-2 text-gray-300"><span className="font-semibold">Código Dana:</span> {eventoSeleccionado.codigoDana || 'Sin código'}</div>
+              {/* Aquí puedes agregar recursos y notas relacionadas si lo deseas */}
+              <div className="mt-6 text-gray-400 italic">(Aquí irán recursos y notas relacionadas...)</div>
+            </>
+          ) : (
+            <div className="text-gray-400 text-lg flex flex-col items-center justify-center h-full">
+              <FaCalendarAlt className="text-5xl mb-4 text-accent/40" />
+              Selecciona un evento para ver detalles.
+            </div>
+          )}
+        </div>
+        {/* Calendario siempre visible abajo */}
+        <div className="border-t border-accent/10 bg-primary/90 p-4">
+          {token && (
+            <EventosMantenimientoCalendar
+              token={token}
+              layout="split"
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          )}
+        </div>
       </div>
-     
-
-
-
+      {/* Modal para crear/editar evento */}
       {mostrarFormulario && (
         <Modal open={mostrarFormulario} onClose={() => { setMostrarFormulario(false); setEventoEditando(null); }} title={eventoEditando ? 'Editar Evento' : 'Nuevo Evento'} maxWidth="max-w-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* ...formulario igual que antes... */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
               <input
@@ -318,8 +354,9 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
           </form>
         </Modal>
       )}
-    </>
+    </div>
   );
-};
+}
 
 export default EventosKnowledgePanel;
+
