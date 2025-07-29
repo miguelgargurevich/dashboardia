@@ -79,16 +79,17 @@ const TiposNotasConfigPanel: React.FC = () => {
       </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {tiposState.filter(tipo => tipo.id !== 'mantenimiento' && tipo.id !== 'video').map((tipo) => {
-          // Unificar lógica de color (igual que TemasConfigPanel/RecursosConfigPanel)
+          // Unificar lógica de color (robusta y DRY)
           let colorString = 'bg-blue-500/20 text-blue-400 border-blue-400/30';
           if (typeof tipo.color === 'string' && tipo.color.trim().length > 0) {
             colorString = tipo.color;
           }
           const colorParts = colorString.split(' ');
-          let bgClass = colorParts[0];
+          // Extraer clases
+          let bgClass = colorParts.find(c => c.startsWith('bg-')) || 'bg-blue-500/20';
           let textClass = colorParts.find(c => c.startsWith('text-')) || '';
           let borderClass = colorParts.find(c => c.startsWith('border-')) || '';
-          // Si solo hay 2 clases, generar el borde a partir del fondo
+          // Si no hay borde, generarlo a partir del fondo
           if (!borderClass) {
             const bgMatch = bgClass.match(/bg-([a-z]+)-(\d+)/);
             if (bgMatch) borderClass = `border-${bgMatch[1]}-${bgMatch[2]}`;
@@ -96,13 +97,17 @@ const TiposNotasConfigPanel: React.FC = () => {
           }
           // Fondo del card: si tiene opacidad, usar /10, si no, usar bgClass + /10
           let cardBgClass = '';
-          if (bgClass.includes('/20')) cardBgClass = bgClass.replace('/20','/10');
-          else if (bgClass.match(/bg-[a-z]+-\d+$/)) cardBgClass = bgClass + '/10';
-          else cardBgClass = bgClass;
+          if (/\/\d+$/.test(bgClass)) {
+            // Si ya tiene opacidad, reemplazar por /10
+            cardBgClass = bgClass.replace(/\/\d+$/, '/10');
+          } else if (bgClass.match(/bg-[a-z]+-\d+$/)) {
+            cardBgClass = bgClass + '/10';
+          } else {
+            cardBgClass = bgClass;
+          }
 
           // Dot: extraer el color base (bg-...-500) aunque tenga opacidad o variante
           let dotBgClass = 'bg-gray-400';
-          // Extraer bg-<color>-<tone> aunque tenga /xx al final (ej: bg-gray-500/20)
           const dotMatch = bgClass.match(/bg-[a-z]+-\d{3}/);
           if (dotMatch && dotMatch[0]) {
             dotBgClass = dotMatch[0];
@@ -118,7 +123,7 @@ const TiposNotasConfigPanel: React.FC = () => {
               className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg ${cardBgClass} ${borderClass} transition-all`}
             >
               <div className="flex-1">
-                <div className={`font-bold text-base flex items-center gap-2${textClass ? ` ${textClass}` : ''}`}>
+                <div className={`font-bold text-base flex items-center gap-2${textClass ? ` ${textClass}` : ''}`}> 
                   <span className={`inline-block w-3 h-3 rounded-full border mr-1 ${dotBgClass} ${borderDotClass}`}></span>
                   {tipo.nombre}
                 </div>

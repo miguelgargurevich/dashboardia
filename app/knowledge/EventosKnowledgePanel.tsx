@@ -35,7 +35,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [seccionActiva, setSeccionActiva] = useState<'calendario' | 'lista'>('calendario');
+  const [seccionActiva, setSeccionActiva] = useState<'calendario' | 'lista'>('lista');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -146,16 +146,6 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       <div className="flex flex-wrap gap-3 mb-6">
         <button
           className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-            seccionActiva === 'calendario'
-              ? 'bg-accent/20 text-accent border border-accent/30'
-              : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-          }`}
-          onClick={() => setSeccionActiva('calendario')}
-        >
-          <FaCalendarAlt className="inline mr-2" /> Calendario
-        </button>
-        <button
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
             seccionActiva === 'lista'
               ? 'bg-accent/20 text-accent border border-accent/30'
               : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
@@ -163,6 +153,16 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
           onClick={() => setSeccionActiva('lista')}
         >
           <FaListUl className="inline mr-2" /> Lista de eventos
+        </button>
+        <button
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            seccionActiva === 'calendario'
+              ? 'bg-accent/20 text-accent border border-accent/30'
+              : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
+          }`}
+          onClick={() => setSeccionActiva('calendario')}
+        >
+          <FaCalendarAlt className="inline mr-2" /> Calendario
         </button>
       </div>
     <div className="flex items-center justify-between mb-6">

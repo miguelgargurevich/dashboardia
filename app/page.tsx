@@ -1,5 +1,4 @@
 "use client";
-
 import AssistantBubble from './components/AsisstantIA/AssistantBubble';
 import TicketsPieChart from './components/dashboard/TicketsPieChart';
 import EventsCalendar from './components/dashboard/EventsCalendar';

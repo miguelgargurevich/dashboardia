@@ -7,9 +7,9 @@ declare global {
 }
 import { useState } from 'react';
 import { FaRobot } from 'react-icons/fa';
+
 if (typeof window !== 'undefined') {
   window.openAssistantBubble = () => {
-    //console.log('[Login] Despachando evento open-assistant-bubble');
     const evt = new CustomEvent('open-assistant-bubble');
     window.dispatchEvent(evt);
   };

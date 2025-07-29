@@ -14,8 +14,6 @@ interface TemasConfigPanelProps {
   onChange: (temas: Tema[]) => void;
 }
 
-
-
 // Cargar temas desde el JSON centralizado en public/temas.json
 
 const fetchTemasJson = async (): Promise<Tema[]> => {
@@ -107,19 +105,22 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
         </button>
       </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-        {temasState.map(tema => (
-          <li key={tema.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 ${tema.color.replace('/20','/10')} transition-all`}>
-            <div className="flex-1">
-              <div className="font-bold text-base flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-full border border-white/30 mr-1" style={{background: tema.color.split(' ')[0].replace('bg-','').replace('-500/20','')}}></span>
-                {tema.nombre}
+        {temasState.map(tema => {
+          const [bgClass, textClass, borderClass] = tema.color.split(' ');
+          return (
+            <li key={tema.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 transition-all`}>
+              <div className="flex-1">
+                <div className={`font-bold text-base flex items-center gap-2 ${textClass}`}>
+                  <span className={`inline-block w-3 h-3 rounded-full border mr-1 ${bgClass} ${borderClass}`}></span>
+                  {tema.nombre}
+                </div>
+                <div className={`text-xs opacity-70 mt-1 ${textClass}`}>{tema.descripcion}</div>
               </div>
-              <div className="text-xs opacity-70 mt-1">{tema.descripcion}</div>
-            </div>
-            <button onClick={() => handleEdit(tema)} className="text-blue-400 hover:text-blue-200"><FaEdit /></button>
-            <button onClick={() => handleDelete(tema.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
-          </li>
-        ))}
+              <button onClick={() => handleEdit(tema)} className="text-blue-400 hover:text-blue-200"><FaEdit /></button>
+              <button onClick={() => handleDelete(tema.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
+            </li>
+          );
+        })}
       </ul>
       {/* Botón movido arriba, junto al título */}
       {mostrarFormulario && (

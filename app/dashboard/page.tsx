@@ -1,5 +1,4 @@
 "use client";
-
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import DailyBarChart from '../components/dashboard/DailyBarChart';
 import WeeklyBarChart from '../components/dashboard/WeeklyBarChart';

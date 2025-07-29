@@ -8,20 +8,25 @@ interface ModalProps {
   maxWidth?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ open, onClose, children, title, maxWidth = "max-w-lg" }) => {
+
+const Modal: React.FC<ModalProps> = ({ open, onClose, children, title, maxWidth = "max-w-2xl" }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className={`bg-secondary rounded-2xl shadow-2xl border border-accent/20 w-full ${maxWidth} mx-4 relative`}>
-        <button
-          className="absolute top-3 right-3 text-accent hover:text-red-400 text-2xl font-bold focus:outline-none"
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          ×
-        </button>
-        {title && <div className="px-6 pt-6 pb-2 text-xl font-bold text-accent">{title}</div>}
-        <div className="px-6 pb-6 pt-2">{children}</div>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className={`bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full ${maxWidth} max-h-[90vh] flex flex-col`}>
+        <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl flex items-center justify-between">
+          <div>
+            {title && <h3 className="text-xl font-bold text-accent">{title}</h3>}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-600/20"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

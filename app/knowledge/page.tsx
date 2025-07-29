@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { FaFileAlt, FaBook, FaVideo, FaSearch, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaPlus, FaEdit, FaTrash, FaEyeSlash, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaTimes, FaCog, FaUsers, FaGraduationCap } from 'react-icons/fa';
+import Modal from '../components/Modal';
+import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus } from 'react-icons/fa';
 import NotasPanel from '../components/dashboard/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
 import RecursosArchivosPanel from '../components/dashboard/RecursosArchivosPanel';
@@ -629,107 +630,85 @@ ${formData.contenido}
     };
 
     return (
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-          <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-accent">
-                  Crear Nueva Nota
-                </h3>
-                <p className="text-sm text-gray-400 mt-2">
-                  Completa la información para crear una nueva nota
-                </p>
-              </div>
-              <button
-                onClick={() => setMostrarFormularioNota(false)}
-                className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-600/20"
-              >
-                <FaTimes />
-              </button>
-            </div>
+      <Modal
+        open={mostrarFormularioNota}
+        onClose={() => setMostrarFormularioNota(false)}
+        title="Crear Nueva Nota"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Título de la Nota *</label>
+            <input
+              type="text"
+              value={formData.titulo}
+              onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              placeholder="Ej: Procedimiento para resolver incidencias de notificaciones"
+              required
+            />
           </div>
-          
-          <div className="p-6 overflow-y-auto flex-1">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Título de la Nota *</label>
-                <input
-                  type="text"
-                  value={formData.titulo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  placeholder="Ej: Procedimiento para resolver incidencias de notificaciones"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Fecha *</label>
-                <input
-                  type="date"
-                  value={formData.fecha}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
-                <select
-                  value={formData.tema}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  required
-                >
-                  {temas.map(tema => (
-                    <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Contenido *</label>
-                <textarea
-                  value={formData.contenido}
-                  onChange={(e) => setFormData(prev => ({ ...prev, contenido: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-                  rows={8}
-                  placeholder="Escribe el contenido de la nota en formato Markdown..."
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
-                <input
-                  type="text"
-                  value={formData.etiquetas}
-                  onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  placeholder="Separadas por comas: urgente, soporte, procedimiento"
-                />
-              </div>
-              
-              <div className="flex gap-3 pt-6 border-t border-accent/20">
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
-                >
-                  Crear Nota
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMostrarFormularioNota(false)}
-                  className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Fecha *</label>
+            <input
+              type="date"
+              value={formData.fecha}
+              onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              required
+            />
           </div>
-        </div>
-      </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
+            <select
+              value={formData.tema}
+              onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              required
+            >
+              {temas.map(tema => (
+                <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Contenido *</label>
+            <textarea
+              value={formData.contenido}
+              onChange={(e) => setFormData(prev => ({ ...prev, contenido: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
+              rows={8}
+              placeholder="Escribe el contenido de la nota en formato Markdown..."
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
+            <input
+              type="text"
+              value={formData.etiquetas}
+              onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              placeholder="Separadas por comas: urgente, soporte, procedimiento"
+            />
+          </div>
+          <div className="flex gap-3 pt-6 border-t border-accent/20">
+            <button
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
+            >
+              Crear Nota
+            </button>
+            <button
+              type="button"
+              onClick={() => setMostrarFormularioNota(false)}
+              className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
     );
   };
 
@@ -818,166 +797,130 @@ ${formData.contenido}
     };
 
     return (
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-          <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-accent">
-                  {recursoEditando ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
-                </h3>
-                <p className="text-sm text-gray-400 mt-2">
-                  {recursoEditando 
-                    ? 'Modifica la información del recurso y guarda los cambios'
-                    : 'Completa la información del recurso'
-                  }
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setMostrarFormularioRecurso(false);
-                  setRecursoEditando(null);
-                }}
-                className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-600/20"
-              >
-                <FaTimes />
-              </button>
+      <Modal
+        open={mostrarFormularioRecurso}
+        onClose={() => {
+          setMostrarFormularioRecurso(false);
+          setRecursoEditando(null);
+        }}
+        title={recursoEditando ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
+            <input
+              type="text"
+              value={formData.titulo}
+              onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              placeholder="Ingresa el título del recurso"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Recurso *</label>
+            <select
+              value={formData.tipo}
+              onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios' }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              required
+              disabled={!!recursoEditando}
+            >
+              <option value="url" className="bg-primary text-white">🔗 Enlace / URL</option>
+              <option value="archivo" className="bg-primary text-white">📁 Archivo</option>
+              <option value="video" className="bg-primary text-white">🎥 Video</option>
+              <option value="ia-automatizacion" className="bg-primary text-white">🤖 IA y Automatización</option>
+              <option value="contactos-externos" className="bg-primary text-white">� Contactos y Recursos Externos</option>
+              <option value="plantillas-formularios" className="bg-primary text-white">📋 Plantillas y Formularios</option>
+            </select>
+          </div>
+          {(formData.tipo === 'url' || formData.tipo === 'video' || formData.tipo === 'ia-automatizacion' || formData.tipo === 'contactos-externos' || formData.tipo === 'plantillas-formularios') ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">URL *</label>
+              <input
+                type="url"
+                value={formData.url}
+                onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
+                className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                placeholder={
+                  formData.tipo === 'video' ? "https://youtube.com/watch?v=..." : 
+                  formData.tipo === 'ia-automatizacion' ? "https://docs.google.com/document/d/..." :
+                  formData.tipo === 'contactos-externos' ? "https://directorio.empresa.com" :
+                  formData.tipo === 'plantillas-formularios' ? "https://forms.google.com/..." :
+                  "https://ejemplo.com"
+                }
+                required
+              />
             </div>
+          ) : formData.tipo === 'archivo' && !recursoEditando ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Archivo *</label>
+              <input
+                type="file"
+                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                required
+              />
+            </div>
+          ) : null}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
+            <input
+              type="text"
+              value={formData.descripcion}
+              onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              placeholder="Descripción breve del recurso"
+            />
           </div>
-          
-          <div className="p-6 overflow-y-auto flex-1">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
-                <input
-                  type="text"
-                  value={formData.titulo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  placeholder="Ingresa el título del recurso"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Recurso *</label>
-                <select
-                  value={formData.tipo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios' }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                  required
-                  disabled={!!recursoEditando}
-                >
-                  <option value="url" className="bg-primary text-white">🔗 Enlace / URL</option>
-                  <option value="archivo" className="bg-primary text-white">📁 Archivo</option>
-                  <option value="video" className="bg-primary text-white">🎥 Video</option>
-                  <option value="ia-automatizacion" className="bg-primary text-white">🤖 IA y Automatización</option>
-                  <option value="contactos-externos" className="bg-primary text-white">� Contactos y Recursos Externos</option>
-                  <option value="plantillas-formularios" className="bg-primary text-white">📋 Plantillas y Formularios</option>
-                </select>
-              </div>
-
-              {(formData.tipo === 'url' || formData.tipo === 'video' || formData.tipo === 'ia-automatizacion' || formData.tipo === 'contactos-externos' || formData.tipo === 'plantillas-formularios') ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">URL *</label>
-                  <input
-                    type="url"
-                    value={formData.url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    placeholder={
-                      formData.tipo === 'video' ? "https://youtube.com/watch?v=..." : 
-                      formData.tipo === 'ia-automatizacion' ? "https://docs.google.com/document/d/..." :
-                      formData.tipo === 'contactos-externos' ? "https://directorio.empresa.com" :
-                      formData.tipo === 'plantillas-formularios' ? "https://forms.google.com/..." :
-                      "https://ejemplo.com"
-                    }
-                    required
-                  />
-                </div>
-              ) : formData.tipo === 'archivo' && !recursoEditando ? (
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Archivo *</label>
-                  <input
-                    type="file"
-                    onChange={(e) => setArchivo(e.target.files?.[0] || null)}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-accent file:text-secondary hover:file:bg-accent/80 transition-all"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.jpg,.jpeg,.png,.gif,.mp4,.avi,.mov"
-                    required
-                  />
-                  {archivo && (
-                    <p className="text-sm text-accent mt-2">
-                      📎 Archivo seleccionado: {archivo.name} ({formatFileSize(archivo.size)})
-                    </p>
-                  )}
-                </div>
-              ) : null}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
-                <textarea
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-                  rows={3}
-                  placeholder="Describe brevemente el contenido del recurso"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
-                  <select
-                    value={formData.tema}
-                    onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    required
-                  >
-                    {temas.map(tema => (
-                      <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
-                  <input
-                    type="text"
-                    value={formData.etiquetas}
-                    onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-                    className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                    placeholder="manual, tutorial, urgente"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 pt-6 border-t border-accent/20">
-                <button
-                  type="submit"
-                  disabled={procesandoRecurso || (formData.tipo === 'archivo' && !archivo && !recursoEditando)}
-                  className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                >
-                  {procesandoRecurso 
-                    ? (recursoEditando ? 'Actualizando...' : 'Creando...') 
-                    : (recursoEditando ? 'Actualizar Recurso' : 'Crear Recurso')
-                  }
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMostrarFormularioRecurso(false);
-                    setRecursoEditando(null);
-                  }}
-                  className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
+            <select
+              value={formData.tema}
+              onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              required
+            >
+              {temas.map(tema => (
+                <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
+            <input
+              type="text"
+              value={formData.etiquetas}
+              onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
+              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              placeholder="Separadas por comas: urgente, soporte, procedimiento"
+            />
+          </div>
+          <div className="flex gap-3 pt-6 border-t border-accent/20">
+            <button
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
+              disabled={procesandoRecurso}
+            >
+              {recursoEditando ? 'Guardar Cambios' : 'Crear Recurso'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMostrarFormularioRecurso(false);
+                setRecursoEditando(null);
+              }}
+              className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
+              disabled={procesandoRecurso}
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
     );
+
   };
 
   // Protección de autenticación
