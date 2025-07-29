@@ -18,7 +18,7 @@ import { FaBook } from 'react-icons/fa';
 
 
 const ConfiguracionPage: React.FC = () => {
-  const [panel, setPanel] = useState<'conocimiento' | 'eventos' | 'temas' | 'recursos' | 'otros'>('conocimiento');
+  const [panel, setPanel] = useState<'eventos' | 'temas' | 'recursos' | 'otros'>('eventos');
 
   // EventosConfigPanel maneja su propio estado
   const [temas, setTemas] = useState<Tema[]>([]);
@@ -55,13 +55,7 @@ const ConfiguracionPage: React.FC = () => {
       <div className="max-w-6xl mx-auto flex gap-8">
         {/* Panel lateral de navegación */}
         <aside className="w-56 min-w-[12rem] bg-secondary rounded-xl shadow-lg p-4 flex flex-col gap-2 h-fit sticky top-8">
-          <button
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'conocimiento' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
-            onClick={() => setPanel('conocimiento')}
-          >
-            <FaBook /> Todo el conocimiento
-            {panel === 'conocimiento' && <FaChevronRight className="ml-auto" />}
-          </button>
+          {/* Botón 'Todo el conocimiento' eliminado */}
           <button
             className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'eventos' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
             onClick={() => setPanel('eventos')}
@@ -93,11 +87,9 @@ const ConfiguracionPage: React.FC = () => {
         </aside>
         {/* Panel de contenido */}
         <section className="flex-1">
-          {panel === 'conocimiento' && (
-            <ConocimientoConfigPanel />
-          )}
+          {/* Panel 'Todo el conocimiento' eliminado */}
           {panel === 'eventos' && (
-            <EventosPanel />
+            <EventosConfigPanel token={token} />
           )}
           {panel === 'temas' && (
             <TemasConfigPanel temas={temas} onChange={setTemas} />

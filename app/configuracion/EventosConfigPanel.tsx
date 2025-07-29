@@ -133,21 +133,11 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
 
   return (
     <>
-      <div className="flex items-center gap-3 mb-8">
-        <FaCalendarAlt className="text-2xl text-accent" />
-        <h1 className="text-3xl font-bold text-accent">Mantenimiento de Eventos</h1>
-      </div>
-      <div className="mb-8">
-        {token && (
-          <EventosMantenimientoCalendar
-            token={token}
-            layout="split"
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        )}
-      </div>
-      <div className="mb-8">
+      <div className="flex items-center gap-3 mb-8 justify-between">
+        <div className="flex items-center gap-3">
+          <FaCalendarAlt className="text-2xl text-accent" />
+          <h1 className="text-3xl font-bold text-accent">Configuración de Eventos</h1>
+        </div>
         <button
           onClick={() => {
             setMostrarFormulario(true);
@@ -172,6 +162,17 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
           <FaPlus /> Nuevo Evento
         </button>
       </div>
+      <div className="mb-8">
+        {token && (
+          <EventosMantenimientoCalendar
+            token={token}
+            layout="split"
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+     
 
 
 

@@ -35,6 +35,7 @@ const colores = [
 const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tiposRecursos, onChange }) => {
   const [tiposState, setTiposState] = useState<TipoRecurso[]>(tiposRecursos && tiposRecursos.length > 0 ? tiposRecursos : []);
   const [editando, setEditando] = useState<TipoRecurso | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [form, setForm] = useState({ nombre: "", descripcion: "", color: colores[0] });
 
   // Cargar tipos de recursos desde el JSON centralizado al montar
@@ -50,6 +51,7 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
   const handleEdit = (tipo: TipoRecurso) => {
     setEditando(tipo);
     setForm({ nombre: tipo.nombre, descripcion: tipo.descripcion, color: tipo.color });
+    setMostrarFormulario(true);
   };
 
   const handleDelete = (id: string) => {
@@ -76,17 +78,30 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
     setTiposState(nuevos);
     onChange && onChange(nuevos);
     setForm({ nombre: "", descripcion: "", color: colores[0] });
+    setMostrarFormulario(false);
   };
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-4">
-        <FaFolderOpen className="text-2xl text-accent" />
-        <h1 className="text-3xl font-bold text-accent">Configuración Recursos</h1>
-    </div>
+      <div className="flex items-center gap-2 mb-4 justify-between">
+        <div className="flex items-center gap-2">
+          <FaFolderOpen className="text-2xl text-accent" />
+          <h1 className="text-3xl font-bold text-accent">Configuración Recursos</h1>
+        </div>
+        <button
+          onClick={() => {
+            setMostrarFormulario(true);
+            setEditando(null);
+            setForm({ nombre: "", descripcion: "", color: colores[0] });
+          }}
+          className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+        >
+          <FaPlus /> Agregar Tipo
+        </button>
+      </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {tiposState.map(tipo => (
-          <li key={tipo.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 shadow bg-primary/60 ${tipo.color} transition-all`}>
+          <li key={tipo.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 ${tipo.color.replace('/20','/10')} transition-all`}>
             <div className="flex-1">
               <div className="font-bold text-base flex items-center gap-2">
                 <span className="inline-block w-3 h-3 rounded-full border border-white/30 mr-1" style={{background: tipo.color.split(' ')[0].replace('bg-','').replace('-500/20','')}}></span>
@@ -99,37 +114,47 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
           </li>
         ))}
       </ul>
-      <form onSubmit={handleSubmit} className="space-y-2 bg-secondary p-4 rounded-lg border border-accent/10">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            placeholder="Nombre del tipo de recurso"
-            value={form.nombre}
-            onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-            className="flex-1 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-            required
-          />
-          <select
-            value={form.color}
-            onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-            className="w-40 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-          >
-            {colores.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+      {/* Botón movido arriba, junto al título */}
+      {mostrarFormulario && (
+        <div className="mb-4">
+          <form onSubmit={handleSubmit} className="space-y-2 bg-secondary p-4 rounded-lg border border-accent/10">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Nombre del tipo de recurso"
+                value={form.nombre}
+                onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                className="flex-1 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                required
+              />
+              <select
+                value={form.color}
+                onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                className="w-40 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+              >
+                {colores.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <input
+              type="text"
+              placeholder="Descripción"
+              value={form.descripcion}
+              onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
+              className="w-full bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+            />
+            <div className="flex gap-3 pt-2">
+              <button type="submit" className="flex-1 bg-accent text-secondary font-semibold py-2 rounded-lg hover:bg-accent/80 transition-all">
+                {editando ? "Actualizar Tipo" : "Crear Tipo"}
+              </button>
+              <button type="button" onClick={() => { setMostrarFormulario(false); setEditando(null); }} className="flex-1 bg-gray-600/80 text-white font-semibold py-2 rounded-lg hover:bg-gray-700/80 transition-all">
+                Cancelar
+              </button>
+            </div>
+          </form>
         </div>
-        <input
-          type="text"
-          placeholder="Descripción"
-          value={form.descripcion}
-          onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
-          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-        />
-        <button type="submit" className="w-full bg-accent text-secondary font-semibold py-2 rounded-lg hover:bg-accent/80 transition-all">
-          {editando ? "Actualizar Tipo" : "Agregar Tipo"}
-        </button>
-      </form>
+      )}
     </div>
   );
 };

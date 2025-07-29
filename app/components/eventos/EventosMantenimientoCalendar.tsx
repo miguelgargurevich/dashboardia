@@ -18,14 +18,17 @@ interface Event {
   description?: string;
 }
 
+import { FaPlus } from "react-icons/fa";
+
 interface Props {
   token: string | null;
   layout?: 'split';
   onEdit?: (evento: Event) => void;
   onDelete?: (id: string) => void;
+  onNuevoEvento?: () => void;
 }
 
-const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, onDelete }) => {
+const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, onDelete, onNuevoEvento }) => {
   const { todayDay, todayMonth, todayYear } = useMemo(() => {
     const today = new Date();
     return {
@@ -178,6 +181,7 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
           </div>
         </div>
         <div className="w-full">
+          {/* Botón 'Nuevo Evento' eliminado, ahora solo se muestra arriba en el panel principal */}
           <div className="bg-primary rounded-lg p-4 shadow-md">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-xl font-bold text-yellow-400">
