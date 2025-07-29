@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 import TodoConocimientoPanel from './TodoConocimientoPanel';
+import EventosKnowledgePanel from "./EventosKnowledgePanel";
 
 // Eliminada la versión duplicada de NotasMD para evitar conflicto de tipos
 
@@ -1005,6 +1006,7 @@ ${formData.contenido}
         </div>
 
         {/* Navegación por secciones */}
+
         <div className="flex flex-wrap gap-4 mb-8">
           <button
             onClick={() => { setSeccionActiva('todo'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
@@ -1039,12 +1041,34 @@ ${formData.contenido}
             <FaLayerGroup />
             Recursos y Archivos
           </button>
+          <button
+            onClick={() => { setSeccionActiva('eventos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              seccionActiva === 'eventos'
+                ? 'bg-accent text-secondary' 
+                : 'bg-secondary text-accent hover:bg-accent/10'
+            }`}
+          >
+            <FaClock />
+            Eventos del Equipo
+          </button>
         </div>
+
 
 
         {/* Panel Todo el conocimiento */}
         {seccionActiva === 'todo' && (
-          <TodoConocimientoPanel notas={notasMD} recursos={recursos} />
+          <div>
+            {/* Panel unificado: notas, recursos, eventos */}
+            <TodoConocimientoPanel notas={notasMD} recursos={recursos} eventos={[]} />
+          </div>
+        )}
+
+        {/* Panel de eventos de conocimiento, como sección independiente */}
+        {seccionActiva === 'eventos' && (
+          <div>
+            <EventosKnowledgePanel token={token} />
+          </div>
         )}
 
         {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
@@ -1073,6 +1097,7 @@ ${formData.contenido}
               Por Temas
             </button>
           </div>
+
         )}
 
         {/* Subnavegación para Recursos y Archivos - Siempre visible cuando estemos en este contexto */}

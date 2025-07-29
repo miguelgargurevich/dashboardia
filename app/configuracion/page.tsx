@@ -11,14 +11,10 @@ import { FaCog, FaLayerGroup, FaCalendarAlt, FaChevronRight, FaFolderOpen } from
 import TemasConfigPanel from './TemasConfigPanel';
 
 import RecursosConfigPanel from './RecursosConfigPanel';
-import EventosConfigPanel from './EventosConfigPanel';
-import ConocimientoConfigPanel from './ConocimientoConfigPanel';
-import EventosPanel from './EventosPanel';
-import { FaBook } from 'react-icons/fa';
 
 
 const ConfiguracionPage: React.FC = () => {
-  const [panel, setPanel] = useState<'eventos' | 'temas' | 'recursos' | 'otros'>('eventos');
+  const [panel, setPanel] = useState<'temas' | 'recursos' | 'otros'>('temas');
 
   // EventosConfigPanel maneja su propio estado
   const [temas, setTemas] = useState<Tema[]>([]);
@@ -37,14 +33,14 @@ const ConfiguracionPage: React.FC = () => {
         setTiposRecursos(data);
       });
   }, []);
-  const [token, setToken] = useState<string | null>(null);
+  // const [token, setToken] = useState<string | null>(null); // Ya no se usa
 
   // Form state con todos los campos relevantes
   // Eliminado: formData y lógica de eventos, ahora en EventosConfigPanel
 
   useEffect(() => {
-    const t = localStorage.getItem('token');
-    setToken(t);
+    // const t = localStorage.getItem('token'); // Ya no se usa
+    // setToken(t); // Ya no se usa
   }, []);
 
 
@@ -55,14 +51,6 @@ const ConfiguracionPage: React.FC = () => {
       <div className="max-w-6xl mx-auto flex gap-8">
         {/* Panel lateral de navegación */}
         <aside className="w-56 min-w-[12rem] bg-secondary rounded-xl shadow-lg p-4 flex flex-col gap-2 h-fit sticky top-8">
-          {/* Botón 'Todo el conocimiento' eliminado */}
-          <button
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'eventos' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
-            onClick={() => setPanel('eventos')}
-          >
-            <FaCalendarAlt /> Eventos
-            {panel === 'eventos' && <FaChevronRight className="ml-auto" />}
-          </button>
           <button
             className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'temas' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
             onClick={() => setPanel('temas')}
@@ -87,10 +75,6 @@ const ConfiguracionPage: React.FC = () => {
         </aside>
         {/* Panel de contenido */}
         <section className="flex-1">
-          {/* Panel 'Todo el conocimiento' eliminado */}
-          {panel === 'eventos' && (
-            <EventosConfigPanel token={token} />
-          )}
           {panel === 'temas' && (
             <TemasConfigPanel temas={temas} onChange={setTemas} />
           )}

@@ -25,7 +25,7 @@ interface Props {
   layout?: 'split';
   onEdit?: (evento: Event) => void;
   onDelete?: (id: string) => void;
-  onNuevoEvento?: () => void;
+  onNuevoEvento?: (dateString?: string) => void;
 }
 
 const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, onDelete, onNuevoEvento }) => {
@@ -160,6 +160,15 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
                       `}
                       onClick={() => {
                         setSelectedDate(day.toString());
+                      }}
+                      onDoubleClick={() => {
+                        // Generar fecha YYYY-MM-DD para el día seleccionado
+                        if (typeof onNuevoEvento === 'function') {
+                          const monthStr = String(mon + 1).padStart(2, '0');
+                          const dayStr = String(day).padStart(2, '0');
+                          const dateStr = `${year}-${monthStr}-${dayStr}`;
+                          onNuevoEvento(dateStr);
+                        }
                       }}
                     >
                       <span className={`text-sm font-medium ${dayEvents.length > 0 ? 'text-accent' : 'text-white'}`}>

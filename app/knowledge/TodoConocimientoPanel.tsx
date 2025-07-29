@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { FaSearch, FaFileAlt, FaBook, FaLayerGroup, FaVideo, FaEye } from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaBook, FaLayerGroup, FaVideo, FaEye, FaCalendarAlt } from "react-icons/fa";
 
 interface Nota {
   id?: string;
@@ -19,12 +19,23 @@ interface Recurso {
   tags: string[];
 }
 
+interface Evento {
+  id?: string;
+  title: string;
+  startDate: string;
+  endDate?: string;
+  location?: string;
+  recurrenceType?: string;
+  eventType?: string;
+}
+
 interface TodoConocimientoPanelProps {
   notas: Nota[];
   recursos: Recurso[];
+  eventos: Evento[];
 }
 
-const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, recursos }) => {
+const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, recursos, eventos }) => {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<any | null>(null);
   const allItems = [
@@ -44,12 +55,21 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
       descripcion: r.descripcion,
       tags: r.tags,
       origen: "recurso"
+    })),
+    ...eventos.map(e => ({
+      id: e.id,
+      tipo: e.eventType || "evento",
+      titulo: e.title,
+      descripcion: `${e.startDate ? new Date(e.startDate).toLocaleString('es-ES') : ''}${e.endDate ? ' - ' + new Date(e.endDate).toLocaleString('es-ES') : ''}${e.location ? ' | ' + e.location : ''}`,
+      tags: [],
+      origen: "evento",
+      evento: e
     }))
   ];
   const filtered = allItems.filter(item =>
     item.titulo.toLowerCase().includes(search.toLowerCase()) ||
     item.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
-    item.tags.some((tag: string) => tag.toLowerCase().includes(search.toLowerCase()))
+    (item.tags && item.tags.some((tag: string) => tag.toLowerCase().includes(search.toLowerCase())))
   );
   return (
     <div className="bg-primary rounded-lg p-6 shadow-md">
@@ -83,7 +103,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  {item.origen === "nota" ? <FaFileAlt className="text-accent" /> : <FaBook className="text-accent" />}
+                  {item.origen === "nota" ? <FaFileAlt className="text-accent" /> : item.origen === "recurso" ? <FaBook className="text-accent" /> : <FaCalendarAlt className="text-accent" />}
                   <span className="font-semibold text-white">{item.titulo}</span>
                   <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent font-bold">{item.tipo}</span>
                 </div>
@@ -115,6 +135,14 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                 )}
                 {selected.origen === "recurso" && (
                   <div className="text-gray-400">Recurso sin vista previa.</div>
+                )}
+                {selected.origen === "evento" && selected.evento && (
+                  <div className="space-y-2">
+                    <div className="text-lg font-bold text-accent">{selected.evento.title}</div>
+                    <div className="text-gray-300">{selected.evento.startDate && new Date(selected.evento.startDate).toLocaleString('es-ES')}{selected.evento.endDate && ' - ' + new Date(selected.evento.endDate).toLocaleString('es-ES')}</div>
+                    {selected.evento.location && <div className="text-gray-400">{selected.evento.location}</div>}
+                    {selected.evento.eventType && <div className="text-xs text-accent">Tipo: {selected.evento.eventType}</div>}
+                  </div>
                 )}
                 <div className="flex flex-wrap gap-2 mt-4">
                   {selected.tags.map((tag: string) => (

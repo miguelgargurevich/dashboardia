@@ -23,11 +23,11 @@ interface Evento {
   updatedAt?: string;
 }
 
-interface EventosConfigPanelProps {
+interface EventosKnowledgePanelProps {
   token: string | null;
 }
 
-const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
+const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(false);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -322,4 +322,4 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
   );
 };
 
-export default EventosConfigPanel;
+export default EventosKnowledgePanel;
