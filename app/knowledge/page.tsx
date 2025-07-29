@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
-import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt } from 'react-icons/fa';
 import NotasPanel from '../components/dashboard/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
 import RecursosArchivosPanel from '../components/dashboard/RecursosArchivosPanel';
@@ -36,6 +36,8 @@ interface NotasMD {
 
 const KnowledgePage: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
+  // Estado para los filtros de Todo el Conocimiento
+  const [filtros, setFiltros] = useState({ notas: true, recursos: true, eventos: true });
   // Eventos para TodoConocimientoPanel (eventos del mes actual)
   const [eventosParaTodoConocimiento, setEventosParaTodoConocimiento] = useState<any[]>([]);
   useEffect(() => {
@@ -57,6 +59,7 @@ const KnowledgePage: React.FC = () => {
     }
     fetchEventos();
   }, [token]);
+  
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -993,12 +996,75 @@ ${formData.contenido}
 
 
         {/* Panel Todo el conocimiento */}
-
-        {/* Panel Todo el conocimiento */}
         {seccionActiva === 'todo' && (
           <div>
-            {/* Panel unificado: notas, recursos, eventos */}
-            <TodoConocimientoPanel notas={notasMD} recursos={recursos} eventos={eventosParaTodoConocimiento} />
+           
+            <div className="flex flex-wrap gap-3 mb-6">
+              <button
+                onClick={() => setFiltros(f => ({ ...f, notas: !f.notas }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border ${
+                  filtros.notas
+                    ? 'bg-accent/20 text-accent border-accent/30'
+                    : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
+                }`}
+              >
+                <FaFileAlt className="text-sm" />
+                Todas las Notas
+              </button>
+              <button
+                onClick={() => setFiltros(f => ({ ...f, recursos: !f.recursos }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border ${
+                  filtros.recursos
+                    ? 'bg-accent/20 text-accent border-accent/30'
+                    : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
+                }`}
+              >
+                <FaBook className="text-sm" />
+                Todos los Recursos
+              </button>
+              <button
+                onClick={() => setFiltros(f => ({ ...f, eventos: !f.eventos }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border ${
+                  filtros.eventos
+                    ? 'bg-accent/20 text-accent border-accent/30'
+                    : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
+                }`}
+              >
+                <FaCalendarAlt className="text-sm" />
+                Todos los Eventos
+              </button>
+            </div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-accent">Todo el conocimiento</h2>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setMostrarFormularioNota(true)}
+                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                  Agregar Nota
+                </button>
+                <button
+                  onClick={() => setMostrarFormularioRecurso(true)}
+                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                  Agregar Recurso
+                </button>
+                {/* <button
+                  onClick={() => setMostrarFormularioEvento(true)}
+                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                  Agregar Evento
+                </button> */}
+              </div>
+            </div>
+            <TodoConocimientoPanel
+              notas={filtros.notas ? notasMD : []}
+              recursos={filtros.recursos ? recursos : []}
+              eventos={filtros.eventos ? eventosParaTodoConocimiento : []}
+            />
           </div>
         )}
 
