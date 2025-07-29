@@ -87,9 +87,10 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
 
   return (
     <div>
+
       <div className="flex items-center gap-2 mb-4">
-        <FaLayerGroup className="text-lg text-accent" />
-        <h2 className="text-lg font-bold text-accent">Temas</h2>
+        <FaLayerGroup className="text-2xl text-accent" />
+        <h1 className="text-3xl font-bold text-accent">Configuración Temas</h1>
       </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {temasState.map(tema => (

@@ -9,13 +9,16 @@ interface Tema {
 import React, { useState, useEffect } from 'react';
 import { FaCog, FaLayerGroup, FaCalendarAlt, FaChevronRight, FaFolderOpen } from 'react-icons/fa';
 import TemasConfigPanel from './TemasConfigPanel';
-import RecursosConfigPanel from './RecursosConfigPanel';
 
+import RecursosConfigPanel from './RecursosConfigPanel';
 import EventosConfigPanel from './EventosConfigPanel';
+import ConocimientoConfigPanel from './ConocimientoConfigPanel';
+import EventosPanel from './EventosPanel';
+import { FaBook } from 'react-icons/fa';
 
 
 const ConfiguracionPage: React.FC = () => {
-  const [panel, setPanel] = useState<'eventos' | 'temas' | 'recursos' | 'otros'>('eventos');
+  const [panel, setPanel] = useState<'conocimiento' | 'eventos' | 'temas' | 'recursos' | 'otros'>('conocimiento');
 
   // EventosConfigPanel maneja su propio estado
   const [temas, setTemas] = useState<Tema[]>([]);
@@ -53,6 +56,13 @@ const ConfiguracionPage: React.FC = () => {
         {/* Panel lateral de navegación */}
         <aside className="w-56 min-w-[12rem] bg-secondary rounded-xl shadow-lg p-4 flex flex-col gap-2 h-fit sticky top-8">
           <button
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'conocimiento' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
+            onClick={() => setPanel('conocimiento')}
+          >
+            <FaBook /> Todo el conocimiento
+            {panel === 'conocimiento' && <FaChevronRight className="ml-auto" />}
+          </button>
+          <button
             className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'eventos' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
             onClick={() => setPanel('eventos')}
           >
@@ -80,12 +90,14 @@ const ConfiguracionPage: React.FC = () => {
             <FaCog /> Otras Configuraciones
             {panel === 'otros' && <FaChevronRight className="ml-auto" />}
           </button>
-
         </aside>
         {/* Panel de contenido */}
         <section className="flex-1">
+          {panel === 'conocimiento' && (
+            <ConocimientoConfigPanel />
+          )}
           {panel === 'eventos' && (
-            <EventosConfigPanel token={token} />
+            <EventosPanel />
           )}
           {panel === 'temas' && (
             <TemasConfigPanel temas={temas} onChange={setTemas} />

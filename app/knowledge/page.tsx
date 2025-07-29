@@ -4,6 +4,8 @@ import { FaFileAlt, FaBook, FaVideo, FaDownload, FaSearch, FaEye, FaBell, FaPrin
 import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
+import TodoConocimientoPanel from './TodoConocimientoPanel';
+
 // Eliminada la versión duplicada de NotasMD para evitar conflicto de tipos
 
 interface Recurso {
@@ -64,7 +66,7 @@ const KnowledgePage: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [seccionActiva, setSeccionActiva] = useState('todos');
+  const [seccionActiva, setSeccionActiva] = useState('todo');
   const [temaSeleccionado, setTemaSeleccionado] = useState<string | null>(null);
   const [notasMD, setNotasMD] = useState<NotasMD[]>([]);
   const [notaSeleccionada, setNotaSeleccionada] = useState<NotasMD | null>(null);
@@ -1005,6 +1007,17 @@ ${formData.contenido}
         {/* Navegación por secciones */}
         <div className="flex flex-wrap gap-4 mb-8">
           <button
+            onClick={() => { setSeccionActiva('todo'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              seccionActiva === 'todo'
+                ? 'bg-accent text-secondary' 
+                : 'bg-secondary text-accent hover:bg-accent/10'
+            }`}
+          >
+            <FaLayerGroup />
+            Todo el conocimiento
+          </button>
+          <button
             onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               seccionActiva === 'temas' || seccionActiva === 'todos'
@@ -1028,10 +1041,16 @@ ${formData.contenido}
           </button>
         </div>
 
+
+        {/* Panel Todo el conocimiento */}
+        {seccionActiva === 'todo' && (
+          <TodoConocimientoPanel notas={notasMD} recursos={recursos} />
+        )}
+
         {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'temas' || seccionActiva === 'todos') && (
           <div className="flex flex-wrap gap-3 mb-6">
-             <button
+            <button
               onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                 seccionActiva === 'todos'
@@ -1053,14 +1072,13 @@ ${formData.contenido}
               <FaLayerGroup className="text-sm" />
               Por Temas
             </button>
-           
           </div>
         )}
 
         {/* Subnavegación para Recursos y Archivos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'tipos' || seccionActiva === 'recursos') && (
           <div className="flex flex-wrap gap-3 mb-6">
-             <button
+            <button
               onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                 seccionActiva === 'recursos'
@@ -1082,7 +1100,6 @@ ${formData.contenido}
               <FaLayerGroup className="text-sm" />
               Por Tipos
             </button>
-           
           </div>
         )}
 

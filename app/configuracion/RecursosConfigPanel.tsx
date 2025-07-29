@@ -81,9 +81,9 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <FaFolderOpen className="text-lg text-accent" />
-        <h2 className="text-lg font-bold text-accent">Tipos de Recursos</h2>
-      </div>
+        <FaFolderOpen className="text-2xl text-accent" />
+        <h1 className="text-3xl font-bold text-accent">Configuración Recursos</h1>
+    </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {tiposState.map(tipo => (
           <li key={tipo.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 shadow bg-primary/60 ${tipo.color} transition-all`}>
