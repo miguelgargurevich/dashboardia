@@ -61,7 +61,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                 placeholder="Buscar recursos..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="flex-1 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                className="flex-1 input-std"
               />
             </div>
 
@@ -71,7 +71,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                 <select
                   value={filtroEtiqueta}
                   onChange={(e) => setFiltroEtiqueta(e.target.value)}
-                  className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                  className="w-full input-std"
                 >
                   <option value="">Todas las etiquetas</option>
                   {etiquetasDisponibles.map(etiqueta => (

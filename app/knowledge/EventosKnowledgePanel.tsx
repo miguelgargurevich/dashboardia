@@ -31,7 +31,7 @@ interface EventosKnowledgePanelProps {
 const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [cargando, setCargando] = useState(false);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [mostrarFormularioEvento, setmostrarFormularioEvento] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [busqueda, setBusqueda] = useState('');
@@ -93,7 +93,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       recurrencePattern: evento.recurrencePattern || '',
       eventType: evento.eventType || '',
     });
-    setMostrarFormulario(true);
+    setmostrarFormularioEvento(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -125,7 +125,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
         body: JSON.stringify(payload),
       });
     }
-    setMostrarFormulario(false);
+    setmostrarFormularioEvento(false);
     setEventoEditando(null);
     setFormData({
       title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', nombreNotificacion: '', isRecurring: false, recurrencePattern: '', eventType: ''
@@ -168,7 +168,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-accent">Gestión de Eventos</h2>
         <button
-        onClick={() => setMostrarFormulario(true)}
+        onClick={() => setmostrarFormularioEvento(true)}
         className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
         >
         <FaPlus />
@@ -205,7 +205,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   placeholder="Buscar eventos..."
                   value={busqueda}
                   onChange={e => setBusqueda(e.target.value)}
-                  className="flex-1 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                  className="flex-1 input-std"
                 />
               </div>
             </div>
@@ -347,8 +347,8 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
         )}
       </div>
       {/* Modal para crear/editar evento */}
-      {mostrarFormulario && (
-        <Modal open={mostrarFormulario} onClose={() => { setMostrarFormulario(false); setEventoEditando(null); }} title={eventoEditando ? 'Editar Evento' : 'Nuevo Evento'} maxWidth="max-w-2xl">
+      {mostrarFormularioEvento && (
+        <Modal open={mostrarFormularioEvento} onClose={() => { setmostrarFormularioEvento(false); setEventoEditando(null); }} title={eventoEditando ? 'Editar Evento' : 'Nuevo Evento'} maxWidth="max-w-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* ...formulario igual que antes... */}
             <div>
@@ -357,7 +357,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 type="text"
                 value={formData.title}
                 onChange={e => setFormData(f => ({ ...f, title: e.target.value }))}
-                className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                className="w-full input-std"
                 required
               />
             </div>
@@ -377,7 +377,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   type="datetime-local"
                   value={formData.startDate}
                   onChange={e => setFormData(f => ({ ...f, startDate: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                   required
                 />
               </div>
@@ -387,7 +387,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   type="datetime-local"
                   value={formData.endDate}
                   onChange={e => setFormData(f => ({ ...f, endDate: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 />
               </div>
             </div>
@@ -397,7 +397,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 type="text"
                 value={formData.location}
                 onChange={e => setFormData(f => ({ ...f, location: e.target.value }))}
-                className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                className="w-full input-std"
               />
             </div>
             <div className="flex gap-4">
@@ -407,7 +407,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   type="text"
                   value={formData.modo}
                   onChange={e => setFormData(f => ({ ...f, modo: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 />
               </div>
               <div className="flex-1">
@@ -416,7 +416,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   type="text"
                   value={formData.validador}
                   onChange={e => setFormData(f => ({ ...f, validador: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 />
               </div>
             </div>
@@ -427,7 +427,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   type="text"
                   value={formData.codigoDana}
                   onChange={e => setFormData(f => ({ ...f, codigoDana: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 />
               </div>
               <div className="flex-1">
@@ -436,7 +436,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   type="text"
                   value={formData.nombreNotificacion}
                   onChange={e => setFormData(f => ({ ...f, nombreNotificacion: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 />
               </div>
             </div>
@@ -446,7 +446,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 <select
                   value={formData.eventType}
                   onChange={e => setFormData(f => ({ ...f, eventType: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 >
                   <option value="">Seleccionar</option>
                   <option value="incidente">Incidente</option>
@@ -461,7 +461,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 <select
                   value={formData.recurrencePattern}
                   onChange={e => setFormData(f => ({ ...f, recurrencePattern: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full input-std"
                 >
                   <option value="">Sin recurrencia</option>
                   <option value="diario">Diario</option>
@@ -481,7 +481,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
               </button>
               <button
                 type="button"
-                onClick={() => { setMostrarFormulario(false); setEventoEditando(null); }}
+                onClick={() => { setmostrarFormularioEvento(false); setEventoEditando(null); }}
                 className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all"
               >
                 Cancelar

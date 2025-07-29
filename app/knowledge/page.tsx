@@ -646,7 +646,7 @@ ${formData.contenido}
               type="text"
               value={formData.titulo}
               onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               placeholder="Ej: Procedimiento para resolver incidencias de notificaciones"
               required
             />
@@ -657,7 +657,7 @@ ${formData.contenido}
               type="date"
               value={formData.fecha}
               onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               required
             />
           </div>
@@ -666,7 +666,7 @@ ${formData.contenido}
             <select
               value={formData.tema}
               onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               required
             >
               {temas.map(tema => (
@@ -691,7 +691,7 @@ ${formData.contenido}
               type="text"
               value={formData.etiquetas}
               onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               placeholder="Separadas por comas: urgente, soporte, procedimiento"
             />
           </div>
@@ -816,7 +816,7 @@ ${formData.contenido}
               type="text"
               value={formData.titulo}
               onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               placeholder="Ingresa el título del recurso"
               required
             />
@@ -826,7 +826,7 @@ ${formData.contenido}
             <select
               value={formData.tipo}
               onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios' }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               required
               disabled={!!recursoEditando}
             >
@@ -845,7 +845,7 @@ ${formData.contenido}
                 type="url"
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+                className="w-full input-std"
                 placeholder={
                   formData.tipo === 'video' ? "https://youtube.com/watch?v=..." : 
                   formData.tipo === 'ia-automatizacion' ? "https://docs.google.com/document/d/..." :
@@ -873,7 +873,7 @@ ${formData.contenido}
               type="text"
               value={formData.descripcion}
               onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               placeholder="Descripción breve del recurso"
             />
           </div>
@@ -882,7 +882,7 @@ ${formData.contenido}
             <select
               value={formData.tema}
               onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               required
             >
               {temas.map(tema => (
@@ -896,7 +896,7 @@ ${formData.contenido}
               type="text"
               value={formData.etiquetas}
               onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
+              className="w-full input-std"
               placeholder="Separadas por comas: urgente, soporte, procedimiento"
             />
           </div>

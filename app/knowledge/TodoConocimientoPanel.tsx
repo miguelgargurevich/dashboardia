@@ -42,8 +42,17 @@ interface TodoConocimientoPanelProps {
 }
 
 const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, recursos, eventos }) => {
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<any | null>(null);
+  // Nuevo layout basado en el diseño proporcionado
+  // Estados y lógica adaptados
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEtiqueta, setFiltroEtiqueta] = useState("");
+  const [itemSeleccionado, setItemSeleccionado] = useState<any | null>(null);
+  // Unificar tipos y etiquetas disponibles
+  const etiquetasDisponibles = Array.from(new Set([
+    ...(notas.flatMap(n => n.etiquetas || [])),
+    ...(recursos.flatMap(r => r.tags || []))
+  ])).filter(Boolean);
+  // Unificar items
   const allItems = [
     ...notas.map(n => ({
       id: n.id || n.nombre,
@@ -72,67 +81,82 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
       evento: e
     }))
   ];
-  const filtered = allItems.filter(item =>
-    item.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    item.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
-    (item.tags && item.tags.some((tag: string) => tag.toLowerCase().includes(search.toLowerCase())))
-  );
+  // Filtrado
+  const filtrados = allItems.filter(item => {
+    if (filtroEtiqueta && !(item.tags && (item.tags as string[]).includes(filtroEtiqueta))) return false;
+    return (
+      item.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+      item.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (item.tags && item.tags.some((tag) => tag.toLowerCase().includes(busqueda.toLowerCase())))
+    );
+  });
   return (
-    <div className="bg-primary rounded-lg p-6 shadow-md">
-      <div className="flex items-center gap-2 mb-4">
-        <FaLayerGroup className="text-2xl text-accent" />
-        <h2 className="text-2xl font-bold text-accent">Todo el conocimiento</h2>
-      </div>
+    <div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lista de items */}
+        {/* Lista y filtros */}
         <div className="lg:col-span-1">
-          <div className="mb-4 flex items-center gap-2">
-            <FaSearch className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por título, descripción o tag..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-            />
-          </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto min-h-[420px]">
-            {filtered.length === 0 && <div className="text-gray-400">No hay resultados.</div>}
-            {filtered.map((item) => {
-              // Lógica de color y gradiente por tipo
-              let temaInfo = {
-                color: 'bg-accent/20 text-accent',
-                nombre: 'Nota',
-                icon: <FaFileAlt className="text-accent" />
-              };
-              if (item.origen === 'nota') {
-                temaInfo = {
+          <div className="bg-secondary rounded-lg p-4">
+            <div className="space-y-4 mb-4">
+              <div className="flex items-center gap-2">
+                <FaSearch className="text-accent" />
+                <input
+                  type="text"
+                  placeholder="Buscar por título, descripción o tag..."
+                  value={busqueda}
+                  onChange={e => setBusqueda(e.target.value)}
+                  className="flex-1 input-std"
+                />
+              </div>
+              {/* Filtro por tipo removido por solicitud */}
+              {etiquetasDisponibles.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por etiqueta</label>
+                  <select
+                    value={filtroEtiqueta}
+                    onChange={e => setFiltroEtiqueta(e.target.value)}
+                    className="w-full input-std"
+                  >
+                    <option value="">Todas las etiquetas</option>
+                    {etiquetasDisponibles.map(etiqueta => (
+                      <option key={etiqueta} value={etiqueta} className="bg-primary text-white">{etiqueta}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2 max-h-96 overflow-y-auto min-h-[420px]">
+              {filtrados.length === 0 && <div className="text-gray-400">No hay resultados.</div>}
+              {filtrados.map((item) => {
+                let temaInfo = {
                   color: 'bg-accent/20 text-accent',
                   nombre: 'Nota',
                   icon: <FaFileAlt className="text-accent" />
                 };
-              } else if (item.origen === 'recurso') {
-                temaInfo = {
-                  color: 'bg-green-900/20 text-green-300',
-                  nombre: 'Recurso',
-                  icon: <FaBook className="text-green-300" />
-                };
-              } else if (item.origen === 'evento') {
-                temaInfo = {
-                  color: 'bg-yellow-900/20 text-yellow-300',
-                  nombre: 'Evento',
-                  icon: <FaCalendarAlt className="text-yellow-300" />
-                };
-              }
-              const isSelected = selected?.id === item.id;
-              // Card lateral para eventos: solo título y descripción
-              if (item.origen === 'evento' && 'evento' in item && item.evento) {
-                const e = item.evento;
+                if (item.origen === 'nota') {
+                  temaInfo = {
+                    color: 'bg-accent/20 text-accent',
+                    nombre: 'Nota',
+                    icon: <FaFileAlt className="text-accent" />
+                  };
+                } else if (item.origen === 'recurso') {
+                  temaInfo = {
+                    color: 'bg-green-900/20 text-green-300',
+                    nombre: 'Recurso',
+                    icon: <FaBook className="text-green-300" />
+                  };
+                } else if (item.origen === 'evento') {
+                  temaInfo = {
+                    color: 'bg-yellow-900/20 text-yellow-300',
+                    nombre: 'Evento',
+                    icon: <FaCalendarAlt className="text-yellow-300" />
+                  };
+                }
+                const isSelected = itemSeleccionado?.id === item.id;
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setSelected(item)}
-                    className={`w-full text-left p-4 rounded-lg transition-all duration-200 border ${
+                    onClick={() => setItemSeleccionado(item)}
+                    className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                       isSelected
                         ? `${temaInfo.color} shadow-lg shadow-current/20 border-0`
                         : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo.color.replace('text-', 'from-').replace('border-', 'from-').split(' ')[0]?.replace('900/20', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
@@ -147,104 +171,78 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                         {temaInfo.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white text-base truncate flex-1">{e.title}</h3>
-                        {item.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{item.descripcion}</p>}
+                        <h3 className="font-semibold text-white text-base truncate flex-1">{item.titulo}</h3>
+                        <p className={`text-xs mb-1 font-medium ${temaInfo.color.split(' ')[1] || 'text-accent'}`}>{temaInfo.nombre}</p>
+                        {item.tags && item.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            {item.tags.slice(0, 3).map((tag: string) => (
+                              <span
+                                key={tag}
+                                className={`px-1.5 py-0.5 rounded text-xs ${temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'} ${temaInfo.color.split(' ')[1] || 'text-accent'}`}
+                              >
+                                #{tag}
+                              </span>
+                            ))}
+                            {item.tags.length > 3 && (
+                              <span className="text-xs text-gray-400">+{item.tags.length - 3}</span>
+                            )}
+                          </div>
+                        )}
+                        {item.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{item.descripcion}</p>}
                       </div>
                     </div>
                   </button>
                 );
-              }
-              // ...existing code for notas y recursos...
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setSelected(item)}
-                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
-                    isSelected
-                      ? `${temaInfo.color} shadow-lg shadow-current/20 border-0`
-                      : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo.color.replace('text-', 'from-').replace('border-', 'from-').split(' ')[0]?.replace('900/20', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      isSelected
-                        ? temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/30') || 'bg-accent/30'
-                        : temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'
-                    }`}>
-                      {temaInfo.icon}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{item.titulo}</h3>
-                      <p className={`text-xs mb-1 font-medium ${temaInfo.color.split(' ')[1] || 'text-accent'}`}>{temaInfo.nombre}</p>
-                      {item.tags && item.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-1">
-                          {item.tags.slice(0, 3).map((tag: string) => (
-                            <span
-                              key={tag}
-                              className={`px-1.5 py-0.5 rounded text-xs ${temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'} ${temaInfo.color.split(' ')[1] || 'text-accent'}`}
-                            >
-                              #{tag}
-                            </span>
-                          ))}
-                          {item.tags.length > 3 && (
-                            <span className="text-xs text-gray-400">+{item.tags.length - 3}</span>
-                          )}
-                        </div>
-                      )}
-                      {item.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{item.descripcion}</p>}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+              })}
+            </div>
           </div>
         </div>
-        {/* Panel de detalles */}
+        {/* Panel lateral de detalle */}
         <div className="lg:col-span-2">
           <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-            {selected ? (
+            {itemSeleccionado ? (
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  {selected.origen === "nota" ? <FaFileAlt className="text-accent" /> : selected.origen === "recurso" ? <FaBook className="text-accent" /> : <FaCalendarAlt className="text-yellow-300" />}
-                  <h2 className="text-xl font-bold text-accent">{selected.titulo}</h2>
-                  <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent font-bold">{selected.tipo}</span>
+                  {itemSeleccionado.origen === "nota" ? <FaFileAlt className="text-accent" /> : itemSeleccionado.origen === "recurso" ? <FaBook className="text-accent" /> : <FaCalendarAlt className="text-yellow-300" />}
+                  <h2 className="text-xl font-bold text-accent">{itemSeleccionado.titulo}</h2>
+                  <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent font-bold">{itemSeleccionado.tipo}</span>
                 </div>
-                {selected.descripcion && <div className="text-gray-300 mb-2">{selected.descripcion}</div>}
-                {selected.origen === "nota" && selected.contenido && (
+                {itemSeleccionado.descripcion && <div className="text-gray-300 mb-2">{itemSeleccionado.descripcion}</div>}
+                {itemSeleccionado.origen === "nota" && itemSeleccionado.contenido && (
                   <div className="prose prose-invert max-w-none">
-                    {selected.contenido}
+                    {itemSeleccionado.contenido}
                   </div>
                 )}
-                {selected.origen === "recurso" && (
+                {itemSeleccionado.origen === "recurso" && (
                   <div className="text-gray-400">Recurso sin vista previa.</div>
                 )}
-                {selected.origen === "evento" && selected.evento && (
+                {itemSeleccionado.origen === "evento" && itemSeleccionado.evento && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-white text-lg flex-1">{selected.evento.title}</h3>
-                      {selected.evento.eventType && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200 font-bold">{selected.evento.eventType}</span>}
+                      <h3 className="font-semibold text-white text-lg flex-1">{itemSeleccionado.evento.title}</h3>
+                      {itemSeleccionado.evento.eventType && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200 font-bold">{itemSeleccionado.evento.eventType}</span>}
                     </div>
                     <div className="flex flex-wrap gap-1 mb-1">
-                      {selected.evento.startDate && (
+                      {itemSeleccionado.evento.startDate && (
                         <span className="px-1.5 py-0.5 rounded text-xs bg-primary/40 text-gray-200">
-                          {new Date(selected.evento.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
-                          {selected.evento.endDate ? ` - ${new Date(selected.evento.endDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}` : ''}
+                          {new Date(itemSeleccionado.evento.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                          {itemSeleccionado.evento.endDate ? ` - ${new Date(itemSeleccionado.evento.endDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}` : ''}
                         </span>
                       )}
-                      {selected.evento.location && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/30 text-gray-300">{selected.evento.location}</span>}
+                      {itemSeleccionado.evento.location && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/30 text-gray-300">{itemSeleccionado.evento.location}</span>}
                     </div>
                     <div className="flex flex-wrap gap-1 mb-1">
-                      {selected.evento.validador && <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/40 text-blue-200">Validador: {selected.evento.validador}</span>}
-                      {selected.evento.modo && <span className="px-1.5 py-0.5 rounded text-xs bg-green-900/40 text-green-200">Modo: {selected.evento.modo}</span>}
-                      {selected.evento.codigoDana && <span className="px-1.5 py-0.5 rounded text-xs bg-purple-900/40 text-purple-200">Dana: {selected.evento.codigoDana}</span>}
-                      {selected.evento.nombreNotificacion && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200">Notif: {selected.evento.nombreNotificacion}</span>}
-                      {selected.evento.recurrencePattern && <span className="px-1.5 py-0.5 rounded text-xs bg-pink-900/40 text-pink-200">{selected.evento.recurrencePattern}</span>}
+                      {itemSeleccionado.evento.validador && <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/40 text-blue-200">Validador: {itemSeleccionado.evento.validador}</span>}
+                      {itemSeleccionado.evento.modo && <span className="px-1.5 py-0.5 rounded text-xs bg-green-900/40 text-green-200">Modo: {itemSeleccionado.evento.modo}</span>}
+                      {itemSeleccionado.evento.codigoDana && <span className="px-1.5 py-0.5 rounded text-xs bg-purple-900/40 text-purple-200">Dana: {itemSeleccionado.evento.codigoDana}</span>}
+                      {itemSeleccionado.evento.nombreNotificacion && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200">Notif: {itemSeleccionado.evento.nombreNotificacion}</span>}
+                      {itemSeleccionado.evento.recurrencePattern && <span className="px-1.5 py-0.5 rounded text-xs bg-pink-900/40 text-pink-200">{itemSeleccionado.evento.recurrencePattern}</span>}
                     </div>
-                    {selected.evento.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{selected.evento.descripcion}</p>}
+                    {itemSeleccionado.evento.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{itemSeleccionado.evento.descripcion}</p>}
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {selected.tags.map((tag: string) => (
+                  {itemSeleccionado.tags.map((tag: string) => (
                     <span key={tag} className="text-xs px-2 py-1 rounded bg-accent/20 text-accent">#{tag}</span>
                   ))}
                 </div>

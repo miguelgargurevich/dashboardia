@@ -1,3 +1,7 @@
+/* Estilo estándar para inputs y selects (excepto textarea largo) */
+.input-std {
+  @apply bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

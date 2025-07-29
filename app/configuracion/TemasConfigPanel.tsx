@@ -132,13 +132,13 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
                 placeholder="Nombre del tema"
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                className="flex-1 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="flex-1 input-std"
                 required
               />
               <select
                 value={form.color}
                 onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                className="w-40 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="w-40 input-std"
               >
                 {colores.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -150,7 +150,7 @@ const TemasConfigPanel: React.FC<Partial<TemasConfigPanelProps>> = ({ temas, onC
               placeholder="Descripción"
               value={form.descripcion}
               onChange={e => setForm(f => ({ ...f, descripcion: e.target.value }))}
-              className="w-full bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+              className="w-full input-std"
             />
             <div className="flex gap-3 pt-2">
               <button type="submit" className="flex-1 bg-accent text-secondary font-semibold py-2 rounded-lg hover:bg-accent/80 transition-all">

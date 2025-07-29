@@ -124,7 +124,7 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
                 placeholder="Nombre del tipo de recurso"
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                className="flex-1 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                className="flex-1 input-std"
                 required
               />
               <select

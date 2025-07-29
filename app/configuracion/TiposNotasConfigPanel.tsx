@@ -139,14 +139,14 @@ const TiposNotasConfigPanel: React.FC = () => {
         <div className="mb-4">
           <form onSubmit={handleSubmit} className="space-y-2 bg-secondary p-4 rounded-lg border border-accent/10">
             <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Nombre del tipo de nota"
-                value={form.nombre}
-                onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
-                className="flex-1 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-                required
-              />
+                  <input
+                    type="text"
+                    placeholder="Nombre del tipo de nota"
+                    value={form.nombre}
+                    onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
+                    className="flex-1 input-std"
+                    required
+                  />
               <select
                 value={form.color}
                 onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
