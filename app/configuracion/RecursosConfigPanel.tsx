@@ -86,7 +86,7 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
       <div className="flex items-center gap-2 mb-4 justify-between">
         <div className="flex items-center gap-2">
           <FaFolderOpen className="text-2xl text-accent" />
-          <h1 className="text-3xl font-bold text-accent">Configuración Recursos</h1>
+          <h1 className="text-3xl font-bold text-accent">Configuración de Tipos de Recursos</h1>
         </div>
         <button
           onClick={() => {

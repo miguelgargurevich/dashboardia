@@ -14,27 +14,41 @@ import EventosKnowledgePanel from "./EventosKnowledgePanel";
 // Eliminada la versión duplicada de NotasMD para evitar conflicto de tipos
 
 
-type NotaTipo = 'nota' | 'documento' | 'video' | 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';
+
+interface TipoNota {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+}
 
 interface NotasMD {
   id?: string; // ID para notas de la base de datos
   nombre: string;
   contenido: string;
   tema: string;
-  tipo: NotaTipo;
+  tipo: string; // ahora string, validado contra tiposNotas
   etiquetas?: string[];
-  // Campos adicionales del modelo unificado
   descripcion?: string;
   status?: string;
   priority?: string;
-  date?: string; // Para notas diarias
+  date?: string;
   relatedResources?: string[];
   createdAt?: string;
   updatedAt?: string;
-
 }
 
+
+
 const KnowledgePage: React.FC = () => {
+  // Tipos de nota desde JSON centralizado
+  const [tiposNotas, setTiposNotas] = useState<TipoNota[]>([]);
+  useEffect(() => {
+    fetch('/tiposNotas.json')
+      .then(res => res.json())
+      .then((data) => setTiposNotas(data));
+  }, []);
+
   const [token, setToken] = useState<string | null>(null);
   // Estado para los filtros de Todo el Conocimiento
   const [filtros, setFiltros] = useState({ notas: true, recursos: true, eventos: true });
@@ -84,6 +98,15 @@ const KnowledgePage: React.FC = () => {
   const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
   const [cargandoRecursos, setCargandoRecursos] = useState(false);
   const [filtroTipoRecurso, setFiltroTipoRecurso] = useState<string>('');
+
+
+  // DEBUG: Mostrar cantidad de tipos de nota disponibles (eliminar cuando se use en selects/filtros)
+  // Esto previene el warning de variable no usada y ayuda a validar la carga
+  // Puedes reemplazarlo por el uso real en selects, filtros, etc.
+  if (!tiposNotas.length) {
+    return <div className="p-8 text-center text-gray-500">Cargando tipos de nota...</div>;
+  }
+
   const [filtroEtiquetaRecurso, setFiltroEtiquetaRecurso] = useState<string>('');
   const [etiquetasDisponiblesRecursos, setEtiquetasDisponiblesRecursos] = useState<string[]>([]);
   const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);
@@ -1214,6 +1237,7 @@ ${formData.contenido}
               descargarNota={descargarNota}
               eliminarNota={eliminarNota}
               renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+              tiposNotas={tiposNotas}
             />
           </div>
         )}
@@ -1326,6 +1350,7 @@ ${formData.contenido}
               descargarNota={descargarNota}
               eliminarNota={eliminarNota}
               renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+              tiposNotas={tiposNotas}
             />
           </div>
         )}

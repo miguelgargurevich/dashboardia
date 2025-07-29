@@ -1,6 +1,13 @@
 import type { Tema } from '../../lib/types';
 import React from 'react';
-import { FaSearch, FaFileAlt, FaBook, FaVideo, FaDownload, FaTrash, FaEye } from 'react-icons/fa';
+import { FaSearch, FaDownload, FaTrash, FaEye } from 'react-icons/fa';
+
+interface TipoNota {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+}
 
 interface NotasPanelProps {
   busqueda: string;
@@ -11,6 +18,7 @@ interface NotasPanelProps {
   cargando: boolean;
   notasFiltradas: any[];
   temas: any[];
+  tiposNotas: TipoNota[];
   notaSeleccionada: any;
   setNotaSeleccionada: (n: any) => void;
   descargarNota: (n: any) => void;
@@ -31,7 +39,8 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
   setNotaSeleccionada,
   descargarNota,
   eliminarNota,
-  renderizarContenidoMarkdown
+  renderizarContenidoMarkdown,
+  tiposNotas
 }) => (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div className="lg:col-span-1">
@@ -81,7 +90,8 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {notasFiltradas.map((nota, index) => {
-              const temaInfo = temas.find((t: any) => t.id === nota.tema);
+              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t: any) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo };
+              const [bgColor, textColor] = tipoNota.color.split(' ');
               const isSelected = notaSeleccionada?.nombre === nota.nombre;
               return (
                 <button
@@ -89,31 +99,21 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                   onClick={() => setNotaSeleccionada(nota)}
                   className={`w-full text-left p-4 rounded-lg transition-all duration-200 border ${
                     isSelected
-                      ? `${temaInfo?.color} shadow-lg shadow-current/20`
-                      : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo?.color?.replace('text-', 'from-').replace('border-', 'from-').split(' ')[1]?.replace('400', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                      ? `${bgColor.replace('/20','/30')} ${textColor} shadow-lg shadow-current/20`
+                      : `bg-gradient-to-r from-primary to-secondary/50 hover:${bgColor.replace('/20','/10')} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      isSelected
-                        ? `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/30') || 'bg-accent/30'}`
-                        : `${temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'}`
-                    }`}>
-                      {nota.tipo === 'nota' ? <FaFileAlt className={`text-sm ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`} /> :
-                        nota.tipo === 'documento' ? <FaBook className={`text-sm ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`} /> :
-                          <FaVideo className={`text-sm ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`} />}
-                    </div>
+                    <div className={`p-2 rounded-lg ${isSelected ? bgColor.replace('/20','/30') : bgColor}`}></div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
-                      <p className={`text-xs mb-1 font-medium ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`}>{temaInfo?.nombre}</p>
+                      <p className={`text-xs mb-1 font-medium ${textColor}`}>{tipoNota.nombre}</p>
                       {nota.etiquetas && nota.etiquetas.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-1">
                           {nota.etiquetas.slice(0, 3).map((etiqueta: string, etIndex: number) => (
                             <span
                               key={etIndex}
-                              className={`px-1.5 py-0.5 rounded text-xs ${
-                                temaInfo?.color?.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('500', '500/20') || 'bg-accent/20'
-                              } ${temaInfo?.color?.split(' ')[1] || 'text-accent'}`}
+                              className={`px-1.5 py-0.5 rounded text-xs ${bgColor} ${textColor}`}
                             >
                               {etiqueta}
                             </span>

@@ -80,12 +80,12 @@ const TiposNotasConfigPanel: React.FC = () => {
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {tiposState.map(tipo => {
           // Extraer color de fondo y texto desde la propiedad color del tipo
-          const [bgColor, textColor] = tipo.color.split(' ');
+          const [bgColor, textColor, borderClass] = tipo.color.split(' ');
           return (
             <li key={tipo.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 ${bgColor.replace('/20','/10')} transition-all`}>
               <div className="flex-1">
                 <div className={`font-bold text-base flex items-center gap-2 ${textColor}`}>
-                  <span className={`inline-block w-3 h-3 rounded-full border border-white/30 mr-1 ${bgColor}`}></span>
+                  <span className={`inline-block w-3 h-3 rounded-full border mr-1 ${bgColor} ${borderClass}`}></span>
                   {tipo.nombre}
                 </div>
                  <div className={`text-xs opacity-70 mt-1 ${textColor}`}>{tipo.descripcion}</div>

@@ -22,9 +22,17 @@ interface Tema {
   color: string;
 }
 
+interface TipoNota {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+}
+
 interface NotasDocumentosPanelProps {
   notas: Nota[];
   temas: Tema[];
+  tiposNotas: TipoNota[];
   notaSeleccionada: Nota | null;
   setNotaSeleccionada: (nota: Nota) => void;
   busqueda: string;
@@ -41,6 +49,7 @@ interface NotasDocumentosPanelProps {
 const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   notas,
   temas,
+  tiposNotas,
   notaSeleccionada,
   setNotaSeleccionada,
   busqueda,
@@ -54,83 +63,60 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   onEditarNota
 }) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Lista de notas */}
-      <div className="lg:col-span-1">
-        <div className="bg-secondary rounded-lg p-4">
-          <div className="space-y-4 mb-4">
-            <div className="flex items-center gap-2">
-              <FaSearch className="text-accent" />
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      {/* Panel de lista de notas */}
+      <div className="lg:col-span-3">
+        <div className="bg-secondary rounded-lg p-6 h-full min-h-96 flex flex-col">
+          {/* Filtros y búsqueda */}
+          <div className="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+            <div className="flex-1 flex items-center gap-2">
               <input
                 type="text"
-                placeholder="Buscar notas..."
+                placeholder="Buscar por nombre o contenido..."
+                className="input input-bordered w-full bg-base-200 text-sm"
                 value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="flex-1 input-std"
+                onChange={e => setBusqueda(e.target.value)}
               />
+              <FaSearch className="text-gray-400" />
             </div>
-            {etiquetasDisponibles.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por etiqueta</label>
-                <select
-                  value={filtroEtiqueta}
-                  onChange={(e) => setFiltroEtiqueta(e.target.value)}
-                  className="w-full input-std"
-                >
-                  <option value="">Todas las etiquetas</option>
-                  {etiquetasDisponibles.map(etiqueta => (
-                    <option key={etiqueta} value={etiqueta} className="bg-primary text-white">{etiqueta}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <select
+              className="select select-bordered bg-base-200 text-sm"
+              value={filtroEtiqueta}
+              onChange={e => setFiltroEtiqueta(e.target.value)}
+            >
+              <option value="">Todas las etiquetas</option>
+              {etiquetasDisponibles.map((et, idx) => (
+                <option key={idx} value={et}>{et}</option>
+              ))}
+            </select>
           </div>
+          {/* Lista de notas */}
           {cargando ? (
-            <div className="text-center py-8">
-              <div className="text-accent">Cargando notas...</div>
-            </div>
+            <div className="flex-1 flex items-center justify-center text-gray-400">Cargando...</div>
           ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="flex flex-col gap-3 overflow-y-auto">
               {notas.map((nota, index) => {
-                // Unificar iconos y colores como en TodoConocimientoPanel
-                let icono = <FaFileAlt className={`text-accent`} />;
-                let color = 'bg-accent/20 text-accent';
-                let nombreTipo = 'Nota';
-                if (nota.tipo === 'nota') {
-                  icono = <FaFileAlt className="text-accent" />;
-                  color = 'bg-accent/20 text-accent';
-                  nombreTipo = 'Nota';
-                } else if (nota.tipo === 'documento') {
-                  icono = <FaBook className="text-green-300" />;
-                  color = 'bg-green-900/20 text-green-300';
-                  nombreTipo = 'Documento';
-                } else if (nota.tipo === 'video') {
-                  icono = <FaVideo className="text-yellow-300" />;
-                  color = 'bg-yellow-900/20 text-yellow-300';
-                  nombreTipo = 'Video';
-                } else if (['incidente','mantenimiento','reunion','capacitacion','otro'].includes(nota.tipo)) {
-                  icono = <FaFileAlt className="text-accent" />;
-                  color = 'bg-accent/20 text-accent';
-                  nombreTipo = nota.tipo.charAt(0).toUpperCase() + nota.tipo.slice(1);
-                }
-                const isSelected = notaSeleccionada?.nombre === nota.nombre;
+                const tipoNota = tiposNotas.find(t => t.id === nota.tipo) || tiposNotas[0];
+                const color = tipoNota.color;
+                const nombreTipo = tipoNota.nombre;
+                const isSelected = notaSeleccionada?.id === nota.id;
                 return (
                   <button
-                    key={index}
+                    key={nota.id || index}
                     onClick={() => setNotaSeleccionada(nota)}
                     className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
                       isSelected
                         ? `${color} shadow-lg shadow-current/20`
-                        : `bg-gradient-to-r from-primary to-secondary/50 hover:${color.replace('text-', 'from-').replace('border-', 'from-').split(' ')[0]?.replace('900/20', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                        : `bg-gradient-to-r from-primary to-secondary/50 hover:${color.split(' ')[0]?.replace('bg-', 'from-').replace('/20', '/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-lg ${
-                        isSelected 
-                          ? color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/30') || 'bg-accent/30'
-                          : color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'
+                        isSelected
+                          ? color.split(' ')[0]?.replace('/20', '/30') || 'bg-accent/30'
+                          : color.split(' ')[0] || 'bg-accent/20'
                       }`}>
-                        {icono}
+                        <FaFileAlt className={color.split(' ')[1] || 'text-accent'} />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
@@ -140,7 +126,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                             {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
                               <span
                                 key={etIndex}
-                                className={`px-1.5 py-0.5 rounded text-xs ${color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'} ${color.split(' ')[1] || 'text-accent'}`}
+                                className={`px-1.5 py-0.5 rounded text-xs ${color.split(' ')[0] || 'bg-accent/20'} ${color.split(' ')[1] || 'text-accent'}`}
                               >
                                 {etiqueta}
                               </span>
@@ -158,6 +144,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                   </button>
                 );
               })}
+
             </div>
           )}
         </div>
@@ -175,7 +162,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     onClick={() => onEditarNota && notaSeleccionada && onEditarNota(notaSeleccionada)}
                     className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
                     disabled={!onEditarNota}
@@ -183,14 +170,14 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                     <FaEdit className="text-sm" />
                     Editar
                   </button>
-                  <button 
+                  <button
                     onClick={() => descargarNota(notaSeleccionada)}
                     className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
                   >
                     <FaFileAlt className="text-sm" />
                     Descargar
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       if (confirm('¿Estás seguro de eliminar esta nota?')) {
                         eliminarNota(notaSeleccionada);

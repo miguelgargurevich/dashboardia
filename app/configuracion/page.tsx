@@ -8,10 +8,12 @@ interface Tema {
 "use client";
 import React, { useState, useEffect } from 'react';
 
+
 import { FaCog, FaLayerGroup, FaCalendarAlt, FaChevronRight, FaFolderOpen, FaStickyNote } from 'react-icons/fa';
 import TemasConfigPanel from './TemasConfigPanel';
 import RecursosConfigPanel from './RecursosConfigPanel';
 import TiposNotasConfigPanel from './TiposNotasConfigPanel';
+import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 
 const ConfiguracionPage: React.FC = () => {
@@ -101,6 +103,7 @@ const ConfiguracionPage: React.FC = () => {
           )}
         </section>
       </div>
+      <AssistantBubble />
     </div>
   );
 };
