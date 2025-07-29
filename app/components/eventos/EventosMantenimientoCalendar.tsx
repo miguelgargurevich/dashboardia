@@ -119,7 +119,7 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
   if (layout === 'split') {
     return (
       <div className="w-full flex flex-col gap-8">
-        <div className="w-full max-w-xl mr-auto">
+        <div className="w-full">
           <div className="bg-primary rounded-lg p-4 shadow-md">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-accent">{monthLabel}</h3>
@@ -177,7 +177,7 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
             )}
           </div>
         </div>
-        <div className="w-full max-w-2xl mr-auto">
+        <div className="w-full">
           <div className="bg-primary rounded-lg p-4 shadow-md">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-xl font-bold text-yellow-400">
@@ -199,7 +199,7 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
                           {event.title.toLowerCase().includes('demo') && <FaLaptop />}
                           {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
                         </span>
-                        <h5 className="font-semibold text-white text-sm">{event.title}</h5>
+                        <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {event.title}</h5>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -225,22 +225,21 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
                       </div>
                     </div>
                     {event.description && (
-                      <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
+                      <p className="text-gray-300 text-xs mb-2 line-clamp-2"><span className="font-bold text-gray-400 mr-1">Descripción:</span> {event.description}</p>
                     )}
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="text-gray-400">
-                          {new Date(event.startDate).toLocaleDateString('es-ES')}
-                          {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
+                          <span className="font-bold text-gray-400 mr-1">Fecha:</span> {new Date(event.startDate).toLocaleDateString('es-ES')}
+                          {event.endDate && <span> - {new Date(event.endDate).toLocaleDateString('es-ES')}</span>}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
                         {event.location && (
                           <span className="text-gray-400">
-                            📍 {event.location}
+                            <span className="font-bold text-gray-400 mr-1">Ubicación:</span> 📍 {event.location}
                           </span>
                         )}
-                        
                       </div>
                     </div>
                     {(event.validador || event.codigoDana || event.nombreNotificacion || event.modo) && (
@@ -249,23 +248,23 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
                           <div className="flex flex-wrap gap-2">
                             {event.validador && (
                               <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                                👤 {event.validador}
+                                <span className="font-bold text-blue-300 mr-1">Validador:</span> 👤 {event.validador}
                               </span>
                             )}
                             {event.codigoDana && (
                               <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
-                                🏢 {event.codigoDana}
+                                <span className="font-bold text-green-300 mr-1">Código Dana:</span> 🏢 {event.codigoDana}
                               </span>
                             )}
                             {event.nombreNotificacion && (
                               <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
-                                🔔 {event.nombreNotificacion}
+                                <span className="font-bold text-purple-300 mr-1">Notificación:</span> 🔔 {event.nombreNotificacion}
                               </span>
                             )}
                           </div>
                           {event.modo && (
                             <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10 ml-2">
-                              {event.modo}
+                              <span className="font-bold text-yellow-400 mr-1">Modo:</span> {event.modo}
                             </span>
                           )}
                         </div>

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaSyncAlt, FaCalendarAlt } from 'react-icons/fa';
-import EventsCalendar from '../components/dashboard/EventsCalendar';
+import EventosMantenimientoCalendar from '../components/eventos/EventosMantenimientoCalendar';
 import Modal from '../components/Modal';
 
 interface Evento {
@@ -129,6 +129,8 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
     cargarEventos(token);
   };
 
+
+
   return (
     <>
       <div className="flex items-center gap-3 mb-8">
@@ -137,7 +139,12 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
       </div>
       <div className="mb-8">
         {token && (
-          <EventsCalendar token={token} />
+          <EventosMantenimientoCalendar
+            token={token}
+            layout="split"
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         )}
       </div>
       <div className="mb-8">
@@ -165,57 +172,9 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
           <FaPlus /> Nuevo Evento
         </button>
       </div>
-      <div className="bg-secondary rounded-lg p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-accent">Eventos</h2>
-          <button onClick={() => token && cargarEventos(token)} className="text-accent hover:text-white"><FaSyncAlt /></button>
-        </div>
-        {cargando ? (
-          <div className="text-gray-400">Cargando eventos...</div>
-        ) : (
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-accent">
-                <th className="py-2">Título</th>
-                <th>Descripción</th>
-                <th>Fecha Inicio</th>
-                <th>Fecha Fin</th>
-                <th>Tipo</th>
-                <th>Modo</th>
-                <th>Ubicación</th>
-                <th>Validador</th>
-                <th>Código Dana</th>
-                <th>Notificación</th>
-                <th>Recurrente</th>
-                <th>Patrón Recurrencia</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventos.map(evento => (
-                <tr key={evento.id} className="border-b border-accent/10 hover:bg-accent/5">
-                  <td className="py-2 font-semibold">{evento.title}</td>
-                  <td>{evento.description}</td>
-                  <td>{evento.startDate ? new Date(evento.startDate).toLocaleDateString() : ''}</td>
-                  <td>{evento.endDate ? new Date(evento.endDate).toLocaleDateString() : ''}</td>
-                  <td>{evento.eventType}</td>
-                  <td>{evento.modo}</td>
-                  <td>{evento.location}</td>
-                  <td>{evento.validador}</td>
-                  <td>{evento.codigoDana}</td>
-                  <td>{evento.nombreNotificacion}</td>
-                  <td>{evento.isRecurring ? 'Sí' : 'No'}</td>
-                  <td>{evento.recurrencePattern}</td>
-                  <td>
-                    <button onClick={() => handleEdit(evento)} className="text-blue-400 hover:text-blue-200 mr-2"><FaEdit /></button>
-                    <button onClick={() => handleDelete(evento.id)} className="text-red-400 hover:text-red-200"><FaTrash /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+
+
+
       {mostrarFormulario && (
         <Modal open={mostrarFormulario} onClose={() => { setMostrarFormulario(false); setEventoEditando(null); }} title={eventoEditando ? 'Editar Evento' : 'Nuevo Evento'} maxWidth="max-w-2xl">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -235,57 +194,47 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
                 value={formData.description}
                 onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
                 className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-                rows={3}
+                rows={2}
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Fecha Inicio</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Fecha inicio *</label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={formData.startDate}
                   onChange={e => setFormData(f => ({ ...f, startDate: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  required
                 />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Fecha Fin</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Fecha fin</label>
                 <input
-                  type="date"
+                  type="datetime-local"
                   value={formData.endDate}
                   onChange={e => setFormData(f => ({ ...f, endDate: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                 />
               </div>
             </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Evento</label>
-                <input
-                  type="text"
-                  value={formData.eventType}
-                  onChange={e => setFormData(f => ({ ...f, eventType: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Ubicación</label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={e => setFormData(f => ({ ...f, location: e.target.value }))}
+                className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+              />
+            </div>
+            <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Modo</label>
                 <input
                   type="text"
                   value={formData.modo}
                   onChange={e => setFormData(f => ({ ...f, modo: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Ubicación</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={e => setFormData(f => ({ ...f, location: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                 />
               </div>
               <div className="flex-1">
@@ -294,18 +243,18 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
                   type="text"
                   value={formData.validador}
                   onChange={e => setFormData(f => ({ ...f, validador: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-300 mb-2">Código Dana</label>
                 <input
                   type="text"
                   value={formData.codigoDana}
                   onChange={e => setFormData(f => ({ ...f, codigoDana: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                 />
               </div>
               <div className="flex-1">
@@ -314,25 +263,41 @@ const EventosConfigPanel: React.FC<EventosConfigPanelProps> = ({ token }) => {
                   type="text"
                   value={formData.nombreNotificacion}
                   onChange={e => setFormData(f => ({ ...f, nombreNotificacion: e.target.value }))}
-                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.isRecurring}
-                onChange={e => setFormData(f => ({ ...f, isRecurring: e.target.checked }))}
-                id="isRecurring"
-              />
-              <label htmlFor="isRecurring" className="text-gray-300">Recurrente</label>
-              <input
-                type="text"
-                placeholder="Patrón de recurrencia"
-                value={formData.recurrencePattern}
-                onChange={e => setFormData(f => ({ ...f, recurrencePattern: e.target.value }))}
-                className="ml-2 w-48 bg-primary/80 border border-accent/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-              />
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de evento</label>
+                <select
+                  value={formData.eventType}
+                  onChange={e => setFormData(f => ({ ...f, eventType: e.target.value }))}
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                >
+                  <option value="">Seleccionar</option>
+                  <option value="incidente">Incidente</option>
+                  <option value="mantenimiento">Mantenimiento</option>
+                  <option value="reunion">Reunión</option>
+                  <option value="capacitacion">Capacitación</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-300 mb-2">Recurrencia</label>
+                <select
+                  value={formData.recurrencePattern}
+                  onChange={e => setFormData(f => ({ ...f, recurrencePattern: e.target.value }))}
+                  className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent h-12"
+                >
+                  <option value="">Sin recurrencia</option>
+                  <option value="diario">Diario</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="mensual">Mensual</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </div>
             </div>
             <div className="flex gap-3 pt-4">
               <button
