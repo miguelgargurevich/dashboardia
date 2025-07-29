@@ -46,13 +46,32 @@ type TipoRecurso = { id: string; nombre: string; descripcion: string; color: str
 type Message = { role: string; content: string };
 
 export default function AssistantBubble() {
-  // Flag para sugerencia de temas solo una vez por conversación
-  const [temaSugerido, setTemaSugerido] = useState(false);
   const pathname = usePathname();
-  // Temas actuales de la app (dinámicos)
   const [temasActuales, setTemasActuales] = useState<string[]>([]);
-  // Guardar temas completos para obtener el id dinámico
   const [temasFull, setTemasFull] = useState<any[]>([]);
+  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const canAttach = pathname !== '/login';
+
+  // Detecta si está en la página de login
+  const isLoginPage = pathname === '/login';
+  // Conversational, text-only initial prompt
+  const initialPrompt = isLoginPage
+    ? '🤖 ¡Hola! Soy tu asistente experto en soporte. Puedes preguntarme cómo registrarte, iniciar sesión o qué puedes hacer en el dashboard. Ejemplo: "¿Cómo me registro?"'
+    : `🤖 ¡Hola! Soy tu asistente experto. Puedes pedirme que cree notas, suba recursos, agregue URLs, consulte eventos, o cualquier otra tarea.\n\nAl crear una nota o recurso, te sugeriré los temas actuales: (cargando temas...). El tag se colocará automáticamente según el tema seleccionado, pero puedes agregar otros tags si lo deseas.\n\nEjemplo: "Crea una nota para el evento de hoy y adjunta estos archivos".`;
+
+  // Inicializa mensajes solo una vez al montar
+  useEffect(() => {
+    setMessages([{ role: 'assistant', content: initialPrompt }]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoginPage]);
+
   useEffect(() => {
     fetch('/temas.json')
       .then(res => res.json())
@@ -66,8 +85,6 @@ export default function AssistantBubble() {
       });
   }, []);
 
-  // Tipos de recursos desde JSON centralizado
-  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
   useEffect(() => {
     fetch('/tiposRecursos.json')
       .then(res => res.json())
@@ -83,7 +100,7 @@ export default function AssistantBubble() {
         setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
       });
   }, []);
-  // Cierra el chat IA si recibe el evento personalizado 'close-assistant-bubble'
+
   useEffect(() => {
     const handler = () => setOpen(false);
     window.addEventListener('close-assistant-bubble', handler);
@@ -91,31 +108,17 @@ export default function AssistantBubble() {
   }, []);
   useEffect(() => {
     const handler = () => {
-      setOpen((prev) => prev ? true : true);
+      setOpen(true);
     };
     window.addEventListener('open-assistant-bubble', handler);
     return () => window.removeEventListener('open-assistant-bubble', handler);
   }, []);
-  // Detecta si está en la página de login
-  const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
-  // Conversational, text-only initial prompt
-  const initialPrompt = isLoginPage
-    ? '🤖 ¡Hola! Soy tu asistente experto en soporte. Puedes preguntarme cómo registrarte, iniciar sesión o qué puedes hacer en el dashboard. Ejemplo: "¿Cómo me registro?"'
-    : `🤖 ¡Hola! Soy tu asistente experto. Puedes pedirme que cree notas, suba recursos, agregue URLs, consulte eventos, o cualquier otra tarea.\n\nAl crear una nota o recurso, te sugeriré los temas actuales: (cargando temas...). El tag se colocará automáticamente según el tema seleccionado, pero puedes agregar otros tags si lo deseas.\n\nEjemplo: "Crea una nota para el evento de hoy y adjunta estos archivos".`;
-  const [open, setOpen] = useState(false);
-  // Eliminado: const [closing, setClosing] = useState(false);
-  // Al abrir el chat, siempre muestra la propuesta inicial como primer mensaje
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: initialPrompt }
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const chatRef = useRef<HTMLDivElement>(null);
-  // Estado para adjuntos (múltiples archivos)
-  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const [dragActive, setDragActive] = useState(false);
-  // Solo permitir adjuntar si NO está en login (usuario logueado)
-  const canAttach = pathname !== '/login';
+
+  useEffect(() => {
+    if (open && chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages, open]);
 
   useEffect(() => {
     if (open && chatRef.current) {
@@ -238,8 +241,7 @@ export default function AssistantBubble() {
     // Si el mensaje es la descripción de la nota (después de pedirla)
     if (messages.length > 0 && /Por favor, escribe la descripción de la nota/.test(messages[messages.length-1].content)) {
       // Generar título automático: "Nota de Hoy - [tema]"
-      const hoy = new Date();
-      const fechaStr = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      // const hoy = new Date();
       // Extraer tema y tags de la descripción usando palabras clave de temas
       let temaDetectado = temasActuales.find(t => value.toLowerCase().includes(t.toLowerCase())) || temasFull[0]?.nombre || 'General';
       let tagsDetectados = [temaDetectado];
@@ -293,9 +295,7 @@ export default function AssistantBubble() {
     setInput('');
     setLoading(false);
   // Reinicia sugerencia de temas al abrir nueva conversación
-  useEffect(() => {
-    if (open) setTemaSugerido(false);
-  }, [open]);
+  // Eliminado: useEffect para setTemaSugerido, ya no se usa
   }
 
   return (
