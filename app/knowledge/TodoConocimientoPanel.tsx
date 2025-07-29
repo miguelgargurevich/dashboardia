@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { FaSearch, FaFileAlt, FaBook, FaLayerGroup, FaVideo, FaEye, FaCalendarAlt } from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaBook, FaLayerGroup, FaEye, FaCalendarAlt } from "react-icons/fa";
 
 interface Nota {
   id?: string;
@@ -27,6 +27,12 @@ interface Evento {
   location?: string;
   recurrenceType?: string;
   eventType?: string;
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  recurrencePattern?: string;
+  // Otros campos relevantes pueden agregarse aquí según el modelo de backend
 }
 
 interface TodoConocimientoPanelProps {
@@ -92,7 +98,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto min-h-[420px]">
             {filtered.length === 0 && <div className="text-gray-400">No hay resultados.</div>}
-            {filtered.map((item, index) => {
+            {filtered.map((item) => {
               // Lógica de color y gradiente por tipo
               let temaInfo = {
                 color: 'bg-accent/20 text-accent',
@@ -119,6 +125,36 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                 };
               }
               const isSelected = selected?.id === item.id;
+              // Card lateral para eventos: solo título y descripción
+              if (item.origen === 'evento' && 'evento' in item && item.evento) {
+                const e = item.evento;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setSelected(item)}
+                    className={`w-full text-left p-4 rounded-lg transition-all duration-200 border ${
+                      isSelected
+                        ? `${temaInfo.color} shadow-lg shadow-current/20 border-0`
+                        : `bg-gradient-to-r from-primary to-secondary/50 hover:${temaInfo.color.replace('text-', 'from-').replace('border-', 'from-').split(' ')[0]?.replace('900/20', '400/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        isSelected
+                          ? temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/30') || 'bg-accent/30'
+                          : temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'
+                      }`}>
+                        {temaInfo.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-white text-base truncate flex-1">{e.title}</h3>
+                        {item.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{item.descripcion}</p>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              }
+              // ...existing code for notas y recursos...
               return (
                 <button
                   key={item.id}
@@ -142,7 +178,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                       <p className={`text-xs mb-1 font-medium ${temaInfo.color.split(' ')[1] || 'text-accent'}`}>{temaInfo.nombre}</p>
                       {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-1">
-                          {item.tags.slice(0, 3).map((tag: string, idx: number) => (
+                          {item.tags.slice(0, 3).map((tag: string) => (
                             <span
                               key={tag}
                               className={`px-1.5 py-0.5 rounded text-xs ${temaInfo.color.replace('text-', 'bg-').replace('border-', 'bg-').split(' ')[0]?.replace('900/20', '500/20') || 'bg-accent/20'} ${temaInfo.color.split(' ')[1] || 'text-accent'}`}
@@ -169,7 +205,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
             {selected ? (
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  {selected.origen === "nota" ? <FaFileAlt className="text-accent" /> : <FaBook className="text-accent" />}
+                  {selected.origen === "nota" ? <FaFileAlt className="text-accent" /> : selected.origen === "recurso" ? <FaBook className="text-accent" /> : <FaCalendarAlt className="text-yellow-300" />}
                   <h2 className="text-xl font-bold text-accent">{selected.titulo}</h2>
                   <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent font-bold">{selected.tipo}</span>
                 </div>
@@ -184,46 +220,27 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                 )}
                 {selected.origen === "evento" && selected.evento && (
                   <div className="space-y-2">
-                    <div className="text-lg font-bold text-accent">{selected.evento.title}</div>
-                    <div className="text-sm text-gray-300 mb-1">
-                      <span className="font-semibold">Descripción:</span> {selected.evento.description || <span className="italic text-gray-500">Sin descripción</span>}
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-white text-lg flex-1">{selected.evento.title}</h3>
+                      {selected.evento.eventType && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200 font-bold">{selected.evento.eventType}</span>}
                     </div>
-                    <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                      <span className="font-semibold">Fecha:</span> {selected.evento.startDate ? `${new Date(selected.evento.startDate).toLocaleDateString()}${selected.evento.endDate ? ' - ' + new Date(selected.evento.endDate).toLocaleDateString() : ''}` : <span className="italic text-gray-500">Sin fecha</span>}
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {selected.evento.startDate && (
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-primary/40 text-gray-200">
+                          {new Date(selected.evento.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                          {selected.evento.endDate ? ` - ${new Date(selected.evento.endDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}` : ''}
+                        </span>
+                      )}
+                      {selected.evento.location && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/30 text-gray-300">{selected.evento.location}</span>}
                     </div>
-                    {selected.evento.location && (
-                      <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                        <span className="font-semibold">Ubicación:</span> {selected.evento.location}
-                      </div>
-                    )}
-                    {selected.evento.modo && (
-                      <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                        <span className="font-semibold">Modo:</span> {selected.evento.modo}
-                      </div>
-                    )}
-                    {selected.evento.validador && (
-                      <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                        <span className="font-semibold">Validador:</span> {selected.evento.validador}
-                      </div>
-                    )}
-                    {selected.evento.codigoDana && (
-                      <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                        <span className="font-semibold">Código Dana:</span> {selected.evento.codigoDana}
-                      </div>
-                    )}
-                    {selected.evento.nombreNotificacion && (
-                      <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                        <span className="font-semibold">Notificación:</span> {selected.evento.nombreNotificacion}
-                      </div>
-                    )}
-                    {selected.evento.eventType && (
-                      <div className="text-xs text-accent">Tipo: {selected.evento.eventType}</div>
-                    )}
-                    {selected.evento.recurrencePattern && (
-                      <div className="text-sm text-gray-300 mb-1 flex flex-wrap gap-2">
-                        <span className="font-semibold">Recurrencia:</span> {selected.evento.recurrencePattern}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-1 mb-1">
+                      {selected.evento.validador && <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/40 text-blue-200">Validador: {selected.evento.validador}</span>}
+                      {selected.evento.modo && <span className="px-1.5 py-0.5 rounded text-xs bg-green-900/40 text-green-200">Modo: {selected.evento.modo}</span>}
+                      {selected.evento.codigoDana && <span className="px-1.5 py-0.5 rounded text-xs bg-purple-900/40 text-purple-200">Dana: {selected.evento.codigoDana}</span>}
+                      {selected.evento.nombreNotificacion && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200">Notif: {selected.evento.nombreNotificacion}</span>}
+                      {selected.evento.recurrencePattern && <span className="px-1.5 py-0.5 rounded text-xs bg-pink-900/40 text-pink-200">{selected.evento.recurrencePattern}</span>}
+                    </div>
+                    {selected.evento.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{selected.evento.descripcion}</p>}
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 mt-4">
