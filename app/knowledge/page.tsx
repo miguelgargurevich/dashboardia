@@ -100,12 +100,7 @@ const KnowledgePage: React.FC = () => {
   const [filtroTipoRecurso, setFiltroTipoRecurso] = useState<string>('');
 
 
-  // DEBUG: Mostrar cantidad de tipos de nota disponibles (eliminar cuando se use en selects/filtros)
-  // Esto previene el warning de variable no usada y ayuda a validar la carga
-  // Puedes reemplazarlo por el uso real en selects, filtros, etc.
-  if (!tiposNotas.length) {
-    return <div className="p-8 text-center text-gray-500">Cargando tipos de nota...</div>;
-  }
+
 
   const [filtroEtiquetaRecurso, setFiltroEtiquetaRecurso] = useState<string>('');
   const [etiquetasDisponiblesRecursos, setEtiquetasDisponiblesRecursos] = useState<string[]>([]);
@@ -955,6 +950,7 @@ ${formData.contenido}
   }
 
   if (!isLoggedIn) {
+
     return null; // Ya redirigió al login
   }
 
@@ -1015,13 +1011,11 @@ ${formData.contenido}
           </button>
         </div>
 
-
-
-
         {/* Panel Todo el conocimiento */}
-        {seccionActiva === 'todo' && (
+        {!tiposNotas.length ? (
+          <div className="p-8 text-center text-gray-500">Cargando tipos de nota...</div>
+        ) : seccionActiva === 'todo' ? (
           <div>
-           
             <div className="flex flex-wrap gap-3 mb-6">
               <button
                 onClick={() => setFiltros(f => ({ ...f, notas: !f.notas }))}
@@ -1074,13 +1068,6 @@ ${formData.contenido}
                   <FaPlus />
                   Agregar Recurso
                 </button>
-                {/* <button
-                  onClick={() => setMostrarFormularioEvento(true)}
-                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                  Agregar Evento
-                </button> */}
               </div>
             </div>
             <TodoConocimientoPanel
@@ -1089,7 +1076,7 @@ ${formData.contenido}
               eventos={filtros.eventos ? eventosParaTodoConocimiento : []}
             />
           </div>
-        )}
+        ) : null}
 
 
         {/* Panel de eventos de conocimiento, como sección independiente */}
