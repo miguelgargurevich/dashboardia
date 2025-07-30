@@ -1,5 +1,7 @@
+
 "use client";
 import React, { useState, useEffect } from "react";
+import { FaCalendarAlt } from "react-icons/fa";
 
 export interface EventoFormValues {
   title: string;
@@ -219,24 +221,15 @@ const EventoForm: React.FC<EventoFormProps> = ({
           </select>
         </div>
       </div>
-      <div className="flex gap-3 pt-4">
-        <button
-          type="submit"
-          className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all"
-          disabled={loading}
-        >
-          {submitLabel}
-        </button>
+      <div className="flex gap-2 justify-end">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all"
-            disabled={loading}
-          >
+          <button type="button" className="px-4 py-2 rounded-lg border border-gray-500 bg-transparent text-gray-300 hover:bg-gray-700 transition" onClick={onCancel} disabled={loading}>
             Cancelar
           </button>
         )}
+        <button type="submit" className="px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/80 transition flex items-center gap-2" disabled={loading}>
+          <span className="mr-2"><FaCalendarAlt /></span> {submitLabel}
+        </button>
       </div>
     </form>
   );
