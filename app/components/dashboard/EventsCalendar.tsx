@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
+import DetalleEventoPanel from '../eventos/DetalleEventoPanel';
 
 interface Event {
   id: string;
@@ -31,19 +32,17 @@ interface Props {
 
 const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelectedDate, triggerDateSelection, onDateChange, onTodayClick }) => {
   // Calcular fecha actual una vez al renderizar
-  const { todayDay, todayMonth, todayYear } = useMemo(() => {
+  const { todayDay } = useMemo(() => {
     const today = new Date();
     return {
       todayDay: today.getDate(),
-      todayMonth: today.getMonth(),
-      todayYear: today.getFullYear()
     };
   }, []);
   
   // Días de la semana (Lun a Dom)
-  const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  // const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   // Siempre mostrar el panel del día actual
   const [selectedDate, setSelectedDate] = useState<string>(todayDay.toString());
   // Estado para el mes visible SIEMPRE inicia en el mes actual
@@ -52,7 +51,6 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
 
   useEffect(() => {
     async function fetchEvents() {
-      setLoading(true);
       try {
         const res = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -74,7 +72,6 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
         console.error('Error fetching events:', error);
         setEvents([]);
       } finally {
-        setLoading(false);
       }
     }
     fetchEvents();
@@ -101,13 +98,13 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
   const [yyyy, mm] = visibleMonth.split('-');
   const year = Number(yyyy);
   const mon = Number(mm) - 1; // 0-indexed para JS
-  const daysInMonth = new Date(year, mon + 1, 0).getDate();
+  // const daysInMonth = new Date(year, mon + 1, 0).getDate();
   // Calcular el día de la semana del primer día del mes (0=Dom, 1=Lun...)
   let firstDayOfWeek = new Date(year, mon, 1).getDay();
   // Ajustar para que el lunes sea el primer día (0=Lun, 6=Dom)
   firstDayOfWeek = (firstDayOfWeek === 0) ? 6 : firstDayOfWeek - 1;
   // Array de días del mes
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  // const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   // Eventos por día
   const eventsByDay: { [key: number]: Event[] } = {};
@@ -182,139 +179,21 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
           </button>
         </div>
       </div>
-      {loading ? <div>Cargando...</div> : (
-        <div className="grid grid-cols-7 gap-2 mb-4">
-          {/* Cabecera de días de la semana */}
-          {weekDays.map((wd) => (
-            <div key={wd} className="text-xs font-bold text-accent text-center pb-2">{wd}</div>
-          ))}
-          {/* Espacios vacíos para alinear el primer día */}
-          {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
-            <div key={`empty-${idx}`}></div>
-          ))}
-          {/* Días del mes */}
-          {days.map(day => {
-            const dayEvents = eventsByDay[day] || [];
-            const isSelected = selectedDate === day.toString();
-            const isToday = day === todayDay && mon === todayMonth && year === todayYear;
-            
-            return (
-              <div
-                key={day}
-                className={`relative rounded-lg p-2 text-center cursor-pointer border transition-all duration-200 min-h-[50px] flex flex-col justify-between
-                  ${isSelected ? 'ring-2 ring-accent bg-accent/20' : 'border-accent/30 hover:border-accent/60'}
-                  ${isToday ? 'border-2 border-blue-400' : ''}
-                  ${dayEvents.length > 0 ? 'bg-accent/10' : 'bg-primary/40'}
-                `}
-                onClick={() => {
-                  setSelectedDate(day.toString());
-                  // Notificar al componente padre si tiene la callback
-                  if (onDateChange) {
-                    const dateString = `${year}-${String(mon + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    onDateChange(dateString);
-                  }
-                }}
-              >
-                <span className={`text-sm font-medium ${dayEvents.length > 0 ? 'text-accent' : 'text-white'}`}>
-                  {day}
-                </span>
-                
-                {/* Indicador de eventos */}
-                {dayEvents.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    <div className="w-full h-1 bg-yellow-400 rounded-full"></div>
-                    <div className="text-xs text-accent font-bold">
-                      {dayEvents.length}E
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {/* Panel de eventos del día seleccionado */}
       <div className="mt-4">
         <div className="flex items-center justify-between mb-4">
           <h4 className="text-xl font-bold text-yellow-400">
             Eventos del día {selectedDate} ({eventsByDay[parseInt(selectedDate)]?.length || 0})
           </h4>
         </div>
-        
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {eventsByDay[parseInt(selectedDate)]?.length > 0 ? (
-            eventsByDay[parseInt(selectedDate)].map((event, index) => (
-              <div key={index} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-yellow-400">
-                      {/* Icono según el tipo/título del evento */}
-                      {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                      {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                      {event.title.toLowerCase().includes('reunión') && <FaUsers />}
-                      {event.title.toLowerCase().includes('webinar') && <FaRobot />}
-                      {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                      {event.title.toLowerCase().includes('demo') && <FaLaptop />}
-                      {/* Icono genérico si no coincide */}
-                      {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
-                    </span>
-                    <h5 className="font-semibold text-white text-sm">{event.title}</h5>
-                  </div>
-                  {event.modo && (
-                    <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
-                      {event.modo}
-                    </span>
-                  )}
-                </div>
-                
-                {event.description && (
-                  <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
-                )}
-                
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400">
-                      {new Date(event.startDate).toLocaleDateString('es-ES')}
-                      {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
-                    </span>
-                  </div>
-                  {event.location && (
-                    <span className="text-gray-400">
-                      📍 {event.location}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Información adicional del evento */}
-                <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                  <div className="flex flex-wrap gap-2 text-xs mb-2">
-                    <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">Modo: {event.modo && event.modo.trim() !== '' ? event.modo : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 Día Envío: {event.diaEnvio && event.diaEnvio.trim() !== '' ? event.diaEnvio : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 Query: {event.query && event.query.trim() !== '' ? (event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query) : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 Recursos: {event.relatedResources && event.relatedResources.length > 0 ? event.relatedResources.length : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🗂️ Tipo: {event.eventType && event.eventType.trim() !== '' ? event.eventType : '-'}</span>
-                    <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🔁 Recurrencia: {event.recurrencePattern && event.recurrencePattern.trim() !== '' ? event.recurrencePattern : '-'}</span>
-                  </div>
-                  {/* Recursos relacionados */}
-                  {event.relatedResources && event.relatedResources.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {event.relatedResources.slice(0, 3).map((resource, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
-                          � {resource}
-                        </span>
-                      ))}
-                      {event.relatedResources.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
-                          +{event.relatedResources.length - 3} más
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
+            eventsByDay[parseInt(selectedDate)].map((event) => (
+              <DetalleEventoPanel
+                key={event.id}
+                eventoSeleccionado={event}
+                onEdit={() => {}}
+                onDelete={() => {}}
+              />
             ))
           ) : (
             <div className="text-center py-8">
