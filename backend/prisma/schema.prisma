@@ -99,6 +99,7 @@ model Event {
   kbs                EventToKBArticle[]
   tickets            EventToTicket[]
   resources          ResourceToEvent[]
+  relatedResources   String[]
 }
 
 model TicketToKBArticle {

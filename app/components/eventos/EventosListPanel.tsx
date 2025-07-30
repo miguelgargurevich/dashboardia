@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 
+
 interface Event {
   id?: string;
   title: string;
@@ -9,6 +10,12 @@ interface Event {
   location?: string;
   recurrenceType?: string;
   eventType?: string;
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  diaEnvio?: string;
+  query?: string;
 }
 
 const emptyEvent: Event = {
@@ -18,6 +25,12 @@ const emptyEvent: Event = {
   location: '',
   recurrenceType: '',
   eventType: '',
+  validador: '',
+  modo: '',
+  codigoDana: '',
+  nombreNotificacion: '',
+  diaEnvio: '',
+  query: '',
 };
 
 interface EventosListPanelProps {
@@ -153,8 +166,10 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
                 <label className="block text-xs mb-1">Tipo de evento</label>
                 <select name="eventType" value={form.eventType || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white">
                   <option value="">Seleccionar</option>
-                  <option value="actividad-diaria">Actividad diaria</option>
-                  <option value="evento-recurrente">Evento recurrente</option>
+                  <option value="incidente">Incidente</option>
+                  <option value="mantenimiento">Mantenimiento</option>
+                  <option value="reunion">Reunión</option>
+                  <option value="capacitacion">Capacitación</option>
                   <option value="otro">Otro</option>
                 </select>
               </div>
@@ -162,11 +177,42 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
                 <label className="block text-xs mb-1">Recurrencia</label>
                 <select name="recurrenceType" value={form.recurrenceType || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white">
                   <option value="">Ninguna</option>
-                  <option value="diaria">Diaria</option>
+                  <option value="diario">Diario</option>
                   <option value="semanal">Semanal</option>
                   <option value="mensual">Mensual</option>
-                  <option value="recurrente">Recurrente</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
                 </select>
+              </div>
+            </div>
+            <div className="mb-2 flex gap-2">
+              <div className="flex-1">
+                <label className="block text-xs mb-1">Validador</label>
+                <input name="validador" value={form.validador || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs mb-1">Modo</label>
+                <input name="modo" value={form.modo || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white" />
+              </div>
+            </div>
+            <div className="mb-2 flex gap-2">
+              <div className="flex-1">
+                <label className="block text-xs mb-1">Código Dana</label>
+                <input name="codigoDana" value={form.codigoDana || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs mb-1">Nombre Notificación</label>
+                <input name="nombreNotificacion" value={form.nombreNotificacion || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white" />
+              </div>
+            </div>
+            <div className="mb-2 flex gap-2">
+              <div className="flex-1">
+                <label className="block text-xs mb-1">Día de Envío</label>
+                <input name="diaEnvio" value={form.diaEnvio || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs mb-1">Query</label>
+                <input name="query" value={form.query || ''} onChange={handleChange} className="w-full px-2 py-1 rounded bg-primary text-white" />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">

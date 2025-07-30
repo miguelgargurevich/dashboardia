@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface DailyBarChartProps {
   token: string;
+  backendUrl: string;
 }
 
 interface TicketData {
@@ -12,7 +13,8 @@ interface TicketData {
   color: string;
 }
 
-export default function DailyBarChart({ token }: DailyBarChartProps) {
+export default function DailyBarChart({ token, backendUrl }: DailyBarChartProps) {
+  const apiUrl = backendUrl;
   const [data, setData] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

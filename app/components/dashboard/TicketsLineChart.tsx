@@ -26,7 +26,7 @@ const TicketsLineChart: React.FC<Props> = ({ token, data }) => {
       setLoading(true);
       try {
         // URL base del backend para tendencia semanal
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         
         const response = await fetch(`${apiUrl}/api/tickets/tendencia-semanal`, {
           headers: { Authorization: `Bearer ${token}` }

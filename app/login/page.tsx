@@ -35,7 +35,9 @@ export default function Login() {
                 e.preventDefault();
                 setError('');
                 try {
-                  const res = await fetch('/api/auth/login', {
+                  // Usar solo la variable de entorno para la URL del backend
+                  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+                  const res = await fetch(`${backendUrl}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
@@ -45,15 +47,15 @@ export default function Login() {
                     setError(data.error || 'Error de autenticación');
                     return;
                   }
-                // Si login OK, guarda el token y redirige al home
-                const data = await res.json();
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                // Cierra el chat IA si está abierto
-                if (typeof window !== 'undefined') {
-                  window.dispatchEvent(new CustomEvent('close-assistant-bubble'));
-                }
-                router.push('/');
+                  // Si login OK, guarda el token y redirige al home
+                  const data = await res.json();
+                  localStorage.setItem('token', data.token);
+                  localStorage.setItem('user', JSON.stringify(data.user));
+                  // Cierra el chat IA si está abierto
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('close-assistant-bubble'));
+                  }
+                  router.push('/');
                 } catch (err) {
                   setError('No se pudo conectar al backend');
                 }

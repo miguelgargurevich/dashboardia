@@ -300,10 +300,28 @@ router.get('/api/events/calendar', async (req, res) => {
         location: true,
         createdAt: true,
         eventType: true,
-        recurrencePattern: true
+        recurrencePattern: true,
+        modo: true,
+        validador: true,
+        codigoDana: true,
+        nombreNotificacion: true,
+        diaEnvio: true,
+        query: true,
+        relatedResources: true
       }
     });
-    res.json(events);
+    // Asegurar que todos los campos extendidos existan aunque sean null
+    const eventsWithDefaults = events.map(ev => ({
+      ...ev,
+      modo: ev.modo ?? '',
+      validador: ev.validador ?? '',
+      codigoDana: ev.codigoDana ?? '',
+      nombreNotificacion: ev.nombreNotificacion ?? '',
+      diaEnvio: ev.diaEnvio ?? '',
+      query: ev.query ?? '',
+      relatedResources: ev.relatedResources ?? []
+    }));
+    res.json(eventsWithDefaults);
   } catch (err) {
     res.status(500).json({ error: 'Error obteniendo eventos para calendario', details: err.message });
   }

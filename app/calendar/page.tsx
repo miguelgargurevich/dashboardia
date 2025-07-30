@@ -579,77 +579,57 @@ interface TipoRecurso {
                       <div className="space-y-3">
                         {selectedDayEvents.map((event, index) => (
                           <div key={`selected-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-blue-400 flex items-center gap-1">
-                                    {event.recurrencePattern !== 'ninguno' ? <FaSyncAlt className="inline-block" /> : <FaCalendarAlt />}
-                                  </span>
-                                  <h5 className="font-semibold text-white text-sm">{event.title}</h5>
-                                </div>
-                                {event.recurrencePattern !== 'ninguno' && (
-                                  <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10 flex items-center gap-1">
-                                    <FaSyncAlt className="inline-block" /> Recurrente
-                                  </span>
-                                )}
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-400 flex items-center gap-1">
+                                  {event.recurrencePattern !== 'ninguno' ? <FaSyncAlt className="inline-block" /> : <FaCalendarAlt />}
+                                </span>
+                                <h5 className="font-semibold text-white text-sm">{event.title}</h5>
                               </div>
-                            {event.description && (
-                              <p className="text-gray-300 text-xs mb-2">{event.description}</p>
-                            )}
-                            {/* Información detallada del evento */}
-                              <div className="space-y-2 text-xs">
-                                <div className="flex items-center justify-between">
-                                  <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300 flex items-center gap-1">
-                                    {event.recurrencePattern !== 'ninguno' ? <><FaSyncAlt className="inline-block" /> Evento Recurrente</> : <> <FaCalendarAlt className="inline-block" /> Evento</>}
-                                  </span>
-                                  <span className="text-gray-400">
-                                    {new Date(event.startDate).toLocaleTimeString('es-ES', { 
-                                      hour: '2-digit', 
-                                      minute: '2-digit' 
-                                    })}
-                                    {event.endDate && (
-                                      <span> - {new Date(event.endDate).toLocaleTimeString('es-ES', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit' 
-                                      })}</span>
-                                    )}
-                                  </span>
-                                </div>
-                                {event.location && (
-                                  <div className="text-gray-400 flex items-center gap-1">
-                                    <FaMapMarkerAlt className="inline-block text-green-400" /> <span className="font-medium">Ubicación:</span> {event.location}
-                                  </div>
-                                )}
-                                {event.recurrencePattern && (
-                                  <div className="text-blue-400 flex items-center gap-1">
-                                    <FaSyncAlt className="inline-block text-blue-400" /> <span className="font-medium">Patrón:</span> {event.recurrencePattern}
-                                  </div>
-                                )}
-                                {event.validador && (
-                                  <div className="text-gray-400 flex items-center gap-1">
-                                    <FaCheckCircle className="inline-block text-green-300" /> <span className="font-medium">Validador:</span> {event.validador}
-                                  </div>
-                                )}
-                                {event.modo && (
-                                  <div className="text-gray-400 flex items-center gap-1">
-                                    <FaUserCog className="inline-block text-yellow-300" /> <span className="font-medium">Modo:</span> {event.modo}
-                                  </div>
-                                )}
-                                {event.codigoDana && (
-                                  <div className="text-gray-400 flex items-center gap-1">
-                                    <FaTag className="inline-block text-pink-300" /> <span className="font-medium">Código DANA:</span> {event.codigoDana}
-                                  </div>
-                                )}
-                                {event.nombreNotificacion && (
-                                  <div className="text-gray-400 flex items-center gap-1">
-                                    <FaBell className="inline-block text-blue-200" /> <span className="font-medium">Notificación:</span> {event.nombreNotificacion}
-                                  </div>
-                                )}
-                                {event.diaEnvio && (
-                                  <div className="text-gray-400 flex items-center gap-1">
-                                    <FaRegClock className="inline-block text-orange-300" /> <span className="font-medium">Día de Envío:</span> {event.diaEnvio}
-                                  </div>
-                                )}
+                              {event.recurrencePattern !== 'ninguno' && (
+                                <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10 flex items-center gap-1">
+                                  <FaSyncAlt className="inline-block" /> Recurrente
+                                </span>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Descripción:</span> {event.description || <span className="italic text-gray-500">Sin descripción</span>}
                               </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Tipo:</span> {event.eventType}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Inicio:</span> {new Date(event.startDate).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Fin:</span> {event.endDate ? new Date(event.endDate).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : <span className="italic text-gray-500">No definido</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Ubicación:</span> {event.location || <span className="italic text-gray-500">No definida</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Patrón:</span> {event.recurrencePattern}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Validador:</span> {event.validador || <span className="italic text-gray-500">No definido</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Modo:</span> {event.modo || <span className="italic text-gray-500">No definido</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Código DANA:</span> {event.codigoDana || <span className="italic text-gray-500">No definido</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Notificación:</span> {event.nombreNotificacion || <span className="italic text-gray-500">No definida</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300">
+                                <span className="font-medium">Día de Envío:</span> {event.diaEnvio || <span className="italic text-gray-500">No definido</span>}
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-300 col-span-2">
+                                <span className="font-medium">Query:</span> {event.query || <span className="italic text-gray-500">No definida</span>}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

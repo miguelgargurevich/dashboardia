@@ -16,6 +16,8 @@ interface Evento {
   validador?: string;
   codigoDana?: string;
   nombreNotificacion?: string;
+  diaEnvio?: string;
+  query?: string;
   relatedResources?: string[];
   isRecurring?: boolean;
   recurrencePattern?: string;
@@ -306,30 +308,44 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 </div>
                 {(eventoSeleccionado.validador || eventoSeleccionado.codigoDana || eventoSeleccionado.nombreNotificacion || eventoSeleccionado.modo) && (
                   <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                    <div className="flex items-center justify-between w-full text-xs">
-                      <div className="flex flex-wrap gap-2">
-                        {eventoSeleccionado.validador && (
-                          <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                            <span className="font-bold text-blue-300 mr-1">Validador:</span> 👤 {eventoSeleccionado.validador}
+                    <div className="flex flex-wrap gap-2 text-xs mb-2">
+                      {eventoSeleccionado.modo && (
+                        <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">{eventoSeleccionado.modo}</span>
+                      )}
+                      {eventoSeleccionado.validador && (
+                        <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 {eventoSeleccionado.validador}</span>
+                      )}
+                      {eventoSeleccionado.codigoDana && (
+                        <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {eventoSeleccionado.codigoDana}</span>
+                      )}
+                      {eventoSeleccionado.nombreNotificacion && (
+                        <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 {eventoSeleccionado.nombreNotificacion}</span>
+                      )}
+                      {eventoSeleccionado.diaEnvio && (
+                        <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {eventoSeleccionado.diaEnvio}</span>
+                      )}
+                      {eventoSeleccionado.query && (
+                        <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={eventoSeleccionado.query}>🔎 {eventoSeleccionado.query.length > 20 ? eventoSeleccionado.query.slice(0,20) + '…' : eventoSeleccionado.query}</span>
+                      )}
+                      {eventoSeleccionado.relatedResources && eventoSeleccionado.relatedResources.length > 0 && (
+                        <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 {eventoSeleccionado.relatedResources.length}</span>
+                      )}
+                    </div>
+                    {/* Recursos relacionados */}
+                    {eventoSeleccionado.relatedResources && eventoSeleccionado.relatedResources.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {eventoSeleccionado.relatedResources.slice(0, 3).map((resource, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                            📄 {resource}
                           </span>
-                        )}
-                        {eventoSeleccionado.codigoDana && (
-                          <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
-                            <span className="font-bold text-green-300 mr-1">Código Dana:</span> 🏢 {eventoSeleccionado.codigoDana}
-                          </span>
-                        )}
-                        {eventoSeleccionado.nombreNotificacion && (
-                          <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
-                            <span className="font-bold text-purple-300 mr-1">Notificación:</span> 🔔 {eventoSeleccionado.nombreNotificacion}
+                        ))}
+                        {eventoSeleccionado.relatedResources.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                            +{eventoSeleccionado.relatedResources.length - 3} más
                           </span>
                         )}
                       </div>
-                      {eventoSeleccionado.modo && (
-                        <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10 ml-2">
-                          <span className="font-bold text-yellow-400 mr-1">Modo:</span> {eventoSeleccionado.modo}
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 )}
               </div>

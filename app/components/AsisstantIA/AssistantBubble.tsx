@@ -149,7 +149,7 @@ export default function AssistantBubble() {
           // Usar el primer tema dinámico como fallback
           const temaFallback = temasFull[0]?.nombre || 'Sin tema';
           formData.append('topic', value || temaFallback);
-          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+          const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           // Subir archivo
           const res = await fetch(`${apiUrl}/api/upload`, {
             method: 'POST',
@@ -255,7 +255,7 @@ export default function AssistantBubble() {
       // Enviar a backend la nota ya estructurada
       const notaPayload = `Título: ${tituloAuto}\nTema: ${temaDetectado}\nContenido: ${value}\nEtiquetas: ${tagsDetectados.join(', ')}`;
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await fetch(`${apiUrl}/api/assistant`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -277,7 +277,7 @@ export default function AssistantBubble() {
 
     // Flujo normal: enviar mensaje al backend
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       const res = await fetch(`${apiUrl}/api/assistant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -22,7 +22,7 @@ const TicketsPieChart: React.FC<Props> = ({ groupBy = 'tipo', token }) => {
     async function fetchStats() {
       setLoading(true);
       try {
-        const apiUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000') + '/api';
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL + '/api';
         const res = await fetch(`${apiUrl}/tickets/distribucion`, {
           headers: { Authorization: `Bearer ${token}` }
         });

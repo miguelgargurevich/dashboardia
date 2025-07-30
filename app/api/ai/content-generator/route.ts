@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Configuración centralizada del backend
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
     // Guardar en la base de datos a través del backend
     const response = await fetch(`${BACKEND_URL}/api/notes`, {

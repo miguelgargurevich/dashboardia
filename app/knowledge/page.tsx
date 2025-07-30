@@ -11,9 +11,6 @@ import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import TodoConocimientoPanel from './TodoConocimientoPanel';
 import EventosKnowledgePanel from "./EventosKnowledgePanel";
 
-// Eliminada la versión duplicada de NotasMD para evitar conflicto de tipos
-
-
 
 interface TipoNota {
   id: string;
@@ -37,8 +34,6 @@ interface NotasMD {
   createdAt?: string;
   updatedAt?: string;
 }
-
-
 
 const KnowledgePage: React.FC = () => {
   // Tipos de nota desde JSON centralizado
@@ -98,10 +93,6 @@ const KnowledgePage: React.FC = () => {
   const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
   const [cargandoRecursos, setCargandoRecursos] = useState(false);
   const [filtroTipoRecurso, setFiltroTipoRecurso] = useState<string>('');
-
-
-
-
   const [filtroEtiquetaRecurso, setFiltroEtiquetaRecurso] = useState<string>('');
   const [etiquetasDisponiblesRecursos, setEtiquetasDisponiblesRecursos] = useState<string[]>([]);
   const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);

@@ -15,6 +15,9 @@ interface Event {
   diaEnvio?: string;
   query?: string;
   description?: string;
+  relatedResources?: string[];
+  eventType?: string;
+  recurrencePattern?: string;
 }
 
 interface Props {
@@ -283,27 +286,34 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
                 </div>
                 
                 {/* Información adicional del evento */}
-                {(event.validador || event.codigoDana || event.nombreNotificacion) && (
-                  <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      {event.validador && (
-                        <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                          👤 {event.validador}
+                <div className="mt-2 pt-2 border-t border-yellow-400/20">
+                  <div className="flex flex-wrap gap-2 text-xs mb-2">
+                    <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">Modo: {event.modo && event.modo.trim() !== '' ? event.modo : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 Día Envío: {event.diaEnvio && event.diaEnvio.trim() !== '' ? event.diaEnvio : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 Query: {event.query && event.query.trim() !== '' ? (event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query) : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 Recursos: {event.relatedResources && event.relatedResources.length > 0 ? event.relatedResources.length : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🗂️ Tipo: {event.eventType && event.eventType.trim() !== '' ? event.eventType : '-'}</span>
+                    <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🔁 Recurrencia: {event.recurrencePattern && event.recurrencePattern.trim() !== '' ? event.recurrencePattern : '-'}</span>
+                  </div>
+                  {/* Recursos relacionados */}
+                  {event.relatedResources && event.relatedResources.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {event.relatedResources.slice(0, 3).map((resource, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                          � {resource}
                         </span>
-                      )}
-                      {event.codigoDana && (
-                        <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
-                          🏢 {event.codigoDana}
-                        </span>
-                      )}
-                      {event.nombreNotificacion && (
-                        <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
-                          🔔 {event.nombreNotificacion}
+                      ))}
+                      {event.relatedResources.length > 3 && (
+                        <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                          +{event.relatedResources.length - 3} más
                         </span>
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))
           ) : (

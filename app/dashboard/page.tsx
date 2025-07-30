@@ -65,7 +65,7 @@ export default function Dashboard() {
                 <h3 className="text-xl font-bold text-gray-200">Tickets por Prioridad - Diario</h3>
               </div>
               <div className="bg-primary rounded-lg p-4">
-                <DailyBarChart token={token || ''} />
+                <DailyPieChart token={token || ''} />
               </div>
             </div>
             

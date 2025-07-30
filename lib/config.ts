@@ -10,7 +10,7 @@ const getBackendConfig = () => {
   
   // Base URL del backend sin /api
   const baseUrl = isDevelopment 
-    ? 'http://localhost:4000' 
+    ? process.env.NEXT_PUBLIC_BACKEND_URL 
     : process.env.NEXT_PUBLIC_BACKEND_BASE_URL || 'https://api.tudominio.com';
   
   return {

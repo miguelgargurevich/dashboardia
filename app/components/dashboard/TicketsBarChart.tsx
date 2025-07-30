@@ -21,7 +21,7 @@ const TicketsBarChart: React.FC<Props> = ({ token }) => {
       setLoading(true);
       try {
         // URL base del backend
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         
         const response = await fetch(`${apiUrl}/api/tickets/por-prioridad`, {
           headers: { Authorization: `Bearer ${token}` }
