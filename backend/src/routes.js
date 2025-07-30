@@ -257,18 +257,14 @@ router.get('/api/events/upcoming', async (req, res) => {
         startDate: true,
         endDate: true,
         location: true,
-        validador: true,
-        modo: true,
-        codigoDana: true,
-        nombreNotificacion: true,
-        diaEnvio: true,
-        query: true,
+        createdAt: true,
         eventType: true,
         recurrencePattern: true
       }
     });
     res.json(events);
   } catch (err) {
+    console.error('Error en /api/events/upcoming:', err);
     res.status(500).json({ error: 'Error obteniendo próximos eventos', details: err.message });
   }
 });
@@ -302,12 +298,7 @@ router.get('/api/events/calendar', async (req, res) => {
         startDate: true,
         endDate: true,
         location: true,
-        validador: true,
-        modo: true,
-        codigoDana: true,
-        nombreNotificacion: true,
-        diaEnvio: true,
-        query: true,
+        createdAt: true,
         eventType: true,
         recurrencePattern: true
       }
@@ -332,12 +323,7 @@ router.get('/api/events/:id', async (req, res) => {
         startDate: true,
         endDate: true,
         location: true,
-        validador: true,
-        modo: true,
-        codigoDana: true,
-        nombreNotificacion: true,
-        diaEnvio: true,
-        query: true,
+        createdAt: true,
         eventType: true,
         recurrencePattern: true
       }
