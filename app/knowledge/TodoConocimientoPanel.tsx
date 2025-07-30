@@ -1,6 +1,8 @@
 "use client";
+import EventoForm from "../components/eventos/EventoForm";
+import Modal from "../components/Modal";
 import React, { useState } from "react";
-import { FaSearch, FaFileAlt, FaBook, FaLayerGroup, FaEye, FaCalendarAlt } from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaBook, FaEye, FaCalendarAlt, FaEdit, FaTrash, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop } from "react-icons/fa";
 
 interface Nota {
   id?: string;
@@ -47,6 +49,90 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
   const [busqueda, setBusqueda] = useState("");
   const [filtroEtiqueta, setFiltroEtiqueta] = useState("");
   const [itemSeleccionado, setItemSeleccionado] = useState<any | null>(null);
+
+  // Normaliza el item seleccionado para el panel lateral
+  const getDetalleSeleccionado = (item: any) => {
+    if (!item) return null;
+    if (item.origen === 'evento' && item.evento) {
+      return {
+        ...item.evento,
+        origen: 'evento',
+      };
+    } else if (item.origen === 'nota') {
+      return {
+        title: item.titulo,
+        description: item.descripcion,
+        contenido: item.contenido,
+        tags: item.tags,
+        origen: 'nota',
+      };
+    } else if (item.origen === 'recurso') {
+      return {
+        title: item.titulo,
+        description: item.descripcion,
+        tags: item.tags,
+        origen: 'recurso',
+      };
+    }
+    return item;
+  };
+  const detalleSeleccionado = getDetalleSeleccionado(itemSeleccionado);
+  // Estados para edición de evento
+  const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
+  const [mostrarFormularioEvento, setmostrarFormularioEvento] = useState(false);
+  const [token] = useState<string | null>(typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+  // Recarga eventos (dummy, deberías pasar cargarEventos real por props si lo necesitas)
+  const cargarEventos = () => { window.location.reload(); };
+
+  // Handler para guardar cambios de evento (PUT)
+  const handleGuardarEvento = async (values: any) => {
+    if (!eventoEditando?.id || !token) return;
+    try {
+      const res = await fetch(`/api/events/${eventoEditando.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      });
+      if (!res.ok) throw new Error('Error al guardar el evento');
+      setmostrarFormularioEvento(false);
+      setEventoEditando(null);
+      cargarEventos();
+    } catch (err) {
+      alert('Ocurrió un error al guardar el evento.');
+    }
+  };
+
+  const handleCancelarEvento = () => {
+    setmostrarFormularioEvento(false);
+    setEventoEditando(null);
+  };
+
+  // Handlers reales solo para eventos
+  const handleEdit = (item: any) => {
+    if (item.origen === 'evento' && item.evento) {
+      setEventoEditando(item.evento);
+      setmostrarFormularioEvento(true);
+    } else {
+      alert('Solo se puede editar eventos desde aquí.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!token) return;
+    if (!confirm('¿Eliminar este evento?')) return;
+    await fetch(`/api/events/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    cargarEventos();
+  };
+
+
   // Unificar tipos y etiquetas disponibles
   const etiquetasDisponibles = Array.from(new Set([
     ...(notas.flatMap(n => n.etiquetas || [])),
@@ -196,56 +282,129 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
               })}
             </div>
           </div>
+          {/* Modal de edición de evento */}
+          <Modal
+            open={mostrarFormularioEvento}
+            onClose={handleCancelarEvento}
+            title="Editar evento"
+            maxWidth="max-w-lg"
+          >
+            <EventoForm
+              initialValues={eventoEditando || undefined}
+              onSubmit={handleGuardarEvento}
+              onCancel={handleCancelarEvento}
+              submitLabel="Guardar cambios"
+            />
+          </Modal>
         </div>
         {/* Panel lateral de detalle */}
         <div className="lg:col-span-2">
           <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-            {itemSeleccionado ? (
+            {detalleSeleccionado ? (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  {itemSeleccionado.origen === "nota" ? <FaFileAlt className="text-accent" /> : itemSeleccionado.origen === "recurso" ? <FaBook className="text-accent" /> : <FaCalendarAlt className="text-yellow-300" />}
-                  <h2 className="text-xl font-bold text-accent">{itemSeleccionado.titulo}</h2>
-                  <span className="text-xs px-2 py-1 rounded bg-accent/20 text-accent font-bold">{itemSeleccionado.tipo}</span>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
+                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('mantenimiento') && <FaTools />}
+                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
+                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('reunión') && <FaUsers />}
+                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('webinar') && <FaRobot />}
+                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('revisión') && <FaClipboardList />}
+                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('demo') && <FaLaptop />}
+                      {detalleSeleccionado.title && !['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => detalleSeleccionado.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
+                    </div>
+                    <h2 className="text-xl font-bold text-accent">{detalleSeleccionado.title}</h2>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        // Solo permite editar si es un evento real
+                        if (detalleSeleccionado.origen === 'evento' && detalleSeleccionado.id) {
+                          setEventoEditando(detalleSeleccionado);
+                          setmostrarFormularioEvento(true);
+                        } else {
+                          alert('Solo se puede editar eventos desde aquí.');
+                        }
+                      }}
+                      className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
+                    >
+                      <FaEdit className="text-sm" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Solo permite eliminar si es un evento real
+                        if (detalleSeleccionado.origen === 'evento' && detalleSeleccionado.id) {
+                          handleDelete(detalleSeleccionado.id);
+                        } else {
+                          alert('Solo se puede eliminar eventos desde aquí.');
+                        }
+                      }}
+                      className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
+                    >
+                      <FaTrash className="text-sm" />
+                      Eliminar
+                    </button>
+                    <button
+                      onClick={() => setItemSeleccionado(null)}
+                      className="flex items-center gap-2 px-3 py-1 bg-gray-600/20 text-gray-300 rounded hover:bg-gray-700/30 transition-colors"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
                 </div>
-                {itemSeleccionado.descripcion && <div className="text-gray-300 mb-2">{itemSeleccionado.descripcion}</div>}
-                {itemSeleccionado.origen === "nota" && itemSeleccionado.contenido && (
-                  <div className="prose prose-invert max-w-none">
-                    {itemSeleccionado.contenido}
+                {detalleSeleccionado.description && (
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-300 mb-2">Descripción</h3>
+                    <p className="text-gray-400">{detalleSeleccionado.description}</p>
                   </div>
                 )}
-                {itemSeleccionado.origen === "recurso" && (
-                  <div className="text-gray-400">Recurso sin vista previa.</div>
-                )}
-                {itemSeleccionado.origen === "evento" && itemSeleccionado.evento && (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-white text-lg flex-1">{itemSeleccionado.evento.title}</h3>
-                      {itemSeleccionado.evento.eventType && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200 font-bold">{itemSeleccionado.evento.eventType}</span>}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mb-1">
-                      {itemSeleccionado.evento.startDate && (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-primary/40 text-gray-200">
-                          {new Date(itemSeleccionado.evento.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
-                          {itemSeleccionado.evento.endDate ? ` - ${new Date(itemSeleccionado.evento.endDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}` : ''}
-                        </span>
+                <div className="flex items-center gap-4 mb-4 text-sm text-gray-400">
+                  <span><span className="font-bold">Fecha:</span> {detalleSeleccionado.startDate && !isNaN(Date.parse(detalleSeleccionado.startDate)) ? new Date(detalleSeleccionado.startDate).toLocaleDateString('es-ES') : ''}{detalleSeleccionado.endDate && !isNaN(Date.parse(detalleSeleccionado.endDate)) && <> - {new Date(detalleSeleccionado.endDate).toLocaleDateString('es-ES')}</>}</span>
+                  {detalleSeleccionado.location && <span><span className="font-bold">Ubicación:</span> 📍 {detalleSeleccionado.location}</span>}
+                </div>
+                {(detalleSeleccionado.validador || detalleSeleccionado.codigoDana || detalleSeleccionado.nombreNotificacion || detalleSeleccionado.modo) && (
+                  <div className="mt-2 pt-2 border-t border-yellow-400/20">
+                    <div className="flex flex-wrap gap-2 text-xs mb-2">
+                      {detalleSeleccionado.modo && (
+                        <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">{detalleSeleccionado.modo}</span>
                       )}
-                      {itemSeleccionado.evento.location && <span className="px-1.5 py-0.5 rounded text-xs bg-primary/30 text-gray-300">{itemSeleccionado.evento.location}</span>}
+                      {detalleSeleccionado.validador && (
+                        <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 {detalleSeleccionado.validador}</span>
+                      )}
+                      {detalleSeleccionado.codigoDana && (
+                        <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {detalleSeleccionado.codigoDana}</span>
+                      )}
+                      {detalleSeleccionado.nombreNotificacion && (
+                        <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 {detalleSeleccionado.nombreNotificacion}</span>
+                      )}
+                      {detalleSeleccionado.diaEnvio && (
+                        <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {detalleSeleccionado.diaEnvio}</span>
+                      )}
+                      {detalleSeleccionado.query && (
+                        <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={detalleSeleccionado.query}>🔎 {detalleSeleccionado.query.length > 20 ? detalleSeleccionado.query.slice(0,20) + '…' : detalleSeleccionado.query}</span>
+                      )}
+                      {detalleSeleccionado.relatedResources && detalleSeleccionado.relatedResources.length > 0 && (
+                        <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 {detalleSeleccionado.relatedResources.length}</span>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-1 mb-1">
-                      {itemSeleccionado.evento.validador && <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/40 text-blue-200">Validador: {itemSeleccionado.evento.validador}</span>}
-                      {itemSeleccionado.evento.modo && <span className="px-1.5 py-0.5 rounded text-xs bg-green-900/40 text-green-200">Modo: {itemSeleccionado.evento.modo}</span>}
-                      {itemSeleccionado.evento.codigoDana && <span className="px-1.5 py-0.5 rounded text-xs bg-purple-900/40 text-purple-200">Dana: {itemSeleccionado.evento.codigoDana}</span>}
-                      {itemSeleccionado.evento.nombreNotificacion && <span className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/40 text-yellow-200">Notif: {itemSeleccionado.evento.nombreNotificacion}</span>}
-                      {itemSeleccionado.evento.recurrencePattern && <span className="px-1.5 py-0.5 rounded text-xs bg-pink-900/40 text-pink-200">{itemSeleccionado.evento.recurrencePattern}</span>}
-                    </div>
-                    {itemSeleccionado.evento.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{itemSeleccionado.evento.descripcion}</p>}
+                    {/* Recursos relacionados */}
+                    {detalleSeleccionado.relatedResources && detalleSeleccionado.relatedResources.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {detalleSeleccionado.relatedResources.slice(0, 3).map((resource: string, idx: number) => (
+                          <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                            📄 {resource}
+                          </span>
+                        ))}
+                        {detalleSeleccionado.relatedResources.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                            +{detalleSeleccionado.relatedResources.length - 3} más
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {itemSeleccionado.tags.map((tag: string) => (
-                    <span key={tag} className="text-xs px-2 py-1 rounded bg-accent/20 text-accent">#{tag}</span>
-                  ))}
-                </div>
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-gray-400">
