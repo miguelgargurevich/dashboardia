@@ -390,62 +390,65 @@ interface TipoRecurso {
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 w-full">
-            <div className="flex items-center gap-2 bg-secondary border border-accent/20 rounded-xl shadow-lg p-1">
-              <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
-                  viewMode === 'calendar' 
-                    ? 'bg-accent text-white shadow-md' 
-                    : 'text-accent hover:bg-accent/10'
-                }`}
-                onClick={() => setViewMode('calendar')}
-              >
-                <FaCalendarAlt />
-                Calendario
-              </button>
-              <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
-                  viewMode === 'list' 
-                    ? 'bg-accent text-white shadow-md' 
-                    : 'text-accent hover:bg-accent/10'
-                }`}
-                onClick={() => setViewMode('list')}
-              >
-                <FaFileAlt />
-                Lista
-              </button>
-            </div>
-            {/* Fecha seleccionada alineada a la derecha */}
-            <div className="flex-1 flex justify-end items-center min-w-[220px]">
-              <span className="text-accent text-base font-semibold bg-primary/40 px-4 py-2 rounded-lg border border-accent/10 shadow">
-                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </span>
-            </div>
-            {/* Control de eventos recurrentes */}
-            <div className="flex items-center gap-2">
-              <button
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm border ${
-                  showRecurringEvents 
-                    ? 'bg-blue-600/20 border-blue-600/40 text-blue-400 hover:bg-blue-600/30' 
-                    : 'bg-gray-600/20 border-gray-600/40 text-gray-400 hover:bg-gray-600/30'
-                }`}
-                onClick={() => setShowRecurringEvents(!showRecurringEvents)}
-                title={showRecurringEvents ? 'Ocultar eventos recurrentes' : 'Mostrar eventos recurrentes'}
-              >
-                {showRecurringEvents ? <FaEyeSlash /> : <FaEye />}
-                {loadingEvents && (
-                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
-                )}
-                {!loadingEvents && recurringEvents.length > 0 && (
-                  <span className="text-xs bg-blue-500/30 px-1 rounded-full">
-                    {recurringEvents.length}
-                  </span>
-                )}
-              </button>
+            <div className="flex w-full items-center justify-between gap-4">
+              {/* Botones de vista */}
+              <div className="flex items-center gap-2 bg-secondary border border-accent/20 rounded-xl shadow-lg p-1">
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                    viewMode === 'calendar' 
+                      ? 'bg-accent text-white shadow-md' 
+                      : 'text-accent hover:bg-accent/10'
+                  }`}
+                  onClick={() => setViewMode('calendar')}
+                >
+                  <FaCalendarAlt />
+                  Calendario
+                </button>
+                <button
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors font-medium ${
+                    viewMode === 'list' 
+                      ? 'bg-accent text-white shadow-md' 
+                      : 'text-accent hover:bg-accent/10'
+                  }`}
+                  onClick={() => setViewMode('list')}
+                >
+                  <FaFileAlt />
+                  Lista
+                </button>
+              </div>
+              {/* Fecha seleccionada */}
+              <div className="flex flex-1 justify-center items-center">
+                <span className="text-accent text-base font-semibold bg-primary/40 px-4 py-2 rounded-lg border border-accent/10 shadow">
+                  {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+              {/* Control de eventos recurrentes */}
+              <div className="flex items-center gap-2">
+                <button
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm border ${
+                    showRecurringEvents 
+                      ? 'bg-blue-600/20 border-blue-600/40 text-blue-400 hover:bg-blue-600/30' 
+                      : 'bg-gray-600/20 border-gray-600/40 text-gray-400 hover:bg-gray-600/30'
+                  }`}
+                  onClick={() => setShowRecurringEvents(!showRecurringEvents)}
+                  title={showRecurringEvents ? 'Ocultar eventos recurrentes' : 'Mostrar eventos recurrentes'}
+                >
+                  {showRecurringEvents ? <FaEyeSlash /> : <FaEye />}
+                  {loadingEvents && (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
+                  )}
+                  {!loadingEvents && recurringEvents.length > 0 && (
+                    <span className="text-xs bg-blue-500/30 px-1 rounded-full">
+                      {recurringEvents.length}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
