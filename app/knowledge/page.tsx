@@ -1,6 +1,8 @@
 "use client";
-import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
+import React, { useState, useEffect } from 'react';
+import NotaForm from '../components/knowledge/NotaForm';
+import RecursoForm from '../components/resources/RecursoForm';
 import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt } from 'react-icons/fa';
 import NotasPanel from '../components/dashboard/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
@@ -90,7 +92,6 @@ const KnowledgePage: React.FC = () => {
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [recursoSeleccionado, setRecursoSeleccionado] = useState<Recurso | null>(null);
   const [mostrarFormularioRecurso, setMostrarFormularioRecurso] = useState(false);
-  const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
   const [cargandoRecursos, setCargandoRecursos] = useState(false);
   const [filtroTipoRecurso, setFiltroTipoRecurso] = useState<string>('');
   const [filtroEtiquetaRecurso, setFiltroEtiquetaRecurso] = useState<string>('');
@@ -135,7 +136,6 @@ const KnowledgePage: React.FC = () => {
       });
   }, []);
   // Helper para obtener el id del primer tema
-  const primerTemaId = temas[0]?.id || '';
 
   // Efecto para inicializar autenticación
   useEffect(() => {
@@ -437,34 +437,6 @@ const KnowledgePage: React.FC = () => {
     }
   };
 
-  const crearRecurso = async (datosRecurso: Partial<Recurso>) => {
-    if (!token) return;
-    
-    try {
-      const response = await fetch('/api/resources', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(datosRecurso)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const nuevoRecurso = data.recurso;
-        setRecursos(prev => [nuevoRecurso, ...prev]);
-        setMostrarFormularioRecurso(false);
-        return nuevoRecurso;
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || 'Error creando recurso');
-      }
-    } catch (error) {
-      console.error('Error creando recurso:', error);
-      throw error;
-    }
-  };
 
   const notasFiltradas = notasMD.filter(nota => {
     const matchBusqueda = nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -583,357 +555,6 @@ const KnowledgePage: React.FC = () => {
     return resultado;
   };
 
-  const FormularioNuevaNota = () => {
-    const hoy = new Date();
-    const fechaHoy = hoy.toISOString().split('T')[0];
-    const [formData, setFormData] = useState({
-      titulo: '',
-      tema: temaSeleccionado || primerTemaId,
-      contenido: '',
-      etiquetas: '',
-      fecha: fechaHoy
-    });
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-        const etiquetas = formData.etiquetas 
-          ? formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
-          : [];
-
-        // Usar la fecha del formulario, o la de hoy si está vacía
-        const fechaNota = formData.fecha || fechaHoy;
-
-        // Crear el contenido markdown para guardar en la base de datos
-        const contenidoMarkdown = `# ${formData.titulo}
-
-${formData.contenido}
-
-**Etiquetas:** ${etiquetas.join(', ')}`;
-
-        const body = {
-          nombre: formData.titulo,
-          tema: formData.tema,
-          contenido: contenidoMarkdown,
-          etiquetas,
-          date: fechaNota
-        };
-
-        const response = await fetch('/api/content/knowledge', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(body)
-        });
-
-        if (response.ok) {
-          await cargarContenido();
-          setMostrarFormularioNota(false);
-          alert('Nota creada exitosamente');
-        } else {
-          throw new Error('Error al crear la nota');
-        }
-      } catch (error) {
-        console.error('Error creando nota:', error);
-        alert('Error al crear la nota. Por favor intenta nuevamente.');
-      }
-    };
-
-    return (
-      <Modal
-        open={mostrarFormularioNota}
-        onClose={() => setMostrarFormularioNota(false)}
-        title="Crear Nueva Nota"
-        maxWidth="max-w-2xl"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Título de la Nota *</label>
-            <input
-              type="text"
-              value={formData.titulo}
-              onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-              className="w-full input-std"
-              placeholder="Ej: Procedimiento para resolver incidencias de notificaciones"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Fecha *</label>
-            <input
-              type="date"
-              value={formData.fecha}
-              onChange={(e) => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
-              className="w-full input-std"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
-            <select
-              value={formData.tema}
-              onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-              className="w-full input-std"
-              required
-            >
-              {temas.map(tema => (
-                <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Contenido *</label>
-            <textarea
-              value={formData.contenido}
-              onChange={(e) => setFormData(prev => ({ ...prev, contenido: e.target.value }))}
-              className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all resize-none"
-              rows={8}
-              placeholder="Escribe el contenido de la nota en formato Markdown..."
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
-            <input
-              type="text"
-              value={formData.etiquetas}
-              onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-              className="w-full input-std"
-              placeholder="Separadas por comas: urgente, soporte, procedimiento"
-            />
-          </div>
-          <div className="flex gap-3 pt-6 border-t border-accent/20">
-            <button
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
-            >
-              Crear Nota
-            </button>
-            <button
-              type="button"
-              onClick={() => setMostrarFormularioNota(false)}
-              className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </Modal>
-    );
-  };
-
-  // Componente para el formulario de crear recurso
-  const FormularioRecurso = () => {
-    const [formData, setFormData] = useState({
-      titulo: recursoEditando?.titulo || '',
-      tipo: (recursoEditando?.tipo as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios') || 'url',
-      descripcion: recursoEditando?.descripcion || '',
-      url: recursoEditando?.url || '',
-      tema: recursoEditando?.tema || temaSeleccionado || primerTemaId,
-      etiquetas: recursoEditando?.tags?.join(', ') || ''
-    });
-    const [archivo, setArchivo] = useState<File | null>(null);
-    const [procesandoRecurso, setProcesandoRecurso] = useState(false);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setProcesandoRecurso(true);
-
-      try {
-        const etiquetas = formData.etiquetas 
-          ? formData.etiquetas.split(',').map(tag => tag.trim()).filter(Boolean)
-          : [];
-
-        if (formData.tipo === 'archivo' && archivo) {
-          // Subir archivo
-          const formDataFile = new FormData();
-          formDataFile.append('file', archivo);
-          formDataFile.append('titulo', formData.titulo);
-          formDataFile.append('descripcion', formData.descripcion);
-          formDataFile.append('tema', formData.tema);
-          formDataFile.append('tags', JSON.stringify(etiquetas));
-
-          const response = await fetch('/api/resources/upload', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            },
-            body: formDataFile,
-          });
-
-          if (!response.ok) {
-            throw new Error('Error al subir el archivo');
-          }
-        } else if (recursoEditando) {
-          // Editar recurso existente
-          const response = await fetch(`/api/resources/${recursoEditando.id}`, {
-            method: 'PUT',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              ...formData,
-              tags: etiquetas
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error('Error al actualizar el recurso');
-          }
-        } else {
-          // Crear nuevo recurso (URL, video, documento)
-          await crearRecurso({
-            titulo: formData.titulo,
-            tipo: formData.tipo,
-            descripcion: formData.descripcion,
-            url: formData.url,
-            tema: formData.tema,
-            tags: etiquetas
-          });
-        }
-
-        // Recargar recursos y cerrar formulario
-        await cargarRecursos();
-        setMostrarFormularioRecurso(false);
-        setRecursoEditando(null);
-        alert(recursoEditando ? 'Recurso actualizado exitosamente' : 'Recurso creado exitosamente');
-      } catch (error) {
-        console.error('Error al procesar recurso:', error);
-        alert('Error al procesar el recurso');
-      } finally {
-        setProcesandoRecurso(false);
-      }
-    };
-
-    return (
-      <Modal
-        open={mostrarFormularioRecurso}
-        onClose={() => {
-          setMostrarFormularioRecurso(false);
-          setRecursoEditando(null);
-        }}
-        title={recursoEditando ? 'Editar Recurso' : 'Agregar Nuevo Recurso'}
-        maxWidth="max-w-2xl"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
-            <input
-              type="text"
-              value={formData.titulo}
-              onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-              className="w-full input-std"
-              placeholder="Ingresa el título del recurso"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Recurso *</label>
-            <select
-              value={formData.tipo}
-              onChange={(e) => setFormData(prev => ({ ...prev, tipo: e.target.value as 'url' | 'archivo' | 'video' | 'ia-automatizacion' | 'contactos-externos' | 'plantillas-formularios' }))}
-              className="w-full input-std"
-              required
-              disabled={!!recursoEditando}
-            >
-              <option value="url" className="bg-primary text-white">🔗 Enlace / URL</option>
-              <option value="archivo" className="bg-primary text-white">📁 Archivo</option>
-              <option value="video" className="bg-primary text-white">🎥 Video</option>
-              <option value="ia-automatizacion" className="bg-primary text-white">🤖 IA y Automatización</option>
-              <option value="contactos-externos" className="bg-primary text-white">� Contactos y Recursos Externos</option>
-              <option value="plantillas-formularios" className="bg-primary text-white">📋 Plantillas y Formularios</option>
-            </select>
-          </div>
-          {(formData.tipo === 'url' || formData.tipo === 'video' || formData.tipo === 'ia-automatizacion' || formData.tipo === 'contactos-externos' || formData.tipo === 'plantillas-formularios') ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">URL *</label>
-              <input
-                type="url"
-                value={formData.url}
-                onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                className="w-full input-std"
-                placeholder={
-                  formData.tipo === 'video' ? "https://youtube.com/watch?v=..." : 
-                  formData.tipo === 'ia-automatizacion' ? "https://docs.google.com/document/d/..." :
-                  formData.tipo === 'contactos-externos' ? "https://directorio.empresa.com" :
-                  formData.tipo === 'plantillas-formularios' ? "https://forms.google.com/..." :
-                  "https://ejemplo.com"
-                }
-                required
-              />
-            </div>
-          ) : formData.tipo === 'archivo' && !recursoEditando ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Archivo *</label>
-              <input
-                type="file"
-                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
-                className="w-full bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all h-12"
-                required
-              />
-            </div>
-          ) : null}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
-            <input
-              type="text"
-              value={formData.descripcion}
-              onChange={(e) => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
-              className="w-full input-std"
-              placeholder="Descripción breve del recurso"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Tema *</label>
-            <select
-              value={formData.tema}
-              onChange={(e) => setFormData(prev => ({ ...prev, tema: e.target.value }))}
-              className="w-full input-std"
-              required
-            >
-              {temas.map(tema => (
-                <option key={tema.id} value={tema.id} className="bg-primary text-white">{tema.nombre}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Etiquetas (opcional)</label>
-            <input
-              type="text"
-              value={formData.etiquetas}
-              onChange={(e) => setFormData(prev => ({ ...prev, etiquetas: e.target.value }))}
-              className="w-full input-std"
-              placeholder="Separadas por comas: urgente, soporte, procedimiento"
-            />
-          </div>
-          <div className="flex gap-3 pt-6 border-t border-accent/20">
-            <button
-              type="submit"
-              className="flex-1 bg-gradient-to-r from-accent to-accent/80 text-secondary font-semibold px-6 py-3 rounded-lg hover:from-accent/90 hover:to-accent/70 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-accent/30"
-              disabled={procesandoRecurso}
-            >
-              {recursoEditando ? 'Guardar Cambios' : 'Crear Recurso'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMostrarFormularioRecurso(false);
-                setRecursoEditando(null);
-              }}
-              className="flex-1 bg-gray-600/80 text-white font-semibold px-6 py-3 rounded-lg hover:bg-gray-700/80 transition-all duration-200 transform hover:scale-105 shadow-lg"
-              disabled={procesandoRecurso}
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </Modal>
-    );
-
-  };
 
   // Protección de autenticación
   if (!mounted || isLoggedIn === null) {
@@ -1293,7 +914,6 @@ ${formData.contenido}
               getTipoRecursoLabel={getTipoRecursoLabel}
               formatFileSize={formatFileSize}
               temaSeleccionado={temaSeleccionado}
-              setRecursoEditando={setRecursoEditando}
               setMostrarFormularioRecurso={setMostrarFormularioRecurso}
               eliminarRecurso={eliminarRecurso}
             />
@@ -1363,15 +983,46 @@ ${formData.contenido}
               getTipoRecursoLabel={getTipoRecursoLabel}
               formatFileSize={formatFileSize}
               temaSeleccionado={temaSeleccionado}
-              setRecursoEditando={setRecursoEditando}
               setMostrarFormularioRecurso={setMostrarFormularioRecurso}
               eliminarRecurso={eliminarRecurso}
             />
           </div>
         )}
         
-        {mostrarFormularioNota && <FormularioNuevaNota />}
-        {mostrarFormularioRecurso && <FormularioRecurso />}
+        {mostrarFormularioNota && (
+          <Modal
+            open={mostrarFormularioNota}
+            onClose={() => setMostrarFormularioNota(false)}
+            title={notaSeleccionada ? 'Editar Nota' : 'Nueva Nota'}
+          >
+            <NotaForm
+              temas={temas}
+              tiposNotas={tiposNotas}
+              etiquetasDisponibles={etiquetasDisponiblesNotas}
+              initialValues={notaSeleccionada || undefined}
+              onSubmit={() => setMostrarFormularioNota(false)}
+            />
+          </Modal>
+        )}
+        {mostrarFormularioRecurso && (
+          <Modal
+            open={mostrarFormularioRecurso}
+            onClose={() => setMostrarFormularioRecurso(false)}
+            title={recursoSeleccionado ? 'Editar Recurso' : 'Nuevo Recurso'}
+          >
+            <RecursoForm
+              temas={temas}
+              tiposRecursos={tiposRecursos.map(t => ({
+                ...t,
+                descripcion: t.descripcion || '',
+                color: t.color || '',
+              }))}
+              etiquetasDisponibles={etiquetasDisponiblesRecursos}
+              initialValues={recursoSeleccionado || undefined}
+              onSubmit={() => setMostrarFormularioRecurso(false)}
+            />
+          </Modal>
+        )}
       </div>
       
       {/* Chat de IA flotante */}

@@ -22,7 +22,7 @@ interface RecursosArchivosPanelProps {
   getTipoRecursoLabel: (tipo: string, tipoArchivo?: string) => string;
   formatFileSize: (bytes: number) => string;
   temaSeleccionado: string | null;
-  setRecursoEditando: React.Dispatch<React.SetStateAction<import('../../lib/types').Recurso | null>>;
+  setRecursoEditando?: React.Dispatch<React.SetStateAction<import('../../lib/types').Recurso | null>>;
   setMostrarFormularioRecurso: (v: boolean) => void;
   eliminarRecurso: (id: string) => void;
 }
@@ -193,7 +193,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      setRecursoEditando(recursoSeleccionado);
+                      setRecursoEditando?.(recursoSeleccionado);
                       setMostrarFormularioRecurso(true);
                     }}
                     className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"

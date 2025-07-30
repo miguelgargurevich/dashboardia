@@ -1,0 +1,9 @@
+[
+  { "id": "mantenimiento", "nombre": "mantenimiento", "icono": "FaTools" },
+  { "id": "capacitacion", "nombre": "capacitación", "icono": "FaChalkboardTeacher" },
+  { "id": "reunion", "nombre": "reunión", "icono": "FaUsers" },
+  { "id": "webinar", "nombre": "webinar", "icono": "FaRobot" },
+  { "id": "revision", "nombre": "revisión", "icono": "FaClipboardList" },
+  { "id": "demo", "nombre": "demo", "icono": "FaLaptop" },
+  { "id": "otro", "nombre": "otro", "icono": "FaCalendarAlt" }
+]

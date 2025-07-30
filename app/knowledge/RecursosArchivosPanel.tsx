@@ -1,7 +1,9 @@
 "use client";
 
 
-import { FaSearch, FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import React, { useState } from "react";
+import { FaSearch, FaEye, FaEdit, FaTrash, FaPlus } from "react-icons/fa";
+import RecursoForm from "../components/resources/RecursoForm";
 
 // Tipos auxiliares
 interface Recurso {
@@ -19,24 +21,17 @@ interface Recurso {
   fechaCarga?: string;
 }
 
-interface Tema {
-  id: string;
-  nombre: string;
-}
-
-interface TipoRecurso {
-  id: string;
-  nombre: string;
-}
+// Importar los tipos correctos de RecursoForm
+import type { Tema, TipoRecurso } from "../components/resources/RecursoForm";
 
 interface RecursosArchivosPanelProps {
   recursos: Recurso[];
   cargando?: boolean;
   recursoSeleccionado: Recurso | null;
   setRecursoSeleccionado: (recurso: Recurso | null) => void;
-  setRecursoEditando: (recurso: Recurso) => void;
-  setMostrarFormularioRecurso: (mostrar: boolean) => void;
-  eliminarRecurso: (id: string) => void;
+  // setRecursoEditando: (recurso: Recurso) => void;
+  // setMostrarFormularioRecurso: (mostrar: boolean) => void;
+  // eliminarRecurso: (id: string) => void;
   busqueda: string;
   setBusqueda: (valor: string) => void;
   filtroTipo: string;
@@ -53,12 +48,12 @@ interface RecursosArchivosPanelProps {
 
 const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
   recursos = [],
-  cargando = false,
+  // cargando = false,
   recursoSeleccionado,
   setRecursoSeleccionado,
-  setRecursoEditando,
-  setMostrarFormularioRecurso,
-  eliminarRecurso,
+  // setRecursoEditando,
+  // setMostrarFormularioRecurso,
+  // eliminarRecurso,
   busqueda,
   setBusqueda,
   filtroTipo,
@@ -72,10 +67,101 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
   getTipoRecursoLabel,
   formatFileSize
 }) => {
+  // Estado para mostrar el formulario de edición/creación
+  const [showRecursoForm, setShowRecursoForm] = useState(false);
+  const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
+  const [modoForm, setModoForm] = useState<'crear' | 'editar'>('crear');
+  const [loadingRecursos, setLoadingRecursos] = useState(false);
+  const [recursosState, setRecursosState] = useState<Recurso[]>(recursos);
+
+  // Refrescar recursos
+  const fetchRecursos = async () => {
+    setLoadingRecursos(true);
+    try {
+      const res = await fetch('/api/resources');
+      if (!res.ok) throw new Error('Error al cargar recursos');
+      const data = await res.json();
+      setRecursosState(Array.isArray(data) ? data : []);
+    } catch {
+      setRecursosState([]);
+    } finally {
+      setLoadingRecursos(false);
+    }
+  };
+
+  // Handler para abrir el formulario de edición
+  const handleEditarRecurso = (recurso: Recurso) => {
+    setRecursoEditando(recurso);
+    setModoForm('editar');
+    setShowRecursoForm(true);
+  };
+
+  // Handler para abrir el formulario de nuevo recurso
+  const handleNuevoRecurso = () => {
+    setRecursoEditando(null);
+    setModoForm('crear');
+    setShowRecursoForm(true);
+  };
+
+  // Handler para guardar el recurso (creación o edición real)
+  const handleGuardarRecurso = async (values: any) => {
+    try {
+      let res;
+      if (modoForm === 'editar' && recursoEditando?.id) {
+        // Actualizar recurso existente
+        res = await fetch(`/api/resources/${recursoEditando.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
+          },
+          body: JSON.stringify(values)
+        });
+      } else {
+        // Crear nuevo recurso
+        const formData = new FormData();
+        formData.append('titulo', values.titulo);
+        formData.append('descripcion', values.descripcion || '');
+        formData.append('tipo', values.tipo);
+        formData.append('tema', values.tema);
+        if (values.archivo) formData.append('file', values.archivo);
+        if (values.url) formData.append('url', values.url);
+        if (values.etiquetas) formData.append('tags', JSON.stringify(values.etiquetas));
+        res = await fetch('/api/resources/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
+          },
+          body: formData
+        });
+      }
+      if (!res.ok) throw new Error('Error al guardar el recurso');
+      setShowRecursoForm(false);
+      setRecursoEditando(null);
+      await fetchRecursos();
+    } catch (err) {
+      alert('Ocurrió un error al guardar el recurso.');
+    }
+  };
+
+  // Handler para cancelar
+  const handleCancelar = () => {
+    setShowRecursoForm(false);
+    setRecursoEditando(null);
+  };
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Lista y filtros */}
       <div className="lg:col-span-1">
+        {/* Botón para nuevo recurso */}
+        <div className="flex justify-end mb-2">
+          <button
+            className="btn btn-accent btn-sm"
+            onClick={handleNuevoRecurso}
+            type="button"
+          >
+            <FaPlus className="mr-1" /> Nuevo recurso
+          </button>
+        </div>
         <div className="bg-secondary rounded-lg p-4">
           <div className="space-y-4 mb-4">
             <div className="flex items-center gap-2">
@@ -117,13 +203,13 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
               </div>
             )}
           </div>
-          {cargando ? (
+          {loadingRecursos ? (
             <div className="text-center py-8">
               <div className="text-accent">Cargando recursos...</div>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {recursos.map((recurso) => (
+              {recursosState.map((recurso) => (
                 <button
                   key={recurso.id}
                   onClick={() => setRecursoSeleccionado(recurso)}
@@ -205,20 +291,31 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => {
-                      setRecursoEditando(recursoSeleccionado);
-                      setMostrarFormularioRecurso(true);
-                    }}
+                    onClick={() => handleEditarRecurso(recursoSeleccionado)}
                     className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
                   >
                     <FaEdit className="text-xs" />
                     Editar
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm('¿Estás seguro de eliminar este recurso?')) {
-                        eliminarRecurso(recursoSeleccionado.id);
-                        setRecursoSeleccionado(null);
+                        try {
+                          const res = await fetch(`/api/resources/${recursoSeleccionado.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                              'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
+                            }
+                          });
+                          if (!res.ok) throw new Error('Error al eliminar el recurso');
+                          setRecursoEditando(null);
+                          setShowRecursoForm(false);
+                          setModoForm('crear');
+                          setRecursoSeleccionado(null);
+                          await fetchRecursos();
+                        } catch (err) {
+                          alert('Ocurrió un error al eliminar el recurso.');
+                        }
                       }
                     }}
                     className="flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
@@ -287,6 +384,22 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
           )}
         </div>
       </div>
+      {/* Formulario de edición/creación de recurso reutilizable */}
+      {showRecursoForm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-secondary rounded-lg p-6 w-full max-w-lg shadow-lg relative">
+            <RecursoForm
+              initialValues={modoForm === 'editar' ? recursoEditando || undefined : undefined}
+              temas={temas}
+              tiposRecursos={tiposRecursos}
+              etiquetasDisponibles={etiquetasDisponibles}
+              onSubmit={handleGuardarRecurso}
+              onCancel={handleCancelar}
+              submitLabel={modoForm === 'editar' ? 'Guardar cambios' : 'Crear recurso'}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

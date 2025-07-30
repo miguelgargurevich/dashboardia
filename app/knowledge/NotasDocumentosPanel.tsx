@@ -1,6 +1,7 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { FaSearch, FaFileAlt, FaBook, FaVideo, FaEye, FaEdit } from "react-icons/fa";
+import NotaForm from "../components/knowledge/NotaForm";
 
 interface Nota {
   id?: string;
@@ -34,7 +35,7 @@ interface NotasDocumentosPanelProps {
   temas: Tema[];
   tiposNotas: TipoNota[];
   notaSeleccionada: Nota | null;
-  setNotaSeleccionada: (nota: Nota) => void;
+  setNotaSeleccionada: (nota: Nota | null) => void;
   busqueda: string;
   setBusqueda: (v: string) => void;
   etiquetasDisponibles: string[];
@@ -42,7 +43,7 @@ interface NotasDocumentosPanelProps {
   setFiltroEtiqueta: (v: string) => void;
   cargando: boolean;
   descargarNota: (nota: Nota) => void;
-  eliminarNota: (nota: Nota) => void;
+  // eliminarNota: (nota: Nota) => void;
   onEditarNota?: (nota: Nota) => void;
 }
 
@@ -59,9 +60,86 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   setFiltroEtiqueta,
   cargando,
   descargarNota,
-  eliminarNota,
+  // eliminarNota,
   onEditarNota
 }) => {
+
+  // Estado para mostrar el formulario de edición/creación
+  // Función para refrescar notas (debe estar en el componente)
+  const [loadingNotas, setLoadingNotas] = useState(false);
+  const [notasState, setNotasState] = useState<Nota[]>(notas);
+  // Si ya se maneja desde arriba, puedes ignorar este estado y solo usar fetchNotes
+  const fetchNotes = async () => {
+    setLoadingNotas(true);
+    try {
+      const res = await fetch('/api/daily-notes');
+      if (!res.ok) throw new Error('Error al cargar notas');
+      const data = await res.json();
+      setNotasState(Array.isArray(data) ? data : []);
+    } catch {
+      setNotasState([]);
+    } finally {
+      setLoadingNotas(false);
+    }
+  };
+  const [showNotaForm, setShowNotaForm] = useState(false);
+  const [notaEditando, setNotaEditando] = useState<Nota | null>(null);
+  const [modoForm, setModoForm] = useState<'crear' | 'editar'>('crear');
+
+  // Handler para abrir el formulario de edición
+  const handleEditarNota = (nota: Nota) => {
+    setNotaEditando(nota);
+    setModoForm('editar');
+    setShowNotaForm(true);
+  };
+
+  // Handler para abrir el formulario de nueva nota
+  const handleNuevaNota = () => {
+    setNotaEditando(null);
+    setModoForm('crear');
+    setShowNotaForm(true);
+  };
+
+  // Handler para guardar la nota (creación o edición real)
+  const handleGuardarNota = async (values: any) => {
+    try {
+      let res;
+      if (modoForm === 'editar' && notaEditando?.id) {
+        // Actualizar nota existente
+        res = await fetch(`/api/daily-notes/${notaEditando.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
+          },
+          body: JSON.stringify(values)
+        });
+      } else {
+        // Crear nueva nota
+        res = await fetch('/api/daily-notes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
+          },
+          body: JSON.stringify(values)
+        });
+      }
+      if (!res.ok) throw new Error('Error al guardar la nota');
+      setShowNotaForm(false);
+      setNotaEditando(null);
+      await fetchNotes();
+    } catch (err) {
+      alert('Ocurrió un error al guardar la nota.');
+    }
+  };
+
+  // Handler para cancelar
+  const handleCancelar = () => {
+    setShowNotaForm(false);
+    setNotaEditando(null);
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Panel de lista de notas */}
@@ -89,13 +167,21 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                 <option key={idx} value={et}>{et}</option>
               ))}
             </select>
+            {/* Botón para nueva nota */}
+            <button
+              className="btn btn-accent btn-sm ml-2"
+              onClick={handleNuevaNota}
+              type="button"
+            >
+              Nueva nota
+            </button>
           </div>
           {/* Lista de notas */}
-          {cargando ? (
+          {loadingNotas ? (
             <div className="flex-1 flex items-center justify-center text-gray-400">Cargando...</div>
           ) : (
             <div className="flex flex-col gap-3 overflow-y-auto">
-              {notas.map((nota, index) => {
+              {notasState.map((nota, index) => {
                 const tipoNota = tiposNotas.find(t => t.id === nota.tipo) || tiposNotas[0];
                 const color = tipoNota.color;
                 const nombreTipo = tipoNota.nombre;
@@ -163,9 +249,8 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => onEditarNota && notaSeleccionada && onEditarNota(notaSeleccionada)}
+                    onClick={() => handleEditarNota(notaSeleccionada)}
                     className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
-                    disabled={!onEditarNota}
                   >
                     <FaEdit className="text-sm" />
                     Editar
@@ -178,9 +263,24 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                     Descargar
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (confirm('¿Estás seguro de eliminar esta nota?')) {
-                        eliminarNota(notaSeleccionada);
+                        try {
+                          const res = await fetch(`/api/daily-notes/${notaSeleccionada.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                              'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
+                            }
+                          });
+                          if (!res.ok) throw new Error('Error al eliminar la nota');
+                          setNotaEditando(null);
+                          setShowNotaForm(false);
+                          setModoForm('crear');
+                          setNotaSeleccionada(null);
+                          await fetchNotes();
+                        } catch (err) {
+                          alert('Ocurrió un error al eliminar la nota.');
+                        }
                       }
                     }}
                     className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
@@ -193,6 +293,22 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
               <div className="prose prose-invert max-w-none">
                 {notaSeleccionada.contenido}
               </div>
+              {/* Formulario de edición/creación de nota reutilizable */}
+              {showNotaForm && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+                  <div className="bg-secondary rounded-lg p-6 w-full max-w-lg shadow-lg relative">
+                    <NotaForm
+                      initialValues={modoForm === 'editar' ? notaEditando || undefined : undefined}
+                      temas={temas}
+                      tiposNotas={tiposNotas}
+                      etiquetasDisponibles={etiquetasDisponibles}
+                      onSubmit={handleGuardarNota}
+                      onCancel={handleCancelar}
+                      submitLabel={modoForm === 'editar' ? 'Guardar cambios' : 'Crear nota'}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-400">
