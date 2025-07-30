@@ -12,6 +12,7 @@ import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 import TodoConocimientoPanel from './TodoConocimientoPanel';
 import EventosKnowledgePanel from "./EventosKnowledgePanel";
+import EventoForm from '../components/eventos/EventoForm';
 
 
 interface TipoNota {
@@ -40,6 +41,8 @@ interface NotasMD {
 const KnowledgePage: React.FC = () => {
   // Tipos de nota desde JSON centralizado
   const [tiposNotas, setTiposNotas] = useState<TipoNota[]>([]);
+  // Estado para crear nuevo evento
+  const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
   useEffect(() => {
     fetch('/tiposNotas.json')
       .then(res => res.json())
@@ -648,7 +651,7 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                <FaBook className="text-sm" />
+                <FaLayerGroup className="text-sm" />
                 Todos los Recursos
               </button>
               <button
@@ -659,7 +662,7 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                <FaCalendarAlt className="text-sm" />
+                <FaClock className="text-sm" />
                 Todos los Eventos
               </button>
             </div>
@@ -679,6 +682,13 @@ const KnowledgePage: React.FC = () => {
                 >
                   <FaPlus />
                   Agregar Recurso
+                </button>
+                <button
+                  onClick={() => setMostrarFormularioEvento(true)}
+                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                  Agregar Evento
                 </button>
               </div>
             </div>
@@ -1025,6 +1035,38 @@ const KnowledgePage: React.FC = () => {
         )}
       </div>
       
+      {/* Modal para crear evento */}
+      {mostrarFormularioEvento && (
+        <Modal
+          open={mostrarFormularioEvento}
+          onClose={() => setMostrarFormularioEvento(false)}
+          title={"Nuevo Evento"}
+        >
+          <EventoForm
+            initialValues={undefined}
+            onSubmit={async (values: any) => {
+              if (!token) return;
+              try {
+                const res = await fetch('/api/events', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify(values)
+                });
+                if (!res.ok) throw new Error('Error al crear el evento');
+                setMostrarFormularioEvento(false);
+                window.location.reload();
+              } catch (err) {
+                alert('Ocurrió un error al crear el evento.');
+              }
+            }}
+            onCancel={() => setMostrarFormularioEvento(false)}
+            submitLabel="Crear evento"
+          />
+        </Modal>
+      )}
       {/* Chat de IA flotante */}
       <AssistantBubble />
     </div>
