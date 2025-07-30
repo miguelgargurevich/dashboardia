@@ -21,7 +21,13 @@ import {
   FaEye,
   FaEyeSlash,
   FaPaperclip,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaTools,
+  FaChalkboardTeacher,
+  FaUsers,
+  FaRobot,
+  FaClipboardList,
+  FaLaptop
 } from "react-icons/fa";
 
 
@@ -43,6 +49,7 @@ interface Event {
   query?: string;
   eventType: EventType;
   recurrencePattern: RecurrencePattern;
+  relatedResources?: string[];
 }
 
 
@@ -432,7 +439,7 @@ interface TipoRecurso {
                 <button
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm border ${
                     showRecurringEvents 
-                      ? 'bg-blue-600/20 border-blue-600/40 text-blue-400 hover:bg-blue-600/30' 
+                      ? 'bg-yellow-400/20 border-yellow-400/40 text-yellow-400 hover:bg-yellow-600/30' 
                       : 'bg-gray-600/20 border-gray-600/40 text-gray-400 hover:bg-gray-600/30'
                   }`}
                   onClick={() => setShowRecurringEvents(!showRecurringEvents)}
@@ -531,7 +538,7 @@ interface TipoRecurso {
                               <div key={`event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}`} className="w-full">
                                 <div className={`text-xs px-1 py-0.5 rounded truncate ${
                                   event.recurrencePattern !== 'ninguno' 
-                                    ? 'bg-blue-600/20 text-blue-400 border border-blue-600/40 font-semibold' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-600/40 font-semibold' 
                                     : 'bg-yellow-500/80 text-black'
                                 }`}>
                                   {event.recurrencePattern !== 'ninguno' && '🔄 '}{event.title}
@@ -567,7 +574,7 @@ interface TipoRecurso {
                 {/* Panel de Eventos del Día */}
                 <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-accent flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
                       <FaCalendarAlt />
                       Eventos del Día ({selectedDayEvents.length})
                     </h2>
@@ -581,57 +588,72 @@ interface TipoRecurso {
                     ) : selectedDayEvents.length > 0 ? (
                       <div className="space-y-3">
                         {selectedDayEvents.map((event, index) => (
-                          <div key={`selected-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
+                          <div key={`selected-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <span className="text-blue-400 flex items-center gap-1">
-                                  {event.recurrencePattern !== 'ninguno' ? <FaSyncAlt className="inline-block" /> : <FaCalendarAlt />}
+                                <span className="text-yellow-400">
+                                  {/* Icono según el tipo/título del evento */}
+                                  {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
+                                  {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
+                                  {event.title.toLowerCase().includes('reunión') && <FaUsers />}
+                                  {event.title.toLowerCase().includes('webinar') && <FaRobot />}
+                                  {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
+                                  {event.title.toLowerCase().includes('demo') && <FaLaptop />}
+                                  {/* Icono genérico si no coincide */}
+                                  {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
                                 </span>
                                 <h5 className="font-semibold text-white text-sm">{event.title}</h5>
                               </div>
-                              {event.recurrencePattern !== 'ninguno' && (
-                                <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10 flex items-center gap-1">
-                                  <FaSyncAlt className="inline-block" /> Recurrente
+                              {event.modo && (
+                                <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
+                                  {event.modo}
                                 </span>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-xs">
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Descripción:</span> {event.description || <span className="italic text-gray-500">Sin descripción</span>}
+                            {event.description && (
+                              <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
+                            )}
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400">
+                                  {new Date(event.startDate).toLocaleDateString('es-ES')}
+                                  {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
+                                </span>
                               </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Tipo:</span> {event.eventType}
+                              {event.location && (
+                                <span className="text-gray-400">
+                                  📍 {event.location}
+                                </span>
+                              )}
+                            </div>
+                            {/* Información adicional del evento */}
+                            <div className="mt-2 pt-2 border-t border-yellow-400/20">
+                              <div className="flex flex-wrap gap-2 text-xs mb-2">
+                                <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">Modo: {event.modo && event.modo.trim() !== '' ? event.modo : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 Día Envío: {event.diaEnvio && event.diaEnvio.trim() !== '' ? event.diaEnvio : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 Query: {event.query && event.query.trim() !== '' ? (event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query) : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 Recursos: {event.relatedResources && event.relatedResources.length > 0 ? event.relatedResources.length : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🗂️ Tipo: {event.eventType && event.eventType.trim() !== '' ? event.eventType : '-'}</span>
+                                <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🔁 Recurrencia: {event.recurrencePattern && event.recurrencePattern.trim() !== '' ? event.recurrencePattern : '-'}</span>
                               </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Inicio:</span> {new Date(event.startDate).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Fin:</span> {event.endDate ? new Date(event.endDate).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' }) : <span className="italic text-gray-500">No definido</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Ubicación:</span> {event.location || <span className="italic text-gray-500">No definida</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Patrón:</span> {event.recurrencePattern}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Validador:</span> {event.validador || <span className="italic text-gray-500">No definido</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Modo:</span> {event.modo || <span className="italic text-gray-500">No definido</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Código DANA:</span> {event.codigoDana || <span className="italic text-gray-500">No definido</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Notificación:</span> {event.nombreNotificacion || <span className="italic text-gray-500">No definida</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300">
-                                <span className="font-medium">Día de Envío:</span> {event.diaEnvio || <span className="italic text-gray-500">No definido</span>}
-                              </div>
-                              <div className="flex items-center gap-1 text-gray-300 col-span-2">
-                                <span className="font-medium">Query:</span> {event.query || <span className="italic text-gray-500">No definida</span>}
-                              </div>
+                              {/* Recursos relacionados */}
+                              {event.relatedResources && event.relatedResources.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {event.relatedResources.slice(0, 3).map((resource, idx) => (
+                                    <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                                      📎 {resource}
+                                    </span>
+                                  ))}
+                                  {event.relatedResources.length > 3 && (
+                                    <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                                      +{event.relatedResources.length - 3} más
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -876,84 +898,81 @@ interface TipoRecurso {
                       if (filterType === 'recurrente') {
                         matchesType = event.recurrencePattern !== 'ninguno';
                       } else if (filterType !== 'all') {
-                        // Si el filtro es un tipo de evento específico
                         matchesType = event.eventType === filterType;
                       }
                       return matchesSearch && matchesType;
                     })
                     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-                    .map((event, index) => {
-                      return (
-                        <div key={`list-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 border border-blue-400/30 rounded-lg p-3">
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-blue-400">
-                                {event.recurrencePattern !== 'ninguno' ? '🔄' : <FaCalendarAlt />}
-                              </span>
-                              <h5 className="font-semibold text-white text-sm">{event.title}</h5>
-                            </div>
-                            {event.recurrencePattern !== 'ninguno' && (
-                              <span className="text-xs text-blue-400 px-2 py-1 rounded bg-blue-400/10">
-                                Recurrente
-                              </span>
-                            )}
+                    .map((event, index) => (
+                      <div key={`list-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-yellow-400">
+                              {/* Icono según el tipo/título del evento */}
+                              {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
+                              {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
+                              {event.title.toLowerCase().includes('reunión') && <FaUsers />}
+                              {event.title.toLowerCase().includes('webinar') && <FaRobot />}
+                              {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
+                              {event.title.toLowerCase().includes('demo') && <FaLaptop />}
+                              {/* Icono genérico si no coincide */}
+                              {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
+                            </span>
+                            <h5 className="font-semibold text-white text-sm">{event.title}</h5>
                           </div>
-                          {event.description && (
-                            <p className="text-gray-300 text-xs mb-2">{event.description}</p>
+                          {event.modo && (
+                            <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
+                              {event.modo}
+                            </span>
                           )}
-                          <div className="space-y-2 text-xs">
-                            <div className="flex items-center justify-between">
-                              <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                                {event.recurrencePattern !== 'ninguno' ? 'Evento Recurrente' : 'Evento'}
-                              </span>
-                              <span className="text-gray-400">
-                                {new Date(event.startDate).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
-                                {' '}
-                                {new Date(event.startDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                                {event.endDate && (
-                                  <span> - {new Date(event.endDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                                )}
-                              </span>
-                            </div>
-                            {event.location && (
-                              <div className="text-gray-400">
-                                📍 <span className="font-medium">Ubicación:</span> {event.location}
-                              </div>
-                            )}
-                            {event.recurrencePattern && (
-                              <div className="text-blue-400">
-                                🔄 <span className="font-medium">Patrón:</span> {event.recurrencePattern}
-                              </div>
-                            )}
-                            {event.validador && (
-                              <div className="text-gray-400">
-                                ✅ <span className="font-medium">Validador:</span> {event.validador}
-                              </div>
-                            )}
-                            {event.modo && (
-                              <div className="text-gray-400">
-                                � <span className="font-medium">Modo:</span> {event.modo}
-                              </div>
-                            )}
-                            {event.codigoDana && (
-                              <div className="text-gray-400">
-                                🏷️ <span className="font-medium">Código DANA:</span> {event.codigoDana}
-                              </div>
-                            )}
-                            {event.nombreNotificacion && (
-                              <div className="text-gray-400">
-                                � <span className="font-medium">Notificación:</span> {event.nombreNotificacion}
-                              </div>
-                            )}
-                            {event.diaEnvio && (
-                              <div className="text-gray-400">
-                                📅 <span className="font-medium">Día de Envío:</span> {event.diaEnvio}
-                              </div>
-                            )}
-                          </div>
                         </div>
-                      );
-                    }))}
+                        {event.description && (
+                          <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
+                        )}
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400">
+                              {new Date(event.startDate).toLocaleDateString('es-ES')}
+                              {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
+                            </span>
+                          </div>
+                          {event.location && (
+                            <span className="text-gray-400">
+                              📍 {event.location}
+                            </span>
+                          )}
+                        </div>
+                        {/* Información adicional del evento */}
+                        <div className="mt-2 pt-2 border-t border-yellow-400/20">
+                          <div className="flex flex-wrap gap-2 text-xs mb-2">
+                            <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">Modo: {event.modo && event.modo.trim() !== '' ? event.modo : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 Día Envío: {event.diaEnvio && event.diaEnvio.trim() !== '' ? event.diaEnvio : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 Query: {event.query && event.query.trim() !== '' ? (event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query) : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 Recursos: {event.relatedResources && event.relatedResources.length > 0 ? event.relatedResources.length : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🗂️ Tipo: {event.eventType && event.eventType.trim() !== '' ? event.eventType : '-'}</span>
+                            <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🔁 Recurrencia: {event.recurrencePattern && event.recurrencePattern.trim() !== '' ? event.recurrencePattern : '-'}</span>
+                          </div>
+                          {/* Recursos relacionados */}
+                          {event.relatedResources && event.relatedResources.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {event.relatedResources.slice(0, 3).map((resource, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                                  📎 {resource}
+                                </span>
+                              ))}
+                              {event.relatedResources.length > 3 && (
+                                <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                                  +{event.relatedResources.length - 3} más
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )))}
                   {([...events, ...recurringEvents].filter(event => {
                     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                       (event.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
