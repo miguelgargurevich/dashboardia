@@ -1,6 +1,7 @@
 
 "use client";
 import React, { useState, useEffect } from "react";
+import RecursosSelectorModal from "./RecursosSelectorModal";
 import { FaCalendarAlt } from "react-icons/fa";
 
 export interface EventoFormValues {
@@ -13,6 +14,10 @@ export interface EventoFormValues {
   validador?: string;
   codigoDana?: string;
   nombreNotificacion?: string;
+  diaEnvio?: string;
+  query?: string;
+  relatedResources?: string[];
+  //
   isRecurring?: boolean;
   recurrencePattern?: string;
   eventType?: string;
@@ -53,11 +58,37 @@ const EventoForm: React.FC<EventoFormProps> = ({
     modo: initialValues?.modo || "",
     validador: initialValues?.validador || "",
     codigoDana: initialValues?.codigoDana || "",
+
     nombreNotificacion: initialValues?.nombreNotificacion || "",
+    diaEnvio: initialValues?.diaEnvio || "",
+    query: initialValues?.query || "",
+    relatedResources: initialValues?.relatedResources || [],
     isRecurring: initialValues?.isRecurring || false,
     recurrencePattern: initialValues?.recurrencePattern || "",
     eventType: initialValues?.eventType || "",
   });
+
+  // Modal de selección de recursos
+  const [recursosModalAbierto, setRecursosModalAbierto] = useState(false);
+  const [recursosSeleccionados, setRecursosSeleccionados] = useState<{ id: string; titulo: string; tipo?: string; descripcion?: string }[]>([]);
+
+  // Sincronizar recursos seleccionados con initialValues
+  useEffect(() => {
+    if (initialValues?.relatedResources && initialValues.relatedResources.length > 0) {
+      // Cargar detalles de los recursos seleccionados
+      fetch('/api/resources')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data.recursos)) {
+            setRecursosSeleccionados(
+              data.recursos.filter((r: any) => initialValues.relatedResources?.includes(r.id))
+            );
+          }
+        });
+    } else {
+      setRecursosSeleccionados([]);
+    }
+  }, [initialValues]);
 
   useEffect(() => {
     if (initialValues) {
@@ -80,6 +111,19 @@ const EventoForm: React.FC<EventoFormProps> = ({
       ...f,
       [name]: newValue
     }));
+  };
+
+  // Manejar archivos adjuntos
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    setForm(f => ({ ...f, archivosAdjuntos: files }));
+  };
+
+
+  // Cuando el usuario confirma selección en el modal
+  const handleRecursosSeleccionados = (recursos: { id: string; titulo: string; tipo?: string; descripcion?: string }[]) => {
+    setRecursosSeleccionados(recursos);
+    setForm(f => ({ ...f, relatedResources: recursos.map(r => r.id) }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -220,6 +264,51 @@ const EventoForm: React.FC<EventoFormProps> = ({
             <option value="anual">Anual</option>
           </select>
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Día de Envío (ej: 6 DE CADA MES)</label>
+        <input
+          type="text"
+          name="diaEnvio"
+          value={form.diaEnvio}
+          onChange={handleChange}
+          className="w-full input-std"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Query (opcional)</label>
+        <input
+          type="text"
+          name="query"
+          value={form.query}
+          onChange={handleChange}
+          className="w-full input-std"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Recursos Relacionados</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {recursosSeleccionados.length === 0 ? (
+            <span className="text-gray-400 text-sm">Ningún recurso seleccionado.</span>
+          ) : (
+            recursosSeleccionados.map(r => (
+              <span key={r.id} className="px-2 py-1 bg-gray-700/40 text-gray-200 text-xs rounded flex items-center gap-1">
+                📄 {r.titulo}
+                {r.tipo && <span className="ml-1 text-gray-400">({r.tipo})</span>}
+              </span>
+            ))
+          )}
+        </div>
+        <button type="button" className="px-3 py-1 rounded bg-accent text-primary font-bold hover:bg-accent/80 transition" onClick={() => setRecursosModalAbierto(true)}>
+          Seleccionar recursos
+        </button>
+        <RecursosSelectorModal
+          open={recursosModalAbierto}
+          onClose={() => setRecursosModalAbierto(false)}
+          onSelect={handleRecursosSeleccionados}
+          selectedIds={form.relatedResources || []}
+          token={typeof window !== 'undefined' ? (window.localStorage.getItem('token') || undefined) : undefined}
+        />
       </div>
       <div className="flex gap-2 justify-end">
         {onCancel && (

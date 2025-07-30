@@ -12,7 +12,7 @@ interface ModalProps {
 const Modal: React.FC<ModalProps> = ({ open, onClose, children, title, maxWidth = "max-w-2xl" }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className={`bg-secondary border border-accent/20 rounded-xl shadow-2xl w-full ${maxWidth} max-h-[90vh] flex flex-col`}>
         <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl flex items-center justify-between">
           <div>
