@@ -3,6 +3,7 @@ import EventoForm from "../components/eventos/EventoForm";
 import Modal from "../components/Modal";
 import React, { useState } from "react";
 import { FaSearch, FaFileAlt, FaBook, FaEye, FaCalendarAlt, FaEdit, FaTrash, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop } from "react-icons/fa";
+import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 
 interface Nota {
   id?: string;
@@ -157,15 +158,22 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
       tags: r.tags,
       origen: "recurso"
     })),
-    ...eventos.map(e => ({
-      id: e.id,
-      tipo: e.eventType || "evento",
-      titulo: e.title,
-      descripcion: `${e.startDate ? new Date(e.startDate).toLocaleString('es-ES') : ''}${e.endDate ? ' - ' + new Date(e.endDate).toLocaleString('es-ES') : ''}${e.location ? ' | ' + e.location : ''}`,
-      tags: [],
-      origen: "evento",
-      evento: e
-    }))
+    ...eventos.map(e => {
+      // No incluir la fecha en la descripción, solo la ubicación si existe
+      let descripcion = '';
+      if (e.location) {
+        descripcion = e.location;
+      }
+      return {
+        id: e.id,
+        tipo: e.eventType || "evento",
+        titulo: e.title,
+        descripcion,
+        tags: [],
+        origen: "evento",
+        evento: e
+      };
+    })
   ];
   // Filtrado
   const filtrados = allItems.filter(item => {
@@ -218,6 +226,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                   nombre: 'Nota',
                   icon: <FaFileAlt className="text-accent" />
                 };
+                let fechaEvento = null;
                 if (item.origen === 'nota') {
                   temaInfo = {
                     color: 'bg-accent/20 text-accent',
@@ -236,6 +245,15 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                     nombre: 'Evento',
                     icon: <FaCalendarAlt className="text-yellow-300" />
                   };
+                  // Mostrar solo la fecha de inicio en formato dd/mm/yyyy
+                  if ('evento' in item && item.evento && item.evento.startDate) {
+                    const fecha = formatFechaDDMMYYYY(item.evento.startDate);
+                    fechaEvento = (
+                      <p className="text-xs text-yellow-200 mb-1">
+                        {fecha}
+                      </p>
+                    );
+                  }
                 }
                 const isSelected = itemSeleccionado?.id === item.id;
                 return (
@@ -259,6 +277,8 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-white text-base truncate flex-1">{item.titulo}</h3>
                         <p className={`text-xs mb-1 font-medium ${temaInfo.color.split(' ')[1] || 'text-accent'}`}>{temaInfo.nombre}</p>
+                        {/* Fecha para eventos */}
+                        {fechaEvento}
                         {item.tags && item.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-1">
                             {item.tags.slice(0, 3).map((tag: string) => (
@@ -350,10 +370,10 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                           alert('Solo se puede editar eventos desde aquí.');
                         }
                       }}
-                      className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
+                      className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
+                      title="Editar evento"
                     >
-                      <FaEdit className="text-sm" />
-                      Editar
+                      <FaEdit /> Editar
                     </button>
                     <button
                       onClick={() => {
@@ -364,14 +384,15 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                           alert('Solo se puede eliminar eventos desde aquí.');
                         }
                       }}
-                      className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
+                      className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
+                      title="Eliminar evento"
                     >
-                      <FaTrash className="text-sm" />
-                      Eliminar
+                      <FaTrash /> Eliminar
                     </button>
                     <button
                       onClick={() => setItemSeleccionado(null)}
-                      className="flex items-center gap-2 px-3 py-1 bg-gray-600/20 text-gray-300 rounded hover:bg-gray-700/30 transition-colors"
+                      className="flex items-center gap-1 text-gray-400 hover:text-gray-200 px-2 py-1 rounded border border-gray-400/30 bg-gray-600/10 text-xs font-semibold"
+                      title="Cerrar panel de detalle"
                     >
                       Cerrar
                     </button>

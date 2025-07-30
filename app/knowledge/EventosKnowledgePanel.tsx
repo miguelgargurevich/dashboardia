@@ -2,6 +2,7 @@
 "use client";
 import React, { useState } from 'react';
 import { FaPlus, FaListUl, FaSearch, FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop } from 'react-icons/fa';
+import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import EventosMantenimientoCalendar from '../components/eventos/EventosMantenimientoCalendar';
 import Modal from '../components/Modal';
@@ -254,10 +255,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
                           <div className="text-xs text-yellow-300 mb-1">
-                            {new Date(event.startDate).toLocaleDateString('es-ES')}
-                            {event.endDate && (
-                              <span> - {new Date(event.endDate).toLocaleDateString('es-ES')}</span>
-                            )}
+                            {formatFechaDDMMYYYY(event.startDate)}
                           </div>
                           {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}
                         </div>

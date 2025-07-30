@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     const adaptedResponse = {
       ...data,
       type: data.tipo,
-      date: data.date || data.createdAt
+      date: data.date || data.createdAt || new Date().toISOString().split('T')[0]
     };
 
     return NextResponse.json(adaptedResponse, { status: 201 });

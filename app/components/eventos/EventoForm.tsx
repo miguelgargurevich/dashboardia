@@ -65,7 +65,6 @@ const EventoForm: React.FC<EventoFormProps> = ({
     relatedResources: initialValues?.relatedResources || [],
     isRecurring: initialValues?.isRecurring || false,
     recurrencePattern: initialValues?.recurrencePattern || "",
-    eventType: initialValues?.eventType || "",
   });
 
   // Modal de selección de recursos
@@ -113,11 +112,6 @@ const EventoForm: React.FC<EventoFormProps> = ({
     }));
   };
 
-  // Manejar archivos adjuntos
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    setForm(f => ({ ...f, archivosAdjuntos: files }));
-  };
 
 
   // Cuando el usuario confirma selección en el modal

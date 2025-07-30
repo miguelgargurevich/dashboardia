@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 
 interface Stat {
   createdAt?: string;
@@ -66,7 +67,7 @@ const TicketsLineChart: React.FC<Props> = ({ token, data }) => {
     labels = data.labels || [];
     values = data.datasets?.[0]?.data || [];
   } else {
-    labels = stats.map(s => s.semana || s.createdAt?.slice(0, 10) || 'Sin fecha');
+    labels = stats.map(s => s.semana || (s.createdAt ? formatFechaDDMMYYYY(s.createdAt) : 'Sin fecha'));
     values = stats.map(s => s.tickets || s._count?.id || 0);
   }
 

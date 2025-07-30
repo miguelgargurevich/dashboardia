@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 import { FaEdit, FaTrash, FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaEye } from 'react-icons/fa';
 
 export interface DetalleEventoPanelProps {
@@ -70,8 +71,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className="text-gray-400">
-                  <span className="font-bold text-gray-400 mr-1">Fecha:</span> {new Date(eventoSeleccionado.startDate).toLocaleDateString('es-ES')}
-                  {eventoSeleccionado.endDate && <span> - {new Date(eventoSeleccionado.endDate).toLocaleDateString('es-ES')}</span>}
+                  <span className="font-bold text-gray-400 mr-1">Fecha:</span> {formatFechaDDMMYYYY(eventoSeleccionado.startDate)}
                 </span>
               </div>
               <div className="flex items-center gap-2">

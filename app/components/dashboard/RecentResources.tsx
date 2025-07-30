@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { FaFileAlt, FaVideo, FaStickyNote, FaLink, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from "react-icons/fa";
+import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 interface TipoRecurso {
   id: string;
   nombre: string;
@@ -74,7 +75,7 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
                 </span>
                 <span className="font-semibold">{resource.titulo}</span>
                 <span className="text-sm text-gray-300">{resource.descripcion}</span>
-                <span className="text-xs text-gray-400">{new Date(resource.fechaCarga).toLocaleString()}</span>
+                <span className="text-xs text-gray-400">{formatFechaDDMMYYYY(resource.fechaCarga)}</span>
                 {resource.filePath && <a href={resource.filePath} className="text-xs text-blue-400 underline">Descargar</a>}
                 {resource.url && <a href={resource.url} className="text-xs text-blue-400 underline">Ver recurso</a>}
               </div>

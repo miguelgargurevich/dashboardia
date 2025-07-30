@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaClock } from "react-icons/fa";
+import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 
 interface Event {
   id: string;
@@ -32,7 +33,7 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
 
   const handleEventClick = (event: Event) => {
     // Extraer la fecha directamente del string sin convertir a Date para evitar problemas de zona horaria
-    const dateString = event.startDate.split('T')[0]; // Obtiene solo la parte de fecha (YYYY-MM-DD)
+    const dateString = formatFechaDDMMYYYY(event.startDate);
     
     // Si hay callback, usarla para comunicarse con el calendario del home
     if (onEventClick) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 import EventoForm from "./EventoForm";
 import type { EventoFormValues } from "./EventoForm";
 
@@ -145,6 +146,7 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
                 <div>
                   <div className="font-semibold text-sm text-accent">{ev.title}</div>
                   <div className="text-xs text-gray-400">{new Date(ev.startDate).toLocaleDateString('es-ES')}</div>
+                  <div className="text-xs text-gray-400">{formatFechaDDMMYYYY(ev.startDate)}</div>
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded" onClick={() => openEdit(ev)}>Editar</button>
