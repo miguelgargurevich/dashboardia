@@ -178,7 +178,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
         className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
         >
         <FaPlus />
-        Agregar Evento
+         Evento
         </button>
     </div> 
       

@@ -31,11 +31,22 @@ const EventoForm: React.FC<EventoFormProps> = ({
   loading = false,
   submitLabel = "Guardar evento"
 }) => {
+
+  // Normaliza fecha a formato YYYY-MM-DDTHH:mm para input datetime-local
+  function normalizeDate(val?: string) {
+    if (!val) return "";
+    // Si ya está en formato corto, no tocar
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(val)) return val;
+    // Si es ISO, recortar
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(val)) return val.slice(0, 16);
+    return val;
+  }
+
   const [form, setForm] = useState<EventoFormValues>({
     title: initialValues?.title || "",
     description: initialValues?.description || "",
-    startDate: initialValues?.startDate || "",
-    endDate: initialValues?.endDate || "",
+    startDate: normalizeDate(initialValues?.startDate),
+    endDate: normalizeDate(initialValues?.endDate),
     location: initialValues?.location || "",
     modo: initialValues?.modo || "",
     validador: initialValues?.validador || "",
@@ -48,7 +59,12 @@ const EventoForm: React.FC<EventoFormProps> = ({
 
   useEffect(() => {
     if (initialValues) {
-      setForm(f => ({ ...f, ...initialValues }));
+      setForm(f => ({
+        ...f,
+        ...initialValues,
+        startDate: normalizeDate(initialValues.startDate),
+        endDate: normalizeDate(initialValues.endDate),
+      }));
     }
   }, [initialValues]);
 

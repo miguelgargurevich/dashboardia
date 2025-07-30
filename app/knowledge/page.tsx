@@ -3,7 +3,7 @@ import Modal from '../components/Modal';
 import React, { useState, useEffect } from 'react';
 import NotaForm from '../components/knowledge/NotaForm';
 import RecursoForm from '../components/resources/RecursoForm';
-import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
 import NotasPanel from '../components/dashboard/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
 import RecursosArchivosPanel from '../components/dashboard/RecursosArchivosPanel';
@@ -640,8 +640,8 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                <FaFileAlt className="text-sm" />
-                Todas las Notas
+                {filtros.notas ? <FaEye className="text-accent text-base" /> : <FaEyeSlash className="text-gray-400 text-base" />}
+                Notas
               </button>
               <button
                 onClick={() => setFiltros(f => ({ ...f, recursos: !f.recursos }))}
@@ -651,8 +651,8 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                <FaLayerGroup className="text-sm" />
-                Todos los Recursos
+                {filtros.recursos ? <FaEye className="text-accent text-base" /> : <FaEyeSlash className="text-gray-400 text-base" />}
+                Recursos
               </button>
               <button
                 onClick={() => setFiltros(f => ({ ...f, eventos: !f.eventos }))}
@@ -662,8 +662,8 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                <FaClock className="text-sm" />
-                Todos los Eventos
+                {filtros.eventos ? <FaEye className="text-accent text-base" /> : <FaEyeSlash className="text-gray-400 text-base" />}
+                Eventos
               </button>
             </div>
             <div className="flex items-center justify-between mb-6">
@@ -674,21 +674,21 @@ const KnowledgePage: React.FC = () => {
                   className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
-                  Agregar Nota
+                   Nota
                 </button>
                 <button
                   onClick={() => setMostrarFormularioRecurso(true)}
                   className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
-                  Agregar Recurso
+                   Recurso
                 </button>
                 <button
                   onClick={() => setMostrarFormularioEvento(true)}
                   className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
-                  Agregar Evento
+                   Evento
                 </button>
               </div>
             </div>
@@ -903,7 +903,7 @@ const KnowledgePage: React.FC = () => {
                   className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
-                  Agregar Recurso
+                   Recurso
                 </button>
               </div>
             </div>
@@ -940,7 +940,7 @@ const KnowledgePage: React.FC = () => {
                 className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
               >
                 <FaPlus />
-                Agregar Nota
+                 Nota
               </button>
             </div>
 
@@ -973,7 +973,7 @@ const KnowledgePage: React.FC = () => {
                 className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
               >
                 <FaPlus />
-                Agregar Recurso
+                 Recurso
               </button>
             </div>
             <RecursosArchivosPanel

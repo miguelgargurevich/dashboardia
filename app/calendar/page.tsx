@@ -769,7 +769,7 @@ interface TipoRecurso {
                         </>
                       ) : (
                         <>
-                          <FaPlus /> Agregar Nota
+                          <FaPlus /> Nota
                         </>
                       )}
                     </button>

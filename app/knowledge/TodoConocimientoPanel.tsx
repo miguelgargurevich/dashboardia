@@ -291,9 +291,33 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
           >
             <EventoForm
               initialValues={eventoEditando || undefined}
-              onSubmit={handleGuardarEvento}
+              onSubmit={async (values: any) => {
+                // Si estamos creando uno nuevo
+                if (!eventoEditando) {
+                  if (!token) return;
+                  try {
+                    const res = await fetch('/api/events', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify(values)
+                    });
+                    if (!res.ok) throw new Error('Error al crear el evento');
+                    setmostrarFormularioEvento(false);
+                    setEventoEditando(null);
+                    cargarEventos();
+                  } catch (err) {
+                    alert('Ocurrió un error al crear el evento.');
+                  }
+                } else {
+                  // Edición existente
+                  await handleGuardarEvento(values);
+                }
+              }}
               onCancel={handleCancelarEvento}
-              submitLabel="Guardar cambios"
+              submitLabel={eventoEditando ? "Guardar cambios" : "Crear evento"}
             />
           </Modal>
         </div>
