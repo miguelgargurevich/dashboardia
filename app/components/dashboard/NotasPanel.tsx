@@ -1,6 +1,7 @@
 import type { Tema } from '../../lib/types';
 import React from 'react';
-import { FaSearch, FaDownload, FaTrash, FaEye } from 'react-icons/fa';
+import { FaSearch } from 'react-icons/fa';
+import DetalleNotaPanel from './DetalleNotaPanel';
 
 interface TipoNota {
   id: string;
@@ -137,55 +138,13 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
     </div>
     {/* Panel de detalles */}
     <div className="lg:col-span-2">
-      <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-        {notaSeleccionada ? (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-accent">{notaSeleccionada.nombre}</h2>
-                <p className="text-sm text-gray-400">
-                  {temas.find((t: any) => t.id === notaSeleccionada.tema)?.nombre}
-                </p>
-                {notaSeleccionada.date && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    <span className="font-semibold">Fecha:</span> {new Date(notaSeleccionada.date).toLocaleDateString('es-ES')}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => descargarNota(notaSeleccionada)}
-                  className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
-                >
-                  <FaDownload className="text-sm" />
-                  Descargar
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm('¿Estás seguro de eliminar esta nota?')) {
-                      eliminarNota(notaSeleccionada);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
-                >
-                  <FaTrash className="text-sm" />
-                  Eliminar
-                </button>
-              </div>
-            </div>
-            <div className="prose prose-invert max-w-none">
-              {renderizarContenidoMarkdown(notaSeleccionada.contenido)}
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            <div className="text-center">
-              <FaEye className="text-4xl mb-4 mx-auto" />
-              <p>Selecciona un documento para visualizar su contenido</p>
-            </div>
-          </div>
-        )}
-      </div>
+      <DetalleNotaPanel
+        notaSeleccionada={notaSeleccionada}
+        temas={temas}
+        descargarNota={descargarNota}
+        eliminarNota={eliminarNota}
+        renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+      />
     </div>
   </div>
 );
