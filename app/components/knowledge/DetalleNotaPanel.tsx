@@ -22,6 +22,7 @@ interface DetalleNotaPanelProps {
   descargarNota: (nota: Nota) => void;
   eliminarNota: (nota: Nota) => void;
   renderizarContenidoMarkdown: (contenido: string) => React.ReactNode;
+  onEdit?: (nota: Nota) => void;
 }
 
 const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
@@ -29,6 +30,7 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
   descargarNota,
   eliminarNota,
   renderizarContenidoMarkdown,
+  onEdit,
 }) => {
     return (
     <div className="bg-secondary rounded-lg p-6 h-full">
@@ -50,14 +52,15 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
                 >
                   <FaDownload /> Descargar
                 </button>
-                {/* Botón editar oculto temporalmente */}
-                <button
-                  style={{ display: 'none' }}
-                  className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
-                  title="Editar nota"
-                >
-                  <FaEdit /> Editar
-                </button>
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(notaSeleccionada)}
+                    className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
+                    title="Editar nota"
+                  >
+                    <FaEdit /> Editar
+                  </button>
+                )}
                 {/* Botón eliminar oculto temporalmente */}
                 <button
                   style={{ display: 'none' }}
@@ -85,12 +88,12 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-center h-full text-gray-400">
-          <div className="text-center">
-            <FaEye className="text-4xl mb-4 mx-auto" />
-            <p>Selecciona una nota para ver sus detalles</p>
+         <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="text-center">
+              <FaEye className="text-4xl mb-4 mx-auto" />
+              <p>{'Selecciona una nota para ver sus detalles'}</p>
+            </div>
           </div>
-        </div>
       )}
     </div>
   );

@@ -733,12 +733,12 @@ const KnowledgePage: React.FC = () => {
                     emptyMessage="Selecciona un evento para ver sus detalles"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
-                    <div className="text-center">
-                      <FaEye className="text-4xl mb-4 mx-auto" />
-                      <p>Selecciona una nota, recurso o evento para ver sus detalles</p>
+                   <div className="flex items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <FaEye className="text-4xl mb-4 mx-auto" />
+                        <p>{'Selecciona una nota, recurso o evento para ver sus detalles'}</p>
+                      </div>
                     </div>
-                  </div>
                 )}
               </div>
             </div>

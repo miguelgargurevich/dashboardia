@@ -16,6 +16,7 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
   recurso,
   getTipoRecursoLabel,
   formatFileSize,
+  onEdit,
 }) => {
   return (
     <div className="bg-secondary rounded-lg p-6 h-full">
@@ -37,6 +38,15 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
                 >
                   <FaDownload /> Descargar
                 </button>
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(recurso)}
+                    className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
+                    title="Editar recurso"
+                  >
+                    <FaEdit /> Editar
+                  </button>
+                )}
                 {/* Botón eliminar oculto temporalmente */}
                 <button
                   style={{ display: 'none' }}
@@ -65,7 +75,7 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
         <div className="flex items-center justify-center h-full text-gray-400">
           <div className="text-center">
             <FaEye className="text-4xl mb-4 mx-auto" />
-            <p>Selecciona un recurso para ver sus detalles</p>
+            <p>{'Selecciona un recurso para ver sus detalles'}</p>
           </div>
         </div>
       )}
