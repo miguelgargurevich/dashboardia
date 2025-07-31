@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
 import { FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
-import DetalleEventoPanel from '../eventos/DetalleEventoPanel';
+import DetalleEventoPanel from './DetalleEventoPanel';
 
 interface Event {
   id: string;
@@ -52,8 +52,10 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
   useEffect(() => {
     async function fetchEvents() {
       try {
+        // Si el token prop está vacío, obtenerlo de localStorage
+        const authToken = token && token.trim() !== '' ? token : (typeof window !== 'undefined' ? localStorage.getItem('token') || '' : '');
         const res = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${authToken}` }
         });
         
         if (res.ok) {
@@ -61,8 +63,10 @@ const EventsCalendar: React.FC<Props> = ({ token, selectedDate: externalSelected
           setEvents(Array.isArray(data) ? data : []);
         } else if (res.status === 401) {
           // Token expirado o inválido, redirigir al login
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
           return;
         } else {
           console.error('Error fetching events:', res.statusText);
