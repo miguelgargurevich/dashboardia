@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaClock } from "react-icons/fa";
+import { FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaClock, FaExclamationTriangle } from "react-icons/fa";
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 
 interface Event {
@@ -120,90 +120,113 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
     <div className="bg-primary rounded-lg p-4 shadow-md">
       {events.length > 0 ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {events.map((event) => (
-            <div 
-              key={event.id} 
-              className="bg-primary/40 rounded-lg p-3 border border-accent/20 hover:border-accent/40 transition-colors cursor-pointer hover:bg-primary/60"
-              onClick={() => handleEventClick(event)}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2 flex-1">
-                  {getEventIcon(event.title)}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-white text-sm leading-tight">
-                      {event.title}
-                    </h4>
-                    <p className="text-xs text-gray-400">
-                      {new Date(event.startDate).toLocaleDateString('es-ES', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
+          {events.map((event) => {
+            const eventDate = new Date(event.startDate);
+            const now = new Date();
+            const diffMs = eventDate.getTime() - now.getTime();
+            const diffDays = diffMs / (1000 * 60 * 60 * 24);
+            const isToday = eventDate.toDateString() === now.toDateString();
+            const isSoon = diffDays <= 2 && diffDays >= 0;
+            const isWeekend = eventDate.getDay() === 0 || eventDate.getDay() === 6;
+            const highlight = isToday || isSoon || isWeekend;
+            return (
+              <div 
+                key={event.id} 
+                className={`rounded-lg p-3 border transition-colors cursor-pointer ${highlight ? 'border-red-500 bg-red-900/30 text-red-200 shadow-lg animate-pulse' : 'bg-primary/40 border border-accent/20 hover:border-accent/40 text-white hover:bg-primary/60'} hover:bg-accent/10`}
+                onClick={() => handleEventClick(event)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2 flex-1">
+                    {highlight && (
+                      <FaExclamationTriangle className="text-red-500 animate-pulse text-2xl" />
+                    )}
+                    {getEventIcon(event.title)}
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-inherit text-sm leading-tight">
+                        {event.title}
+                      </h4>
+                      <p className="text-xs text-inherit">
+                        {eventDate.toLocaleDateString('es-ES', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded font-medium whitespace-nowrap flex items-center gap-1 ${highlight ? 'bg-red-900/40 text-red-400' : 'bg-accent/10 text-accent'}`}>
+                      <FaClock className="text-xs" />
+                      {formatTimeUntil(event.startDate)}
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-1 rounded bg-accent/10 text-accent font-medium whitespace-nowrap flex items-center gap-1">
-                    <FaClock className="text-xs" />
-                    {formatTimeUntil(event.startDate)}
-                  </span>
-                </div>
-              </div>
 
-              {event.description && (
-                <p className="text-xs text-gray-300 mb-2 line-clamp-2">
-                  {event.description}
-                </p>
-              )}
+                {event.description && (
+                  <p className="text-xs mb-2 line-clamp-2 text-inherit">
+                    {event.description}
+                  </p>
+                )}
 
-              <div className="flex items-center justify-between text-xs mb-2">
-                <div className="flex flex-wrap gap-2">
-                  {event.modo && (
-                    <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">{event.modo}</span>
-                  )}
-                  {event.validador && (
-                    <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 {event.validador}</span>
-                  )}
-                  {event.codigoDana && (
-                    <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {event.codigoDana}</span>
-                  )}
-                  {event.nombreNotificacion && (
-                    <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">� {event.nombreNotificacion}</span>
-                  )}
-                  {event.diaEnvio && (
-                    <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {event.diaEnvio}</span>
-                  )}
-                  {event.query && (
-                    <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 {event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query}</span>
-                  )}
-                  {event.relatedResources && event.relatedResources.length > 0 && (
-                    <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 {event.relatedResources.length}</span>
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <div className="flex flex-wrap gap-2">
+                    {event.modo && (
+                      <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">{event.modo}</span>
+                    )}
+                    {event.validador && (
+                      <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 {event.validador}</span>
+                    )}
+                    {event.codigoDana && (
+                      <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {event.codigoDana}</span>
+                    )}
+                    {event.nombreNotificacion && (
+                      <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">� {event.nombreNotificacion}</span>
+                    )}
+                    {event.diaEnvio && (
+                      <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {event.diaEnvio}</span>
+                    )}
+                    {event.query && (
+                      <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 {event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query}</span>
+                    )}
+                    {event.relatedResources && event.relatedResources.length > 0 && (
+                      <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 {event.relatedResources.length}</span>
+                    )}
+                  </div>
+                  {event.location && (
+                    <span className="text-gray-400 truncate max-w-32">📍 {event.location}</span>
                   )}
                 </div>
-                {event.location && (
-                  <span className="text-gray-400 truncate max-w-32">📍 {event.location}</span>
+
+                {/* Recursos relacionados */}
+                {event.relatedResources && event.relatedResources.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {event.relatedResources.slice(0, 3).map((resource, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
+                        📄 {resource}
+                      </span>
+                    ))}
+                    {event.relatedResources.length > 3 && (
+                      <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
+                        +{event.relatedResources.length - 3} más
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Mensaje especial para eventos destacados */}
+                {highlight && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <FaExclamationTriangle className="text-red-500 animate-pulse text-lg" />
+                    <span className="font-bold text-red-400">
+                      {isWeekend ? '¡Fin de semana! Se debe reprogramar.' : isToday ? '¡Es hoy!' : '¡Próximo!'}
+                    </span>
+                  </div>
                 )}
               </div>
-
-              {/* Recursos relacionados */}
-              {event.relatedResources && event.relatedResources.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {event.relatedResources.slice(0, 3).map((resource, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
-                      📄 {resource}
-                    </span>
-                  ))}
-                  {event.relatedResources.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
-                      +{event.relatedResources.length - 3} más
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-8">
