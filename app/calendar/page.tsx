@@ -1,10 +1,23 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+// Tipos para NotaForm
+interface NotaFormValues {
+  nombre: string;
+  contenido: string;
+  tipo: string;
+  etiquetas?: string[];
+  descripcion?: string;
+  tema: string;
+  priority?: string;
+  date?: string;
+}
+
 import dynamic from 'next/dynamic';
 // Importar el formulario de nota de forma dinámica para evitar SSR
 const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
+import Modal from '../components/Modal';
 
 import { 
   FaCalendarAlt, 
@@ -58,6 +71,16 @@ interface Event {
 
 
 const Calendar: React.FC = () => {
+  // Estado para tipos de nota y etiquetas disponibles
+  const [tiposNotas, setTiposNotas] = useState<any[]>([]);
+  const [etiquetasDisponibles, setEtiquetasDisponibles] = useState<string[]>([]);
+
+  // Cargar tipos de nota
+  useEffect(() => {
+    fetch('/tiposNotas.json')
+      .then(res => res.json())
+      .then(data => setTiposNotas(data));
+  }, []);
   // Estado para mostrar/ocultar el panel de filtros en la vista de lista
   const [showFilters, setShowFilters] = useState(false);
   const searchParams = useSearchParams();
@@ -1043,11 +1066,56 @@ interface TipoRecurso {
        
       </div>
       
+
+      {/* Modal para editar nota */}
+      {showNoteForm && editingNote && (
+        <Modal open={showNoteForm} onClose={handleCloseNoteForm} title="Editar nota" maxWidth="max-w-2xl">
+          <NotaForm
+            initialValues={{
+              nombre: editingNote.title || '',
+              contenido: editingNote.content || '',
+              tipo: tiposNotas[0]?.id || '',
+              etiquetas: editingNote.tags || [],
+              descripcion: '',
+              tema: editingNote.tema || temas[0]?.id || '',
+              date: editingNote.date
+            }}
+            temas={temas}
+            tiposNotas={tiposNotas}
+            etiquetasDisponibles={Array.from(new Set(notes.flatMap(n => n.tags || [])))}
+            onSubmit={async (values) => {
+              // Actualizar nota en backend
+              const token = getToken();
+              await fetch(`/api/daily-notes/${editingNote.id}`,
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    title: values.nombre,
+                    content: values.contenido,
+                    tags: values.etiquetas,
+                    tema: values.tema,
+                    date: values.date || editingNote.date
+                  })
+                }
+              );
+              handleCloseNoteForm();
+              fetchNotes();
+            }}
+            onCancel={handleCloseNoteForm}
+            loading={false}
+            submitLabel="Guardar nota"
+          />
+        </Modal>
+      )}
+
       {/* Burbuja flotante del asistente de IA */}
       <AssistantBubble />
     </div>
   );
-};
+}
 
 export default Calendar;
-                        
