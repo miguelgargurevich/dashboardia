@@ -3,7 +3,7 @@ import Modal from '../components/Modal';
 import React, { useState, useEffect } from 'react';
 import NotaForm from '../components/knowledge/NotaForm';
 import RecursoForm from '../components/resources/RecursoForm';
-import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt, FaEye } from 'react-icons/fa';
 import NotasPanel from '../components/dashboard/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
 import RecursosArchivosPanel from '../components/dashboard/RecursosArchivosPanel';
@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
 import TodoConocimientoPanel from './TodoConocimientoPanel';
+import DetalleNotaPanel from '../components/dashboard/DetalleNotaPanel';
+import DetalleRecursoPanel from '../components/dashboard/DetalleRecursoPanel';
+import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import EventosKnowledgePanel from "./EventosKnowledgePanel";
 import EventoForm from '../components/eventos/EventoForm';
 
@@ -72,6 +75,8 @@ const KnowledgePage: React.FC = () => {
     fetchEventos();
   }, [token]);
   
+  // Estado para selección de evento en TodoConocimientoPanel
+  const [eventoSeleccionado, setEventoSeleccionado] = useState<any | null>(null);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -622,11 +627,11 @@ const KnowledgePage: React.FC = () => {
           </button>
         </div>
 
-        {/* Panel Todo el conocimiento */}
+        {/* Panel Todo el conocimiento con filtros y botones de acción */}
         {!tiposNotas.length ? (
           <div className="p-8 text-center text-gray-500">Cargando tipos de nota...</div>
         ) : seccionActiva === 'todo' ? (
-          <div>
+          <>
             <div className="flex flex-wrap gap-3 mb-6">
               <button
                 onClick={() => setFiltros(f => ({ ...f, notas: !f.notas }))}
@@ -636,7 +641,7 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                {filtros.notas ? <FaEye className="text-accent text-base" /> : <FaEyeSlash className="text-gray-400 text-base" />}
+                {filtros.notas ? <FaEye className="text-accent text-base" /> : <FaEye className="text-gray-400 text-base" />}
                 Notas
               </button>
               <button
@@ -647,7 +652,7 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                {filtros.recursos ? <FaEye className="text-accent text-base" /> : <FaEyeSlash className="text-gray-400 text-base" />}
+                {filtros.recursos ? <FaEye className="text-accent text-base" /> : <FaEye className="text-gray-400 text-base" />}
                 Recursos
               </button>
               <button
@@ -658,7 +663,7 @@ const KnowledgePage: React.FC = () => {
                     : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
                 }`}
               >
-                {filtros.eventos ? <FaEye className="text-accent text-base" /> : <FaEyeSlash className="text-gray-400 text-base" />}
+                {filtros.eventos ? <FaEye className="text-accent text-base" /> : <FaEye className="text-gray-400 text-base" />}
                 Eventos
               </button>
             </div>
@@ -688,21 +693,60 @@ const KnowledgePage: React.FC = () => {
                 </button>
               </div>
             </div>
-            <TodoConocimientoPanel
-              notas={filtros.notas ? notasMD : []}
-              recursos={filtros.recursos ? recursos : []}
-              eventos={filtros.eventos ? eventosParaTodoConocimiento : []}
-            />
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1">
+                <TodoConocimientoPanel
+                  notas={filtros.notas ? notasMD : []}
+                  recursos={filtros.recursos ? recursos : []}
+                  eventos={filtros.eventos ? eventosParaTodoConocimiento : []}
+                  notaSeleccionada={notaSeleccionada}
+                  setNotaSeleccionada={setNotaSeleccionada as (nota: any) => void}
+                  recursoSeleccionado={recursoSeleccionado}
+                  setRecursoSeleccionado={setRecursoSeleccionado as (recurso: any) => void}
+                  eventoSeleccionado={eventoSeleccionado}
+                  setEventoSeleccionado={setEventoSeleccionado as (evento: any) => void}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                {notaSeleccionada ? (
+                  <DetalleNotaPanel
+                    notaSeleccionada={notaSeleccionada as any}
+                    temas={temas}
+                    descargarNota={descargarNota as (nota: any) => void}
+                    eliminarNota={eliminarNota as (nota: any) => void}
+                    renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+                  />
+                ) : recursoSeleccionado ? (
+                  <DetalleRecursoPanel
+                    recurso={recursoSeleccionado}
+                    temas={temas}
+                    getTipoRecursoLabel={getTipoRecursoLabel}
+                    formatFileSize={formatFileSize}
+                    onEdit={() => setMostrarFormularioRecurso(true)}
+                    onDelete={eliminarRecurso}
+                  />
+                ) : eventoSeleccionado ? (
+                  <DetalleEventoPanel
+                    eventoSeleccionado={eventoSeleccionado}
+                    onEdit={() => setMostrarFormularioEvento(true)}
+                    onDelete={() => {}}
+                    emptyMessage="Selecciona un evento para ver sus detalles"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400">
+                    <div className="text-center">
+                      <FaEye className="text-4xl mb-4 mx-auto" />
+                      <p>Selecciona una nota, recurso o evento para ver sus detalles</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         ) : null}
 
 
-        {/* Panel de eventos de conocimiento, como sección independiente */}
-        {seccionActiva === 'eventos' && (
-          <div>
-            <EventosKnowledgePanel token={token} />
-          </div>
-        )}
+
 
         {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'temas' || seccionActiva === 'todos') && (
@@ -788,6 +832,74 @@ const KnowledgePage: React.FC = () => {
           </div>
         )}
 
+        {/* Vista por tipos de recursos */}
+        {seccionActiva === 'tipos' && !tipoRecursoSeleccionado && (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {tiposRecursos.map((tipo) => {
+                const cantidadRecursos = recursos.filter(recurso => recurso.tipo === tipo.id).length;
+                return (
+                  <button
+                    key={tipo.id}
+                    onClick={() => setTipoRecursoSeleccionado(tipo.id)}
+                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-white/10 hover:border-accent/60`}
+                  >
+                    <div className="flex items-center gap-4 mb-3">
+                      {tipo.icono}
+                      <h3 className="text-lg font-bold">{tipo.nombre}</h3>
+                    </div>
+                    <p className="text-sm mb-3 opacity-80">{tipo.descripcion}</p>
+                    <div className="text-xs opacity-60">
+                      {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Panel de eventos de conocimiento, como sección independiente */}
+        {seccionActiva === 'eventos' && (
+          <div>
+            <EventosKnowledgePanel token={token} />
+          </div>
+        )}
+        
+        {/* Vista de todas las Notas */}
+        {seccionActiva === 'todos' && (
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
+                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                   Nota
+                </button>
+              </div>
+            </div>
+            <NotasPanel
+              busqueda={busqueda}
+              setBusqueda={setBusqueda}
+              etiquetasDisponiblesNotas={etiquetasDisponiblesNotas}
+              filtroEtiquetaNota={filtroEtiquetaNota}
+              setFiltroEtiquetaNota={setFiltroEtiquetaNota}
+              cargando={cargando}
+              notasFiltradas={notasFiltradas}
+              temas={temas}
+              notaSeleccionada={notaSeleccionada}
+              setNotaSeleccionada={setNotaSeleccionada}
+              descargarNota={descargarNota}
+              eliminarNota={eliminarNota}
+              renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+              tiposNotas={tiposNotas}
+            />
+          </div>
+        )}
+
         {/* Vista de documentos por tema */}
         {seccionActiva === 'temas' && temaSeleccionado && (
           <div>
@@ -847,33 +959,6 @@ const KnowledgePage: React.FC = () => {
           </div>
         )}
 
-        {/* Vista por tipos de recursos */}
-        {seccionActiva === 'tipos' && !tipoRecursoSeleccionado && (
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tiposRecursos.map((tipo) => {
-                const cantidadRecursos = recursos.filter(recurso => recurso.tipo === tipo.id).length;
-                return (
-                  <button
-                    key={tipo.id}
-                    onClick={() => setTipoRecursoSeleccionado(tipo.id)}
-                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-white/10 hover:border-accent/60`}
-                  >
-                    <div className="flex items-center gap-4 mb-3">
-                      {tipo.icono}
-                      <h3 className="text-lg font-bold">{tipo.nombre}</h3>
-                    </div>
-                    <p className="text-sm mb-3 opacity-80">{tipo.descripcion}</p>
-                    <div className="text-xs opacity-60">
-                      {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Vista de recursos por tipo seleccionado */}
         {seccionActiva === 'tipos' && tipoRecursoSeleccionado && (
           <div>
@@ -926,40 +1011,6 @@ const KnowledgePage: React.FC = () => {
           </div>
         )}
 
-        {/* Vista de todas las Notas */}
-        {seccionActiva === 'todos' && (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
-                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                   Nota
-                </button>
-              </div>
-            </div>
-            <NotasPanel
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              etiquetasDisponiblesNotas={etiquetasDisponiblesNotas}
-              filtroEtiquetaNota={filtroEtiquetaNota}
-              setFiltroEtiquetaNota={setFiltroEtiquetaNota}
-              cargando={cargando}
-              notasFiltradas={notasFiltradas}
-              temas={temas}
-              notaSeleccionada={notaSeleccionada}
-              setNotaSeleccionada={setNotaSeleccionada}
-              descargarNota={descargarNota}
-              eliminarNota={eliminarNota}
-              renderizarContenidoMarkdown={renderizarContenidoMarkdown}
-              tiposNotas={tiposNotas}
-            />
-          </div>
-        )}
-
         {/* Vista de recursos */}
         {seccionActiva === 'recursos' && (
           <div>
@@ -996,6 +1047,7 @@ const KnowledgePage: React.FC = () => {
           </div>
         )}
         
+        {/* Modal para crear nota */}
         {mostrarFormularioNota && (
           <Modal
             open={mostrarFormularioNota}
@@ -1029,6 +1081,8 @@ const KnowledgePage: React.FC = () => {
             />
           </Modal>
         )}
+
+        {/* Modal para crear recurso */}
         {mostrarFormularioRecurso && (
           <Modal
             open={mostrarFormularioRecurso}
@@ -1066,40 +1120,43 @@ const KnowledgePage: React.FC = () => {
             />
           </Modal>
         )}
+
+        {/* Modal para crear evento */}
+        {mostrarFormularioEvento && (
+          <Modal
+            open={mostrarFormularioEvento}
+            onClose={() => setMostrarFormularioEvento(false)}
+            title={"Nuevo Evento"}
+          >
+            <EventoForm
+              initialValues={undefined}
+              onSubmit={async (values: any) => {
+                if (!token) return;
+                try {
+                  const res = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(values)
+                  });
+                  if (!res.ok) throw new Error('Error al crear el evento');
+                  setMostrarFormularioEvento(false);
+                  window.location.reload();
+                } catch (err) {
+                  alert('Ocurrió un error al crear el evento.');
+                }
+              }}
+              onCancel={() => setMostrarFormularioEvento(false)}
+              submitLabel="Crear evento"
+            />
+          </Modal>
+        )}
+
       </div>
       
-      {/* Modal para crear evento */}
-      {mostrarFormularioEvento && (
-        <Modal
-          open={mostrarFormularioEvento}
-          onClose={() => setMostrarFormularioEvento(false)}
-          title={"Nuevo Evento"}
-        >
-          <EventoForm
-            initialValues={undefined}
-            onSubmit={async (values: any) => {
-              if (!token) return;
-              try {
-                const res = await fetch('/api/events', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify(values)
-                });
-                if (!res.ok) throw new Error('Error al crear el evento');
-                setMostrarFormularioEvento(false);
-                window.location.reload();
-              } catch (err) {
-                alert('Ocurrió un error al crear el evento.');
-              }
-            }}
-            onCancel={() => setMostrarFormularioEvento(false)}
-            submitLabel="Crear evento"
-          />
-        </Modal>
-      )}
+
       {/* Chat de IA flotante */}
       <AssistantBubble />
     </div>
