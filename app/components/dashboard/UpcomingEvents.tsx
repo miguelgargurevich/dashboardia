@@ -119,7 +119,7 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
   return (
     <div className="bg-primary rounded-lg p-4 shadow-md">
       {events.length > 0 ? (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+        <div className="space-y-3 overflow-y-auto">
           {events.map((event) => {
             const eventDate = new Date(event.startDate);
             const now = new Date();
