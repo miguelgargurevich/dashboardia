@@ -106,8 +106,6 @@ const Calendar: React.FC = () => {
       .then(res => res.json())
       .then(data => setTiposNotas(data));
   }, []);
-  // Estado para mostrar/ocultar el panel de filtros en la vista de lista
-  const [showFilters, setShowFilters] = useState(false);
   const searchParams = useSearchParams();
   
   // Verificar autenticación al cargar el componente
@@ -144,7 +142,6 @@ const Calendar: React.FC = () => {
   const [showRecurringEvents, setShowRecurringEvents] = useState<boolean>(true);
   // const [loading, setLoading] = useState(false); // Eliminado: ya no se usa
   const [loadingEvents, setLoadingEvents] = useState(false);
-  const [isUsingMockData] = useState(false); // Solo lectura, para mostrar banner si aplica
 
   // --- Notas diarias ---
 interface Note {
@@ -158,31 +155,6 @@ interface Note {
   relatedResources?: string[];
 }
 
-interface TipoRecurso {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  color: string;
-  icono?: React.ReactNode;
-}
-
-  // Estado para tipos de recursos
-  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
-  useEffect(() => {
-    fetch('/tiposRecursos.json')
-      .then(res => res.json())
-      .then((data) => {
-        const iconMap: Record<string, React.ReactNode> = {
-          'url': <FaPaperclip className="text-accent" />,
-          'archivo': <FaFileAlt className="text-accent" />,
-          'video': <FaRegCalendarAlt className="text-accent" />,
-          'ia-automatizacion': <FaSyncAlt className="text-accent" />,
-          'contactos-externos': <FaUserCog className="text-accent" />,
-          'plantillas-formularios': <FaTag className="text-accent" />
-        };
-        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaPaperclip className="text-accent" /> })));
-      });
-  }, []);
 
   // Estado global para temas
   const [temas, setTemas] = useState<any[]>([]);
@@ -303,11 +275,6 @@ interface TipoRecurso {
   // Notas del día seleccionado
   const selectedDayNotes = notes.filter(n => n.date === selectedDate);
 
-  // Estado para controlar qué notas están expandidas (ver más)
-  const [showMoreNotes, setShowMoreNotes] = useState<Record<string, boolean>>({});
-  const toggleShowMore = (id: string) => {
-    setShowMoreNotes(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   // --- Estado y lógica para edición y eliminación de notas ---
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -336,11 +303,7 @@ interface TipoRecurso {
       alert('No se pudo eliminar la nota.');
     }
   };
-  // --- Render botón para nueva nota ---
-  // Puedes ubicar este botón donde prefieras en el panel de notas del día
-  // Ejemplo: arriba de la lista de notas
-  // --- Modal para nueva nota ---
-  // Se renderiza al final del return principal
+
 
   const handleCloseNoteForm = () => {
     setShowNoteForm(false);
@@ -351,8 +314,8 @@ interface TipoRecurso {
 
   // Filtros para la vista de lista
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
+  const [searchTerm] = useState('');
+  const [filterType] = useState<string>('all');
 
   const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -886,50 +849,6 @@ interface TipoRecurso {
                 <h2 className="text-2xl font-bold text-accent mb-4 flex items-center gap-2">
                   <FaFileAlt /> Lista de Eventos ({events.length + recurringEvents.length})
                 </h2>
-                {/* Botón para mostrar/ocultar filtros */}
-                <div className="mb-4">
-                  <button
-                    className="px-4 py-2 bg-accent text-white rounded-lg font-medium shadow hover:bg-accent/80 transition-colors"
-                    onClick={() => setShowFilters(f => !f)}
-                  >
-                    {showFilters ? 'Ocultar Filtros' : 'Mostrar Filtros'}
-                  </button>
-                </div>
-                {/* Panel de filtros, visible solo si showFilters es true */}
-                {showFilters && (
-                  <div className="mb-4 p-4 bg-primary/20 rounded-lg border border-accent/10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-300 mb-1">Buscar</label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-2 pr-2 py-1 bg-primary border border-accent/30 rounded text-white text-xs"
-                            placeholder="Buscar por título o descripción..."
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-300 mb-1">Tipo</label>
-                        <select
-                          value={filterType}
-                          onChange={e => setFilterType(e.target.value)}
-                          className="w-full px-2 py-1 bg-primary border border-accent/30 rounded text-white text-xs"
-                        >
-                          <option value="all">Todos</option>
-                          <option value="incidente">Incidente</option>
-                          <option value="mantenimiento">Mantenimiento</option>
-                          <option value="reunion">Reunión</option>
-                          <option value="capacitacion">Capacitación</option>
-                          <option value="otro">Otro</option>
-                          <option value="recurrente">Recurrente</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
                 <div className="space-y-3 max-h-[70vh] overflow-y-auto">
                   {([...events, ...recurringEvents]
                     .filter(event => {
