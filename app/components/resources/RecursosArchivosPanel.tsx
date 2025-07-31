@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
-import { FaSearch, FaEdit, FaTrash, FaEyeSlash } from "react-icons/fa";
+import { FaSearch } from "react-icons/fa";
+import DetalleRecursoPanel from "./DetalleRecursoPanel";
 
 
 import type { Recurso, Tema } from '../../lib/types';
@@ -146,114 +147,14 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
       </div>
       {/* Panel de detalles */}
       <div className="lg:col-span-2">
-        <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-          {recursoSeleccionado ? (
-            <div>
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold text-accent mb-2">{recursoSeleccionado.titulo}</h2>
-                  {recursoSeleccionado.url && (
-                    <a
-                      href={recursoSeleccionado.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 text-sm break-all"
-                    >
-                      {recursoSeleccionado.url}
-                    </a>
-                  )}
-                  {recursoSeleccionado.filePath && (
-                    <a
-                      href={recursoSeleccionado.filePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 text-sm break-all"
-                    >
-                      {recursoSeleccionado.nombreOriginal || recursoSeleccionado.filePath}
-                    </a>
-                  )}
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-sm text-gray-400">
-                      {temas.find(t => t.id === recursoSeleccionado.tema)?.nombre}
-                    </span>
-                    <span className="text-gray-600">•</span>
-                    <span className="text-sm text-gray-400">
-                      {getTipoRecursoLabel(recursoSeleccionado.tipo, recursoSeleccionado.tipoArchivo)}
-                    </span>
-                    {recursoSeleccionado.tamaño && (
-                      <>
-                        <span className="text-gray-600">•</span>
-                        <span className="text-sm text-gray-400">
-                          {formatFileSize(recursoSeleccionado.tamaño)}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setRecursoEditando?.(recursoSeleccionado);
-                      setMostrarFormularioRecurso(true);
-                    }}
-                    className="flex items-center gap-1 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
-                  >
-                    <FaEdit className="text-xs" />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('¿Estás seguro de eliminar este recurso?')) {
-                        eliminarRecurso(recursoSeleccionado.id);
-                        setRecursoSeleccionado(null);
-                      }
-                    }}
-                    className="flex items-center gap-1 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
-                  >
-                    <FaTrash className="text-xs" />
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {recursoSeleccionado.descripcion && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-300 mb-2">Descripción</h3>
-                    <p className="text-gray-400">{recursoSeleccionado.descripcion}</p>
-                  </div>
-                )}
-                {recursoSeleccionado.tags.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-gray-300 mb-2">Etiquetas</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {recursoSeleccionado.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-accent/20 text-accent rounded text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="text-sm text-gray-500 space-y-1">
-                  <p>Subido: {recursoSeleccionado.fechaCarga ? new Date(recursoSeleccionado.fechaCarga).toLocaleDateString() : ''}</p>
-                  {recursoSeleccionado.nombreOriginal && (
-                    <p>Archivo original: {recursoSeleccionado.nombreOriginal}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              <div className="text-center">
-                <FaEyeSlash className="text-4xl mb-4 mx-auto" />
-                <p>Selecciona un recurso para ver sus detalles</p>
-              </div>
-            </div>
-          )}
-        </div>
+        <DetalleRecursoPanel
+          recurso={recursoSeleccionado}
+          temas={temas}
+          getTipoRecursoLabel={getTipoRecursoLabel}
+          formatFileSize={formatFileSize}
+          onEdit={setRecursoEditando ? (r) => { setRecursoEditando(r); setMostrarFormularioRecurso(true); } : undefined}
+          onDelete={recursoSeleccionado ? (id) => { if (confirm('¿Estás seguro de eliminar este recurso?')) { eliminarRecurso(id); setRecursoSeleccionado(null); } } : undefined}
+        />
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 import EventoForm from "../components/eventos/EventoForm";
 import Modal from "../components/Modal";
 import React, { useState } from "react";
-import { FaSearch, FaFileAlt, FaBook, FaEye, FaCalendarAlt, FaEdit, FaTrash, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop } from "react-icons/fa";
+import { FaSearch, FaFileAlt, FaBook, FaCalendarAlt } from "react-icons/fa";
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 
 interface Nota {
@@ -42,42 +42,37 @@ interface TodoConocimientoPanelProps {
   notas: Nota[];
   recursos: Recurso[];
   eventos: Evento[];
+  notaSeleccionada: Nota | null;
+  setNotaSeleccionada: (nota: Nota | null) => void;
+  recursoSeleccionado: Recurso | null;
+  setRecursoSeleccionado: (recurso: Recurso | null) => void;
+  eventoSeleccionado: Evento | null;
+  setEventoSeleccionado: (evento: Evento | null) => void;
 }
 
-const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, recursos, eventos }) => {
+const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
+  notas,
+  recursos,
+  eventos,
+  notaSeleccionada,
+  setNotaSeleccionada,
+  recursoSeleccionado,
+  setRecursoSeleccionado,
+  eventoSeleccionado,
+  setEventoSeleccionado
+}) => {
   // Nuevo layout basado en el diseño proporcionado
   // Estados y lógica adaptados
   const [busqueda, setBusqueda] = useState("");
   const [filtroEtiqueta, setFiltroEtiqueta] = useState("");
-  const [itemSeleccionado, setItemSeleccionado] = useState<any | null>(null);
+  // El estado de selección se maneja en el padre
 
-  // Normaliza el item seleccionado para el panel lateral
-  const getDetalleSeleccionado = (item: any) => {
-    if (!item) return null;
-    if (item.origen === 'evento' && item.evento) {
-      return {
-        ...item.evento,
-        origen: 'evento',
-      };
-    } else if (item.origen === 'nota') {
-      return {
-        title: item.titulo,
-        description: item.descripcion,
-        contenido: item.contenido,
-        tags: item.tags,
-        origen: 'nota',
-      };
-    } else if (item.origen === 'recurso') {
-      return {
-        title: item.titulo,
-        description: item.descripcion,
-        tags: item.tags,
-        origen: 'recurso',
-      };
-    }
-    return item;
-  };
-  const detalleSeleccionado = getDetalleSeleccionado(itemSeleccionado);
+  // ...existing code...
+  // Determinar el item seleccionado actual
+  let itemSeleccionado: any = null;
+  if (notaSeleccionada) itemSeleccionado = { ...notaSeleccionada, origen: 'nota' };
+  else if (recursoSeleccionado) itemSeleccionado = { ...recursoSeleccionado, origen: 'recurso' };
+  else if (eventoSeleccionado) itemSeleccionado = { ...eventoSeleccionado, origen: 'evento', evento: eventoSeleccionado };
   // Estados para edición de evento
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [mostrarFormularioEvento, setmostrarFormularioEvento] = useState(false);
@@ -111,27 +106,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
     setEventoEditando(null);
   };
 
-  // Handlers reales solo para eventos
-  const handleEdit = (item: any) => {
-    if (item.origen === 'evento' && item.evento) {
-      setEventoEditando(item.evento);
-      setmostrarFormularioEvento(true);
-    } else {
-      alert('Solo se puede editar eventos desde aquí.');
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!token) return;
-    if (!confirm('¿Eliminar este evento?')) return;
-    await fetch(`/api/events/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    cargarEventos();
-  };
+  // ...existing code...
 
 
   // Unificar tipos y etiquetas disponibles
@@ -186,7 +161,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
   });
   return (
     <div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Lista y filtros */}
         <div className="lg:col-span-1">
           <div className="bg-secondary rounded-lg p-4">
@@ -259,7 +234,22 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setItemSeleccionado(item)}
+                    onClick={() => {
+                      // Al seleccionar, cerrar otros paneles
+                      if (item.origen === 'nota') {
+                        setNotaSeleccionada(notas.find(n => (n.id || n.nombre) === item.id) || null);
+                        setRecursoSeleccionado(null);
+                        setEventoSeleccionado(null);
+                      } else if (item.origen === 'recurso') {
+                        setRecursoSeleccionado(recursos.find(r => r.id === item.id) || null);
+                        setNotaSeleccionada(null);
+                        setEventoSeleccionado(null);
+                      } else if (item.origen === 'evento') {
+                      setEventoSeleccionado('evento' in item ? (item.evento || null) : null);
+                        setNotaSeleccionada(null);
+                        setRecursoSeleccionado(null);
+                      }
+                    }}
                     className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                       isSelected
                         ? `${temaInfo.color} shadow-lg shadow-current/20 border-0`
@@ -340,126 +330,6 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({ notas, re
               submitLabel={eventoEditando ? "Guardar cambios" : "Crear evento"}
             />
           </Modal>
-        </div>
-        {/* Panel lateral de detalle */}
-        <div className="lg:col-span-2">
-          <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-            {detalleSeleccionado ? (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
-                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('reunión') && <FaUsers />}
-                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('webinar') && <FaRobot />}
-                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                      {detalleSeleccionado.title && detalleSeleccionado.title.toLowerCase().includes('demo') && <FaLaptop />}
-                      {detalleSeleccionado.title && !['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => detalleSeleccionado.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
-                    </div>
-                    <h2 className="text-xl font-bold text-accent">{detalleSeleccionado.title}</h2>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        // Solo permite editar si es un evento real
-                        if (detalleSeleccionado.origen === 'evento' && detalleSeleccionado.id) {
-                          setEventoEditando(detalleSeleccionado);
-                          setmostrarFormularioEvento(true);
-                        } else {
-                          alert('Solo se puede editar eventos desde aquí.');
-                        }
-                      }}
-                      className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
-                      title="Editar evento"
-                    >
-                      <FaEdit /> Editar
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Solo permite eliminar si es un evento real
-                        if (detalleSeleccionado.origen === 'evento' && detalleSeleccionado.id) {
-                          handleDelete(detalleSeleccionado.id);
-                        } else {
-                          alert('Solo se puede eliminar eventos desde aquí.');
-                        }
-                      }}
-                      className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
-                      title="Eliminar evento"
-                    >
-                      <FaTrash /> Eliminar
-                    </button>
-                    <button
-                      onClick={() => setItemSeleccionado(null)}
-                      className="flex items-center gap-1 text-gray-400 hover:text-gray-200 px-2 py-1 rounded border border-gray-400/30 bg-gray-600/10 text-xs font-semibold"
-                      title="Cerrar panel de detalle"
-                    >
-                      Cerrar
-                    </button>
-                  </div>
-                </div>
-                {detalleSeleccionado.description && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-300 mb-2">Descripción</h3>
-                    <p className="text-gray-400">{detalleSeleccionado.description}</p>
-                  </div>
-                )}
-                <div className="flex items-center gap-4 mb-4 text-sm text-gray-400">
-                  <span><span className="font-bold">Fecha:</span> {detalleSeleccionado.startDate && !isNaN(Date.parse(detalleSeleccionado.startDate)) ? new Date(detalleSeleccionado.startDate).toLocaleDateString('es-ES') : ''}{detalleSeleccionado.endDate && !isNaN(Date.parse(detalleSeleccionado.endDate)) && <> - {new Date(detalleSeleccionado.endDate).toLocaleDateString('es-ES')}</>}</span>
-                  {detalleSeleccionado.location && <span><span className="font-bold">Ubicación:</span> 📍 {detalleSeleccionado.location}</span>}
-                </div>
-                {(detalleSeleccionado.validador || detalleSeleccionado.codigoDana || detalleSeleccionado.nombreNotificacion || detalleSeleccionado.modo) && (
-                  <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                    <div className="flex flex-wrap gap-2 text-xs mb-2">
-                      {detalleSeleccionado.modo && (
-                        <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">{detalleSeleccionado.modo}</span>
-                      )}
-                      {detalleSeleccionado.validador && (
-                        <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 {detalleSeleccionado.validador}</span>
-                      )}
-                      {detalleSeleccionado.codigoDana && (
-                        <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {detalleSeleccionado.codigoDana}</span>
-                      )}
-                      {detalleSeleccionado.nombreNotificacion && (
-                        <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 {detalleSeleccionado.nombreNotificacion}</span>
-                      )}
-                      {detalleSeleccionado.diaEnvio && (
-                        <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {detalleSeleccionado.diaEnvio}</span>
-                      )}
-                      {detalleSeleccionado.query && (
-                        <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={detalleSeleccionado.query}>🔎 {detalleSeleccionado.query.length > 20 ? detalleSeleccionado.query.slice(0,20) + '…' : detalleSeleccionado.query}</span>
-                      )}
-                      {detalleSeleccionado.relatedResources && detalleSeleccionado.relatedResources.length > 0 && (
-                        <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 {detalleSeleccionado.relatedResources.length}</span>
-                      )}
-                    </div>
-                    {/* Recursos relacionados */}
-                    {detalleSeleccionado.relatedResources && detalleSeleccionado.relatedResources.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {detalleSeleccionado.relatedResources.slice(0, 3).map((resource: string, idx: number) => (
-                          <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
-                            📄 {resource}
-                          </span>
-                        ))}
-                        {detalleSeleccionado.relatedResources.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
-                            +{detalleSeleccionado.relatedResources.length - 3} más
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                <div className="text-center">
-                  <FaEye className="text-4xl mb-4 mx-auto" />
-                  <p>Selecciona un elemento para ver sus detalles</p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>
