@@ -1,5 +1,8 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+// Importar el formulario de nota de forma dinámica para evitar SSR
+const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
@@ -247,6 +250,8 @@ interface TipoRecurso {
     setCreatingNote(false);
     setUploadingFiles(false);
   };
+
+
   // Notas del día seleccionado
   const selectedDayNotes = notes.filter(n => n.date === selectedDate);
 
@@ -255,9 +260,43 @@ interface TipoRecurso {
   const toggleShowMore = (id: string) => {
     setShowMoreNotes(prev => ({ ...prev, [id]: !prev[id] }));
   };
-  
-  // Estados para eventos recurrentes - ELIMINADOS
-  
+
+  // --- Estado y lógica para edición y eliminación de notas ---
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [showNoteForm, setShowNoteForm] = useState(false);
+
+  // @ts-ignore
+  const handleEditNote = (note) => {
+    setEditingNote(note);
+    setShowNoteForm(true);
+  };
+
+  // @ts-ignore
+  const handleDeleteNote = async (note) => {
+    if (!window.confirm('¿Seguro que deseas eliminar esta nota?')) return;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/daily-notes/${note.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Error al eliminar nota');
+      fetchNotes();
+    } catch (e) {
+      alert('No se pudo eliminar la nota.');
+    }
+  };
+
+  const handleCloseNoteForm = () => {
+    setShowNoteForm(false);
+    setEditingNote(null);
+  };
+
+  const handleNoteFormSaved = () => {
+    handleCloseNoteForm();
+    fetchNotes();
+  };
+
   // Filtros para la vista de lista
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [searchTerm, setSearchTerm] = useState('');
@@ -682,6 +721,20 @@ interface TipoRecurso {
                   </h3>
                   {/* Crear nueva nota */}
                   <div className="mb-4 space-y-2">
+                    {/* Campo de fecha editable para la nota diaria */}
+                    <div className="flex items-center gap-2">
+                      <label className="text-green-300 font-semibold text-sm" htmlFor="note-date-input">Fecha de la nota:</label>
+                      <input
+                        id="note-date-input"
+                        type="date"
+                        className="px-3 py-2 rounded-lg bg-primary border border-green-400/30 text-white text-base focus:ring-2 focus:ring-green-400/40 focus:outline-none"
+                        value={selectedDate || today.toISOString().slice(0,10)}
+                        onChange={e => setSelectedDate(e.target.value)}
+                        disabled={creatingNote}
+                        min="2000-01-01"
+                        max="2100-12-31"
+                      />
+                    </div>
                     <input
                       type="text"
                       className="w-full px-4 py-3 rounded-lg bg-primary border border-green-400/30 text-white text-base"
@@ -779,53 +832,50 @@ interface TipoRecurso {
                   {loadingNotes ? (
                     <div className="text-center text-xs text-gray-400">Cargando notas...</div>
                   ) : selectedDayNotes.length > 0 ? (
-                    <ul className="space-y-4">
+                    <ul className="space-y-3">
                       {selectedDayNotes.map(note => {
                         const temaObj = temas.find((t: any) => t.id === note.tema);
                         const temaClass = temaObj?.color || 'bg-gray-700/40 text-gray-200';
                         const recursosCount = Array.isArray(note.relatedResources) ? note.relatedResources.length : 0;
                         return (
-                          <li key={note.id} className="bg-primary/40 border border-green-400/30 rounded-xl p-4 shadow flex flex-col gap-2">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-green-300 text-base">{note.title || 'Sin título'}</span>
-                                {/* Mostrar número de recursos asociados */}
-                                <span className="ml-2 text-xs font-bold text-accent bg-accent/10 px-2 py-0.5 rounded-full" title="Recursos asociados">
-                                  {recursosCount} archivos
+                          <li key={note.id} className="bg-primary/40 rounded-lg p-3 border border-green-400/30 shadow flex flex-col gap-2">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-400">
+                                  <FaRegStickyNote />
                                 </span>
-                                <span className="text-[11px] text-gray-400 ml-auto">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="font-semibold text-white text-sm">{note.title || 'Sin título'}</span>
                               </div>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
-                                  {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
-                                </span>
-                                {note.tema && (
-                                  <span className={`text-xs px-3 py-1 rounded-full font-semibold border border-white/10 shadow-sm ${temaClass}`}>{note.tema}</span>
-                                )}
+                              <div className="flex items-center gap-2 ml-auto">
+                                <span className="text-[11px] text-gray-400">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                                <button
+                                  className="text-blue-400 hover:text-blue-600 p-1 rounded transition"
+                                  title="Editar nota"
+                                  onClick={() => handleEditNote(note)}
+                                >
+                                  <FaCheckCircle />
+                                </button>
+                                <button
+                                  className="text-red-400 hover:text-red-600 p-1 rounded transition"
+                                  title="Eliminar nota"
+                                  onClick={() => handleDeleteNote(note)}
+                                >
+                                  ×
+                                </button>
                               </div>
                             </div>
-                            {/* Contenido de la nota: recortado, con link a base de conocimientos */}
-                            <div className="text-white text-sm whitespace-pre-line mb-1 max-h-24 overflow-hidden relative">
-                              {note.content.length > 120 ? (
-                                <>
-                                  {note.content.slice(0, 120)}...
-                                </>
-                              ) : (
-                                note.content
+                            {note.content && (
+                              <p className="text-gray-300 text-xs mb-2 line-clamp-2">{note.content.length > 120 ? `${note.content.slice(0, 120)}...` : note.content}</p>
+                            )}
+                            <p className='text-xs text-gray-400 mb-2'>{new Date(note.date).toLocaleDateString('es-ES')}</p>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
+                                {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
+                              </span>
+                              {note.tema && (
+                                <span className={`text-xs px-3 py-1 rounded-full font-semibold border border-white/10 shadow-sm ${temaClass}`}>{note.tema}</span>
                               )}
-                             
-                            </div>
-                            {/* Quitar Ver más y panel expandible. Mejorar link de nota completa */}
-                            <div className="flex justify-end">
-                              <a
-                                href={`/knowledge/${note.id}`}
-                                className="flex items-center gap-1 text-blue-300 underline bg-primary/80 px-2 py-1 rounded w-fit ml-auto hover:bg-primary/60 transition"
-                                title="Ver nota completa en base de conocimientos"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <FaExternalLinkAlt className="inline-block" /> 
-                              </a>
+                              <span className="text-xs text-gray-400 ml-auto">{recursosCount} Archivos</span>
                             </div>
                           </li>
                         );
@@ -949,11 +999,6 @@ interface TipoRecurso {
                             <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
                             <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
                             <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 Día Envío: {event.diaEnvio && event.diaEnvio.trim() !== '' ? event.diaEnvio : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 Query: {event.query && event.query.trim() !== '' ? (event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query) : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 Recursos: {event.relatedResources && event.relatedResources.length > 0 ? event.relatedResources.length : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🗂️ Tipo: {event.eventType && event.eventType.trim() !== '' ? event.eventType : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🔁 Recurrencia: {event.recurrencePattern && event.recurrencePattern.trim() !== '' ? event.recurrencePattern : '-'}</span>
                           </div>
                           {/* Recursos relacionados */}
                           {event.relatedResources && event.relatedResources.length > 0 && (
@@ -991,7 +1036,6 @@ interface TipoRecurso {
                   )}
                 </div>
               </div>
-  
             </div>
           )}
         </div>
@@ -1006,3 +1050,4 @@ interface TipoRecurso {
 };
 
 export default Calendar;
+                        
