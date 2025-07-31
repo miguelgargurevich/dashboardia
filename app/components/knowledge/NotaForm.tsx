@@ -78,83 +78,96 @@ const NotaForm: React.FC<NotaFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Título</label>
-        <input
-          type="text"
-          className="input-std w-full"
-          value={nombre}
-          onChange={e => setNombre(e.target.value)}
-          placeholder="Título de la nota"
-          required
-        />
+    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-secondary/90 to-primary/90 rounded-2xl shadow-2xl border border-accent/30 p-6 max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">
+      <div className="flex items-center gap-2 mb-2">
+        <FaFileAlt className="text-accent text-2xl" />
+        <h2 className="text-xl font-bold text-accent">{initialValues ? 'Editar Nota' : 'Nueva Nota'}</h2>
       </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Contenido</label>
-        <textarea
-          className="input-std w-full min-h-[120px]"
-          value={contenido}
-          onChange={e => setContenido(e.target.value)}
-          placeholder="Contenido de la nota"
-          rows={6}
-          required
-        />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Tipo de nota</label>
-          <select
-            className="input-std w-full"
-            value={tipo}
-            onChange={e => setTipo(e.target.value)}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 flex flex-col gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              className="input-std w-full pl-10"
+              value={nombre}
+              onChange={e => setNombre(e.target.value)}
+              placeholder="Título de la nota"
+              required
+            />
+            <FaFileAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+          </div>
+          <textarea
+            className="input-std w-full min-h-[120px]"
+            value={contenido}
+            onChange={e => setContenido(e.target.value)}
+            placeholder="Contenido de la nota"
+            rows={6}
             required
-          >
-            {tiposNotas.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
+          />
+        </div>
+        <div className="flex-1 flex flex-col gap-3">
+          <div className="relative">
+            <select
+              className="input-std w-full pl-10"
+              value={tipo}
+              onChange={e => setTipo(e.target.value)}
+              required
+            >
+              {tiposNotas.map(t => (
+                <option key={t.id} value={t.id}>{t.nombre}</option>
+              ))}
+            </select>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📝</span>
+          </div>
+          <div className="relative">
+            <select
+              className="input-std w-full pl-10"
+              value={tema}
+              onChange={e => setTema(e.target.value)}
+              required
+            >
+              {temas.map(t => (
+                <option key={t.id} value={t.id}>{t.nombre}</option>
+              ))}
+            </select>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🏷️</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 flex flex-col gap-2">
+          <label className="block text-sm font-medium mb-1">Etiquetas (separadas por coma)</label>
+          <div className="relative">
+            <input
+              type="text"
+              className="input-std w-full pl-10"
+              value={etiquetas.join(", ")}
+              onChange={handleEtiquetasChange}
+              placeholder="Ej: importante, tarea, urgente"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">#</span>
+          </div>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {etiquetasDisponibles.map((et, idx) => (
+              <span key={idx} className="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs">{et}</span>
             ))}
-          </select>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Tema</label>
-          <select
-            className="input-std w-full"
-            value={tema}
-            onChange={e => setTema(e.target.value)}
-            required
-          >
-            {temas.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Etiquetas (separadas por coma)</label>
-        <input
-          type="text"
-          className="input-std w-full"
-          value={etiquetas.join(", ")}
-          onChange={handleEtiquetasChange}
-          placeholder="Ej: importante, tarea, urgente"
-        />
-        <div className="flex flex-wrap gap-1 mt-1">
-          {etiquetasDisponibles.map((et, idx) => (
-            <span key={idx} className="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs">{et}</span>
-          ))}
+        <div className="flex-1 flex flex-col gap-2">
+          <label className="block text-sm font-medium mb-1">Descripción (opcional)</label>
+          <div className="relative">
+            <input
+              type="text"
+              className="input-std w-full pl-10"
+              value={descripcion}
+              onChange={e => setDescripcion(e.target.value)}
+              placeholder="Descripción breve"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📝</span>
+          </div>
         </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">Descripción (opcional)</label>
-        <input
-          type="text"
-          className="input-std w-full"
-          value={descripcion}
-          onChange={e => setDescripcion(e.target.value)}
-          placeholder="Descripción breve"
-        />
-      </div>
-      <div className="flex gap-2 justify-end">
+      <div className="flex gap-2 justify-end mt-4">
         {onCancel && (
           <button type="button" className="px-4 py-2 rounded-lg border border-gray-500 bg-transparent text-gray-300 hover:bg-gray-700 transition" onClick={onCancel} disabled={loading}>
             Cancelar

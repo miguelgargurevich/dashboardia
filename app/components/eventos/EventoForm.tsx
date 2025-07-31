@@ -126,158 +126,167 @@ const EventoForm: React.FC<EventoFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Título *</label>
-        <input
-          type="text"
-          name="title"
-          value={form.title}
-          onChange={handleChange}
-          className="w-full input-std"
-          required
-        />
+    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-secondary/90 to-primary/90 rounded-2xl shadow-2xl border border-accent/30 p-6 max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">
+      <div className="flex items-center gap-2 mb-2">
+        <FaCalendarAlt className="text-accent text-2xl" />
+        <h2 className="text-xl font-bold text-accent">{initialValues ? 'Editar Evento' : 'Nuevo Evento'}</h2>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Descripción</label>
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          className="w-full bg-primary/80 border border-accent/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-          rows={2}
-        />
-      </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Fecha inicio *</label>
-          <input
-            type="datetime-local"
-            name="startDate"
-            value={form.startDate}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 flex flex-col gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              name="title"
+              className="input-std w-full pl-10"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="Título del evento"
+              required
+            />
+            <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+          </div>
+          <textarea
+            name="description"
+            className="input-std w-full min-h-[80px]"
+            value={form.description}
             onChange={handleChange}
-            className="w-full input-std"
-            required
+            placeholder="Descripción del evento"
+            rows={4}
           />
         </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Fecha fin</label>
-          <input
-            type="datetime-local"
-            name="endDate"
-            value={form.endDate}
-            onChange={handleChange}
-            className="w-full input-std"
-          />
+        <div className="flex-1 flex flex-col gap-3">
+          <div className="relative">
+            <input
+              type="datetime-local"
+              name="startDate"
+              className="input-std w-full pl-10"
+              value={form.startDate}
+              onChange={handleChange}
+              required
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📅</span>
+          </div>
+          <div className="relative">
+            <input
+              type="datetime-local"
+              name="endDate"
+              className="input-std w-full pl-10"
+              value={form.endDate}
+              onChange={handleChange}
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">⏰</span>
+          </div>
         </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Ubicación</label>
-        <input
-          type="text"
-          name="location"
-          value={form.location}
-          onChange={handleChange}
-          className="w-full input-std"
-        />
-      </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Modo</label>
-          <input
-            type="text"
-            name="modo"
-            value={form.modo}
-            onChange={handleChange}
-            className="w-full input-std"
-          />
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              name="location"
+              className="input-std w-full pl-10"
+              value={form.location}
+              onChange={handleChange}
+              placeholder="Ubicación"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📍</span>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              name="modo"
+              className="input-std w-full pl-10"
+              value={form.modo}
+              onChange={handleChange}
+              placeholder="Modo (opcional)"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🎯</span>
+          </div>
         </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Validador</label>
-          <input
-            type="text"
-            name="validador"
-            value={form.validador}
-            onChange={handleChange}
-            className="w-full input-std"
-          />
-        </div>
-      </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Código Dana</label>
-          <input
-            type="text"
-            name="codigoDana"
-            value={form.codigoDana}
-            onChange={handleChange}
-            className="w-full input-std"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Notificación</label>
-          <input
-            type="text"
-            name="nombreNotificacion"
-            value={form.nombreNotificacion}
-            onChange={handleChange}
-            className="w-full input-std"
-          />
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              name="validador"
+              className="input-std w-full pl-10"
+              value={form.validador}
+              onChange={handleChange}
+              placeholder="Validador (opcional)"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">✅</span>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              name="codigoDana"
+              className="input-std w-full pl-10"
+              value={form.codigoDana}
+              onChange={handleChange}
+              placeholder="Código Dana (opcional)"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔢</span>
+          </div>
         </div>
       </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de evento</label>
-          <select
-            name="eventType"
-            value={form.eventType}
-            onChange={handleChange}
-            className="w-full input-std"
-          >
-            <option value="">Seleccionar</option>
-            <option value="incidente">Incidente</option>
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="reunion">Reunión</option>
-            <option value="capacitacion">Capacitación</option>
-            <option value="otro">Otro</option>
-          </select>
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="relative">
+            <select
+              name="eventType"
+              className="input-std w-full pl-10"
+              value={form.eventType}
+              onChange={handleChange}
+            >
+              <option value="">Tipo de evento</option>
+              <option value="incidente">Incidente</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="reunion">Reunión</option>
+              <option value="capacitacion">Capacitación</option>
+              <option value="otro">Otro</option>
+            </select>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🏷️</span>
+          </div>
+          <div className="relative">
+            <select
+              name="recurrencePattern"
+              className="input-std w-full pl-10"
+              value={form.recurrencePattern}
+              onChange={handleChange}
+            >
+              <option value="">Sin recurrencia</option>
+              <option value="diario">Diario</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensual">Mensual</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="anual">Anual</option>
+            </select>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔁</span>
+          </div>
         </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Recurrencia</label>
-          <select
-            name="recurrencePattern"
-            value={form.recurrencePattern}
-            onChange={handleChange}
-            className="w-full input-std"
-          >
-            <option value="">Sin recurrencia</option>
-            <option value="diario">Diario</option>
-            <option value="semanal">Semanal</option>
-            <option value="mensual">Mensual</option>
-            <option value="trimestral">Trimestral</option>
-            <option value="anual">Anual</option>
-          </select>
+        <div className="flex-1 flex flex-col gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              name="diaEnvio"
+              className="input-std w-full pl-10"
+              value={form.diaEnvio}
+              onChange={handleChange}
+              placeholder="Día de Envío (ej: 6 DE CADA MES)"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📆</span>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              name="query"
+              className="input-std w-full pl-10"
+              value={form.query}
+              onChange={handleChange}
+              placeholder="Query (opcional)"
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔎</span>
+          </div>
         </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Día de Envío (ej: 6 DE CADA MES)</label>
-        <input
-          type="text"
-          name="diaEnvio"
-          value={form.diaEnvio}
-          onChange={handleChange}
-          className="w-full input-std"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">Query (opcional)</label>
-        <input
-          type="text"
-          name="query"
-          value={form.query}
-          onChange={handleChange}
-          className="w-full input-std"
-        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Recursos Relacionados</label>
@@ -304,14 +313,14 @@ const EventoForm: React.FC<EventoFormProps> = ({
           token={typeof window !== 'undefined' ? (window.localStorage.getItem('token') || undefined) : undefined}
         />
       </div>
-      <div className="flex gap-2 justify-end">
+      <div className="flex gap-2 justify-end mt-4">
         {onCancel && (
           <button type="button" className="px-4 py-2 rounded-lg border border-gray-500 bg-transparent text-gray-300 hover:bg-gray-700 transition" onClick={onCancel} disabled={loading}>
             Cancelar
           </button>
         )}
         <button type="submit" className="px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/80 transition flex items-center gap-2" disabled={loading}>
-          <span className="mr-2"><FaCalendarAlt /></span> {submitLabel}
+          <FaCalendarAlt className="mr-2" /> {submitLabel}
         </button>
       </div>
     </form>
