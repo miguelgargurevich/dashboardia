@@ -182,7 +182,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
           ) : (
             <div className="flex flex-col gap-3 overflow-y-auto">
               {notasState.map((nota, index) => {
-                const tipoNota = tiposNotas.find(t => t.id === nota.tipo) || tiposNotas[0];
+                const tipoNota = tiposNotas.find((t: TipoNota) => t.id === nota.tipo) || tiposNotas[0];
                 const color = tipoNota.color;
                 const nombreTipo = tipoNota.nombre;
                 const isSelected = notaSeleccionada?.id === nota.id;
@@ -190,141 +190,77 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                   <button
                     key={nota.id || index}
                     onClick={() => setNotaSeleccionada(nota)}
-                    className={`w-full text-left p-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] border ${
-                      isSelected
-                        ? `${color} shadow-lg shadow-current/20`
-                        : `bg-gradient-to-r from-primary to-secondary/50 hover:${color.split(' ')[0]?.replace('bg-', 'from-').replace('/20', '/10') || 'from-accent/10'} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
-                    }`}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 cursor-pointer
+                      ${isSelected
+                        ? `${color} shadow-lg shadow-current/20 border-accent bg-accent/20`
+                        : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'}
+                    `}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        isSelected
-                          ? color.split(' ')[0]?.replace('/20', '/30') || 'bg-accent/30'
-                          : color.split(' ')[0] || 'bg-accent/20'
-                      }`}>
-                        <FaFileAlt className={color.split(' ')[1] || 'text-accent'} />
+                    <div className={`flex-shrink-0 p-3 rounded-lg flex items-center justify-center ${isSelected ? color.split(' ')[0]?.replace('/20', '/30') || 'bg-accent/30' : color.split(' ')[0] || 'bg-accent/20'}`}>
+                      {/* Icono de nota siempre */}
+                      <FaFileAlt className={`text-2xl ${color.split(' ')[1] || 'text-accent'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-white text-base truncate flex-1">{nota.nombre}</h3>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
-                        <p className={`text-xs mb-1 font-medium ${color.split(' ')[1] || 'text-accent'}`}>{nombreTipo}</p>
-                        {nota.etiquetas && nota.etiquetas.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-1">
-                            {nota.etiquetas.slice(0, 3).map((etiqueta, etIndex) => (
-                              <span
-                                key={etIndex}
-                                className={`px-1.5 py-0.5 rounded text-xs ${color.split(' ')[0] || 'bg-accent/20'} ${color.split(' ')[1] || 'text-accent'}`}
-                              >
-                                {etiqueta}
-                              </span>
-                            ))}
-                            {nota.etiquetas.length > 3 && (
-                              <span className="text-xs text-gray-400">+{nota.etiquetas.length - 3}</span>
-                            )}
-                          </div>
-                        )}
-                        <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                          {nota.contenido.slice(0, 100)}...
-                        </p>
-                      </div>
+                      <div className="text-xs text-gray-400 truncate">{nombreTipo}</div>
                     </div>
                   </button>
                 );
               })}
-
             </div>
           )}
         </div>
       </div>
-      {/* Panel de detalles */}
-      <div className="lg:col-span-2">
-        <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
-          {notaSeleccionada ? (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-accent">{notaSeleccionada.nombre}</h2>
-                  <p className="text-sm text-gray-400">
-                    {temas.find(t => t.id === notaSeleccionada.tema)?.nombre}
-                  </p>
-                  {notaSeleccionada.date && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      <span className="font-semibold">Fecha:</span> {new Date(notaSeleccionada.date).toLocaleDateString('es-ES')}
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEditarNota(notaSeleccionada)}
-                    className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition-colors"
-                  >
-                    <FaEdit className="text-sm" />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => descargarNota(notaSeleccionada)}
-                    className="flex items-center gap-2 px-3 py-1 bg-accent/20 text-accent rounded hover:bg-accent/30 transition-colors"
-                  >
-                    <FaFileAlt className="text-sm" />
-                    Descargar
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (confirm('¿Estás seguro de eliminar esta nota?')) {
-                        try {
-                          const res = await fetch(`/api/daily-notes/${notaSeleccionada.id}`, {
-                            method: 'DELETE',
-                            headers: {
-                              'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}`
-                            }
-                          });
-                          if (!res.ok) throw new Error('Error al eliminar la nota');
-                          setNotaEditando(null);
-                          setShowNotaForm(false);
-                          setModoForm('crear');
-                          setNotaSeleccionada(null);
-                          await fetchNotes();
-                        } catch (err) {
-                          alert('Ocurrió un error al eliminar la nota.');
-                        }
-                      }
-                    }}
-                    className="flex items-center gap-2 px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
-                  >
-                    <FaEye className="text-sm" />
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-              <div className="prose prose-invert max-w-none">
-                {notaSeleccionada.contenido}
-              </div>
-              {/* Formulario de edición/creación de nota reutilizable */}
-              {showNotaForm && (
-                <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-                  <div className="bg-secondary rounded-lg p-6 w-full max-w-lg shadow-lg relative">
-                    <NotaForm
-                      initialValues={modoForm === 'editar' ? notaEditando || undefined : undefined}
-                      temas={temas}
-                      tiposNotas={tiposNotas}
-                      etiquetasDisponibles={etiquetasDisponibles}
-                      onSubmit={handleGuardarNota}
-                      onCancel={handleCancelar}
-                      submitLabel={modoForm === 'editar' ? 'Guardar cambios' : 'Crear nota'}
-                    />
-                  </div>
-                </div>
+      {notaSeleccionada && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60">
+          <div className="bg-primary rounded-xl shadow-2xl p-6 w-full max-w-2xl relative border border-accent/30">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-accent text-lg"
+              onClick={() => setNotaSeleccionada(null)}
+              title="Cerrar"
+            >
+              ×
+            </button>
+            <div className="flex items-center gap-3 mb-2">
+              <FaFileAlt className="text-accent text-xl" />
+              <h2 className="text-lg font-bold text-white flex-1 truncate">{notaSeleccionada.nombre}</h2>
+              <button
+                className="ml-2 px-2 py-1 rounded bg-accent/10 text-accent text-xs hover:bg-accent/20"
+                onClick={() => descargarNota(notaSeleccionada)}
+                title="Descargar nota"
+              >
+                Descargar
+              </button>
+              {onEditarNota && (
+                <button
+                  className="ml-2 px-2 py-1 rounded bg-accent/10 text-accent text-xs hover:bg-accent/20"
+                  onClick={() => onEditarNota(notaSeleccionada)}
+                  title="Editar nota"
+                >
+                  Editar
+                </button>
               )}
             </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
-              <div className="text-center">
-                <FaEye className="text-4xl mb-4 mx-auto" />
-                <p>Selecciona un documento para visualizar su contenido</p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-sm text-gray-400">
+                  {temas.find((t: Tema) => t.id === notaSeleccionada.tema)?.nombre}
+                </p>
+                {notaSeleccionada.date && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    <span className="font-semibold">Fecha:</span> {new Date(notaSeleccionada.date).toLocaleDateString('es-ES')}
+                  </p>
+                )}
               </div>
             </div>
-          )}
+            <div className="prose prose-invert max-w-none">
+              {notaSeleccionada.contenido}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
