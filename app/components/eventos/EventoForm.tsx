@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import RecursosSelectorModal from "./RecursosSelectorModal";
-import { FaCalendarAlt } from "react-icons/fa";
+import {FaPaperclip, FaCalendarAlt, FaRegCalendarAlt, FaRegClock, FaMapMarkerAlt, FaBullseye, FaCheckCircle, FaHashtag, FaTag, FaListOl, FaSyncAlt, FaSearch, FaClipboardList } from "react-icons/fa";
 
 export interface EventoFormValues {
   title: string;
@@ -145,14 +145,17 @@ const EventoForm: React.FC<EventoFormProps> = ({
             />
             <FaCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
-          <textarea
-            name="description"
-            className="input-std w-full min-h-[80px]"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Descripción del evento"
-            rows={4}
-          />
+          <div className="relative">
+            <textarea
+              name="description"
+              className="input-std w-full min-h-[80px] pl-10"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Descripción del evento"
+              rows={4}
+            />
+            <FaClipboardList className="absolute left-3 top-4 text-accent" />
+          </div>
         </div>
         <div className="flex-1 flex flex-col gap-3">
           <div className="relative">
@@ -164,7 +167,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               required
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📅</span>
+            <FaRegCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <input
@@ -174,7 +177,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               value={form.endDate}
               onChange={handleChange}
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">⏰</span>
+            <FaRegClock className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>
@@ -189,7 +192,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               placeholder="Ubicación"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📍</span>
+            <FaMapMarkerAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <input
@@ -200,7 +203,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               placeholder="Modo (opcional)"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🎯</span>
+            <FaBullseye className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
         <div className="flex-1 flex flex-col gap-2">
@@ -213,7 +216,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               placeholder="Validador (opcional)"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">✅</span>
+            <FaCheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <input
@@ -224,7 +227,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               placeholder="Código Dana (opcional)"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔢</span>
+            <FaListOl className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>
@@ -233,7 +236,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
           <div className="relative">
             <select
               name="eventType"
-              className="input-std w-full pl-10"
+              className="input-std w-full pl-10 appearance-none"
               value={form.eventType}
               onChange={handleChange}
             >
@@ -244,12 +247,12 @@ const EventoForm: React.FC<EventoFormProps> = ({
               <option value="capacitacion">Capacitación</option>
               <option value="otro">Otro</option>
             </select>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🏷️</span>
+            <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <select
               name="recurrencePattern"
-              className="input-std w-full pl-10"
+              className="input-std w-full pl-10 appearance-none"
               value={form.recurrencePattern}
               onChange={handleChange}
             >
@@ -260,7 +263,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               <option value="trimestral">Trimestral</option>
               <option value="anual">Anual</option>
             </select>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔁</span>
+            <FaSyncAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
         <div className="flex-1 flex flex-col gap-2">
@@ -273,7 +276,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               placeholder="Día de Envío (ej: 6 DE CADA MES)"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📆</span>
+            <FaRegCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <input
@@ -284,7 +287,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
               onChange={handleChange}
               placeholder="Query (opcional)"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔎</span>
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>
@@ -296,7 +299,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
           ) : (
             recursosSeleccionados.map(r => (
               <span key={r.id} className="px-2 py-1 bg-gray-700/40 text-gray-200 text-xs rounded flex items-center gap-1">
-                📄 {r.titulo}
+                <FaPaperclip className="inline-block mr-1 text-accent" />{r.titulo}
                 {r.tipo && <span className="ml-1 text-gray-400">({r.tipo})</span>}
               </span>
             ))

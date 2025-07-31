@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaPaperclip } from "react-icons/fa";
+import { FaPaperclip, FaTag, FaBook, FaHashtag, FaLink, FaStickyNote } from "react-icons/fa";
 
 interface RecursoFormValues {
   titulo: string;
@@ -104,13 +104,13 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
               onChange={e => setDescripcion(e.target.value)}
               placeholder="Descripción breve"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📝</span>
+            <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
         <div className="flex-1 flex flex-col gap-3">
           <div className="relative">
             <select
-              className="input-std w-full pl-10"
+              className="input-std w-full pl-10 appearance-none"
               value={tipo}
               onChange={e => setTipo(e.target.value)}
               required
@@ -119,11 +119,11 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
                 <option key={t.id} value={t.id}>{t.nombre}</option>
               ))}
             </select>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🏷️</span>
+            <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <select
-              className="input-std w-full pl-10"
+              className="input-std w-full pl-10 appearance-none"
               value={tema}
               onChange={e => setTema(e.target.value)}
               required
@@ -132,7 +132,7 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
                 <option key={t.id} value={t.id}>{t.nombre}</option>
               ))}
             </select>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📚</span>
+            <FaBook className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>
@@ -154,7 +154,7 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
               onChange={e => setUrl(e.target.value)}
               placeholder="https://..."
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🔗</span>
+            <FaLink className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>
@@ -169,7 +169,7 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
               onChange={handleEtiquetasChange}
               placeholder="Ej: importante, referencia, externo"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">#</span>
+            <FaHashtag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {etiquetasDisponibles.map((et, idx) => (
@@ -185,7 +185,7 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
           </button>
         )}
         <button type="submit" className="px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/80 transition flex items-center gap-2" disabled={loading}>
-          <FaPaperclip className="mr-2" /> {submitLabel}
+            <FaPaperclip className="mr-2" /> {submitLabel}
         </button>
       </div>
     </form>

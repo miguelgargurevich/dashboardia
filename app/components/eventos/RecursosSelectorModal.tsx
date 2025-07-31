@@ -98,31 +98,39 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-fade-in">
-      <div className="bg-gradient-to-br from-secondary/90 to-primary/90 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-accent/30 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in">
+      <div className="bg-gradient-to-br from-secondary/95 to-primary/95 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col border border-accent/40 overflow-hidden">
         {/* Header sticky */}
-        <div className="sticky top-0 z-10 bg-secondary/95 border-b border-accent/20 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-accent flex items-center gap-2"><FaFileAlt className="text-accent" /> Seleccionar Recursos</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-700/30 text-gray-400 hover:text-white transition" aria-label="Cerrar"><FaTimes /></button>
+        <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
+          <div>
+            <h3 className="text-xl font-bold text-accent flex items-center gap-2"><FaFileAlt className="text-accent" />Seleccionar Recursos</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-600/20 text-2xl font-bold"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
         </div>
-        <div className="p-6 flex flex-col gap-4 overflow-y-auto">
-          <div className="flex flex-col md:flex-row gap-2 md:items-center">
+        <div className="p-8 flex flex-col gap-6 overflow-y-auto">
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <div className="relative flex-1">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-accent text-lg" />
               <input
                 type="text"
-                placeholder="Buscar por nombre..."
+                placeholder="Buscar recurso por nombre..."
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}
-                className="input-std pl-10"
+                className="input-std pl-10 py-3 text-base bg-primary/80 border-accent/30 focus:ring-accent/40"
               />
             </div>
-            <div className="relative">
-              <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+            <div className="relative w-56">
+              <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent text-lg" />
               <select
                 value={tipoFiltro}
                 onChange={e => setTipoFiltro(e.target.value)}
-                className="input-std pl-10"
+                className="input-std pl-10 py-3 text-base bg-primary/80 border-accent/30 focus:ring-accent/40 appearance-none"
               >
                 <option value="">Todos los tipos</option>
                 {tipos.map(tipo => (
@@ -130,87 +138,37 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
                 ))}
               </select>
             </div>
-            <button
-              type="button"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition shadow ${agregando ? 'bg-gray-700 text-gray-200' : 'bg-accent text-primary hover:bg-accent/80'}`}
-              onClick={() => setAgregando(a => !a)}
-            >
-              <FaPlus /> {agregando ? "Cancelar" : "Agregar recurso"}
-            </button>
           </div>
-          {agregando && (
-            <div className="bg-primary/40 rounded-xl p-4 flex flex-col gap-3 border border-accent/10 shadow-inner animate-fade-in">
-              <div className="flex gap-2 items-center">
-                <FaFileAlt className="text-accent" />
-                <input
-                  type="text"
-                  placeholder="Título del recurso"
-                  value={nuevoTitulo}
-                  onChange={e => setNuevoTitulo(e.target.value)}
-                  className="input-std flex-1"
-                  required
-                />
-              </div>
-              <div className="flex gap-2 items-center">
-                <FaTag className="text-accent" />
-                <input
-                  type="text"
-                  placeholder="Tipo (opcional)"
-                  value={nuevoTipo}
-                  onChange={e => setNuevoTipo(e.target.value)}
-                  className="input-std flex-1"
-                />
-              </div>
-              <div className="flex gap-2 items-center">
-                <FaAlignLeft className="text-accent" />
-                <textarea
-                  placeholder="Descripción (opcional)"
-                  value={nuevaDescripcion}
-                  onChange={e => setNuevaDescripcion(e.target.value)}
-                  className="input-std flex-1"
-                  rows={2}
-                />
-              </div>
-              <div className="flex gap-2 justify-end mt-2">
-                <button type="button" className="px-4 py-2 rounded-lg bg-gray-600 text-gray-200 hover:bg-gray-700 transition" onClick={() => setAgregando(false)}>
-                  Cancelar
-                </button>
-                <button type="button" className="px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/80 transition flex items-center gap-2" disabled={agregandoLoading} onClick={handleAgregarRecurso}>
-                  <FaCheck /> Guardar
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             {recursosFiltrados.length === 0 ? (
-              <div className="text-gray-400 col-span-2">No hay recursos disponibles.</div>
+              <div className="text-gray-400 col-span-2 text-center py-8 text-lg">No hay recursos disponibles.</div>
             ) : (
               recursosFiltrados.map(recurso => (
-                <label key={recurso.id} className={`flex items-center gap-3 p-4 rounded-xl border border-accent/10 bg-secondary/80 shadow hover:shadow-lg cursor-pointer transition-all ${seleccionados.includes(recurso.id) ? 'ring-2 ring-accent/60' : ''}`}>
+                <label key={recurso.id} className={`group flex items-start gap-4 p-5 rounded-2xl border border-accent/10 bg-secondary/90 shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-150 ${seleccionados.includes(recurso.id) ? 'ring-2 ring-accent/80 border-accent/40 bg-accent/10' : 'hover:border-accent/40 hover:bg-accent/5'}`}>
                   <input
                     type="checkbox"
                     checked={seleccionados.includes(recurso.id)}
                     onChange={() => toggleSeleccion(recurso.id)}
-                    className="accent-accent w-5 h-5"
+                    className="accent-accent w-5 h-5 mt-1"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white truncate">{recurso.titulo}</span>
-                      {recurso.tipo && <span className="text-xs text-accent bg-accent/10 rounded px-2 py-0.5 ml-2">{recurso.tipo}</span>}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-white truncate text-base group-hover:text-accent transition-colors">{recurso.titulo}</span>
+                      {recurso.tipo && <span className="text-xs text-accent bg-accent/10 rounded-full px-3 py-0.5 ml-2 font-semibold uppercase tracking-wide">{recurso.tipo}</span>}
                     </div>
-                    {recurso.descripcion && <div className="text-xs text-gray-400 mt-1 truncate">{recurso.descripcion}</div>}
+                    {recurso.descripcion && <div className="text-xs text-gray-300 mt-1 truncate italic">{recurso.descripcion}</div>}
                   </div>
-                  {seleccionados.includes(recurso.id) && <FaCheck className="text-accent text-lg ml-2" />}
+                  {seleccionados.includes(recurso.id) && <FaCheck className="text-accent text-xl ml-2 animate-bounce" />}
                 </label>
               ))
             )}
           </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <button className="px-4 py-2 rounded-lg border border-gray-500 bg-transparent text-gray-300 hover:bg-gray-700 transition" onClick={onClose}>
+          <div className="flex justify-end gap-3 mt-4">
+            <button className="px-6 py-3 rounded-xl border border-gray-500 bg-transparent text-gray-300 hover:bg-gray-700/40 hover:text-white font-semibold text-base transition" onClick={onClose}>
               Cancelar
             </button>
-            <button className="px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/80 transition flex items-center gap-2" onClick={handleConfirmar}>
-              <FaCheck /> Confirmar selección
+            <button className="px-6 py-3 rounded-xl bg-accent text-primary font-bold hover:bg-accent/90 transition flex items-center gap-3 text-base shadow-lg" onClick={handleConfirmar}>
+              <FaCheck className="text-lg" /> Confirmar selección
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaFileAlt } from "react-icons/fa";
+import { FaFileAlt, FaStickyNote, FaTag, FaHashtag, FaRegStickyNote } from "react-icons/fa";
 
 interface NotaFormValues {
   nombre: string;
@@ -55,6 +55,11 @@ const NotaForm: React.FC<NotaFormProps> = ({
   const [tema, setTema] = useState(initialValues?.tema || (temas[0]?.id || ""));
   const [etiquetas, setEtiquetas] = useState<string[]>(initialValues?.etiquetas || []);
   const [descripcion, setDescripcion] = useState(initialValues?.descripcion || "");
+  const getToday = () => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10);
+  };
+  const [date, setDate] = useState(initialValues?.date || getToday());
 
   useEffect(() => {
     if (initialValues) {
@@ -64,13 +69,15 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setTema(initialValues.tema || (temas[0]?.id || ""));
       setEtiquetas(initialValues.etiquetas || []);
       setDescripcion(initialValues.descripcion || "");
+      setDate(initialValues.date || getToday());
     }
     // eslint-disable-next-line
   }, [JSON.stringify(initialValues)]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ nombre, contenido, tipo, etiquetas, descripcion, tema });
+    const values = { nombre, contenido, tipo, etiquetas, descripcion, tema, date };
+    await onSubmit(values);
   };
 
   const handleEtiquetasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,7 +87,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="bg-gradient-to-br from-secondary/90 to-primary/90 rounded-2xl shadow-2xl border border-accent/30 p-6 max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">
       <div className="flex items-center gap-2 mb-2">
-        <FaFileAlt className="text-accent text-2xl" />
+        <FaRegStickyNote className="text-accent text-2xl" />
         <h2 className="text-xl font-bold text-accent">{initialValues ? 'Editar Nota' : 'Nueva Nota'}</h2>
       </div>
       <div className="flex flex-col md:flex-row gap-4">
@@ -94,21 +101,35 @@ const NotaForm: React.FC<NotaFormProps> = ({
               placeholder="Título de la nota"
               required
             />
-            <FaFileAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+            <FaRegStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
-          <textarea
-            className="input-std w-full min-h-[120px]"
-            value={contenido}
-            onChange={e => setContenido(e.target.value)}
-            placeholder="Contenido de la nota"
-            rows={6}
-            required
-          />
+                <div className="relative">
+                  <input
+                    type="date"
+                    className="input-std w-full pl-10"
+                    value={date}
+                    onChange={e => setDate(e.target.value)}
+                    placeholder="Fecha de la nota"
+                    required
+                  />
+                  <FaRegStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+                </div>
+          <div className="relative">
+            <textarea
+              className="input-std w-full min-h-[120px] pl-10"
+              value={contenido}
+              onChange={e => setContenido(e.target.value)}
+              placeholder="Contenido de la nota"
+              rows={6}
+              required
+            />
+            <FaStickyNote className="absolute left-3 top-4 text-accent" />
+          </div>
         </div>
         <div className="flex-1 flex flex-col gap-3">
           <div className="relative">
             <select
-              className="input-std w-full pl-10"
+              className="input-std w-full pl-10 appearance-none"
               value={tipo}
               onChange={e => setTipo(e.target.value)}
               required
@@ -117,11 +138,11 @@ const NotaForm: React.FC<NotaFormProps> = ({
                 <option key={t.id} value={t.id}>{t.nombre}</option>
               ))}
             </select>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📝</span>
+            <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="relative">
             <select
-              className="input-std w-full pl-10"
+              className="input-std w-full pl-10 appearance-none"
               value={tema}
               onChange={e => setTema(e.target.value)}
               required
@@ -130,7 +151,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
                 <option key={t.id} value={t.id}>{t.nombre}</option>
               ))}
             </select>
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">🏷️</span>
+            <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>
@@ -145,7 +166,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
               onChange={handleEtiquetasChange}
               placeholder="Ej: importante, tarea, urgente"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">#</span>
+            <FaHashtag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {etiquetasDisponibles.map((et, idx) => (
@@ -163,7 +184,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
               onChange={e => setDescripcion(e.target.value)}
               placeholder="Descripción breve"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent">📝</span>
+            <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>

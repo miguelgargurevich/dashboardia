@@ -1,17 +1,5 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-// Tipos para NotaForm
-interface NotaFormValues {
-  nombre: string;
-  contenido: string;
-  tipo: string;
-  etiquetas?: string[];
-  descripcion?: string;
-  tema: string;
-  priority?: string;
-  date?: string;
-}
-
 import dynamic from 'next/dynamic';
 // Importar el formulario de nota de forma dinámica para evitar SSR
 const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
@@ -68,7 +56,17 @@ interface Event {
   relatedResources?: string[];
 }
 
-
+// Tipos para NotaForm
+interface NotaFormValues {
+  nombre: string;
+  contenido: string;
+  tipo: string;
+  etiquetas?: string[];
+  descripcion?: string;
+  tema: string;
+  priority?: string;
+  date?: string;
+}
 
 const Calendar: React.FC = () => {
   // Estado para tipos de nota y etiquetas disponibles
@@ -287,11 +285,16 @@ interface TipoRecurso {
   // --- Estado y lógica para edición y eliminación de notas ---
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [showNoteForm, setShowNoteForm] = useState(false);
+  const [showNewNoteForm, setShowNewNoteForm] = useState(false);
 
   // @ts-ignore
   const handleEditNote = (note) => {
     setEditingNote(note);
     setShowNoteForm(true);
+  };
+
+  const handleNewNote = () => {
+    setShowNewNoteForm(true);
   };
 
   // @ts-ignore
@@ -309,6 +312,11 @@ interface TipoRecurso {
       alert('No se pudo eliminar la nota.');
     }
   };
+  // --- Render botón para nueva nota ---
+  // Puedes ubicar este botón donde prefieras en el panel de notas del día
+  // Ejemplo: arriba de la lista de notas
+  // --- Modal para nueva nota ---
+  // Se renderiza al final del return principal
 
   const handleCloseNoteForm = () => {
     setShowNoteForm(false);
@@ -1066,6 +1074,54 @@ interface TipoRecurso {
        
       </div>
       
+
+      {/* Botón para nueva nota */}
+      <div className="flex justify-end mb-2">
+        <button
+          className="px-4 py-2 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition flex items-center gap-2 shadow"
+          onClick={e => { e.preventDefault(); handleNewNote(); }}
+        >
+          <FaPlus /> Nueva Nota
+        </button>
+      </div>
+
+      {/* Modal para nueva nota */}
+      {showNewNoteForm && (
+        <Modal open={showNewNoteForm} onClose={() => setShowNewNoteForm(false)} title="Nueva Nota" maxWidth="max-w-2xl">
+          <NotaForm
+            temas={temas}
+            tiposNotas={tiposNotas}
+            etiquetasDisponibles={Array.from(new Set(notes.flatMap(n => n.tags || [])))}
+            onSubmit={async (values) => {
+              // Crear nota en backend
+              const token = getToken();
+              const res = await fetch('/api/daily-notes', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  title: values.nombre,
+                  content: values.contenido,
+                  date: values.date,
+                  tags: values.etiquetas,
+                  tema: values.tema
+                })
+              });
+              if (!res.ok) {
+                alert('Error al crear nota');
+                return;
+              }
+              setShowNewNoteForm(false);
+              fetchNotes();
+            }}
+            onCancel={() => setShowNewNoteForm(false)}
+            loading={false}
+            submitLabel="Guardar nota"
+          />
+        </Modal>
+      )}
 
       {/* Modal para editar nota */}
       {showNoteForm && editingNote && (
