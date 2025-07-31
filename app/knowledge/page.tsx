@@ -715,6 +715,7 @@ const KnowledgePage: React.FC = () => {
                     descargarNota={descargarNota as (nota: any) => void}
                     eliminarNota={eliminarNota as (nota: any) => void}
                     renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+                    onEdit={() => setMostrarFormularioNota(true)}
                   />
                 ) : recursoSeleccionado ? (
                   <DetalleRecursoPanel
