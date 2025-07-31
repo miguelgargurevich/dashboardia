@@ -246,6 +246,11 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                   <p className="text-sm text-gray-400">
                     {temas.find(t => t.id === notaSeleccionada.tema)?.nombre}
                   </p>
+                  {notaSeleccionada.date && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      <span className="font-semibold">Fecha:</span> {new Date(notaSeleccionada.date).toLocaleDateString('es-ES')}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button

@@ -348,7 +348,7 @@ const KnowledgePage: React.FC = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setRecursos(data.recursos || []);
+        setRecursos(data.resources || []);
       } else {
         console.error('Error cargando recursos:', response.statusText);
       }
@@ -670,14 +670,14 @@ const KnowledgePage: React.FC = () => {
               <h2 className="text-xl font-bold text-accent">Todo el conocimiento</h2>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setMostrarFormularioNota(true)}
+                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
                   className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
                    Nota
                 </button>
                 <button
-                  onClick={() => setMostrarFormularioRecurso(true)}
+                  onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
                   className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
@@ -813,7 +813,7 @@ const KnowledgePage: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setMostrarFormularioNota(true)}
+                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
                   className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
@@ -899,7 +899,7 @@ const KnowledgePage: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => setMostrarFormularioRecurso(true)}
+                  onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
                   className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
                 >
                   <FaPlus />
@@ -935,15 +935,16 @@ const KnowledgePage: React.FC = () => {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
-              <button
-                onClick={() => setMostrarFormularioNota(true)}
-                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-              >
-                <FaPlus />
-                 Nota
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
+                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+                >
+                  <FaPlus />
+                   Nota
+                </button>
+              </div>
             </div>
-
             <NotasPanel
               busqueda={busqueda}
               setBusqueda={setBusqueda}
@@ -969,7 +970,7 @@ const KnowledgePage: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-accent">Gestión de Recursos</h2>
               <button
-                onClick={() => setMostrarFormularioRecurso(true)}
+                onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
                 className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
               >
                 <FaPlus />
@@ -1010,7 +1011,25 @@ const KnowledgePage: React.FC = () => {
               tiposNotas={tiposNotas}
               etiquetasDisponibles={etiquetasDisponiblesNotas}
               initialValues={notaSeleccionada || undefined}
-              onSubmit={() => setMostrarFormularioNota(false)}
+              onSubmit={async (values) => {
+                if (!token) return;
+                try {
+                  const res = await fetch('/api/content/knowledge', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(values)
+                  });
+                  if (!res.ok) throw new Error('Error al guardar la nota');
+                  await cargarContenido();
+                  setNotaSeleccionada(null);
+                  setMostrarFormularioNota(false);
+                } catch (err) {
+                  alert('Ocurrió un error al guardar la nota.');
+                }
+              }}
             />
           </Modal>
         )}
@@ -1029,7 +1048,25 @@ const KnowledgePage: React.FC = () => {
               }))}
               etiquetasDisponibles={etiquetasDisponiblesRecursos}
               initialValues={recursoSeleccionado || undefined}
-              onSubmit={() => setMostrarFormularioRecurso(false)}
+              onSubmit={async (values) => {
+                if (!token) return;
+                try {
+                  const res = await fetch('/api/resources', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(values)
+                  });
+                  if (!res.ok) throw new Error('Error al guardar el recurso');
+                  await cargarRecursos();
+                  setRecursoSeleccionado(null);
+                  setMostrarFormularioRecurso(false);
+                } catch (err) {
+                  alert('Ocurrió un error al guardar el recurso.');
+                }
+              }}
             />
           </Modal>
         )}

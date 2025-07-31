@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { nombre, tema, contenido, etiquetas } = body;
+    const { nombre, tema, contenido, etiquetas, date } = body;
 
     // Validaciones básicas
     if (!nombre || !tema || !contenido) {
@@ -130,6 +130,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Usar la fecha actual si no se especifica
+    const today = new Date().toISOString().slice(0, 10);
+
     // Preparar datos para el backend
     const noteData = {
       title: nombre,
@@ -138,7 +141,8 @@ export async function POST(request: NextRequest) {
       tipo: 'nota',
       descripcion: `Nota creada desde Knowledge Base: ${nombre}`,
       tags: etiquetas || [],
-      status: 'activo'
+      status: 'activo',
+      date: date || today
     };
 
     // Crear nota en el backend

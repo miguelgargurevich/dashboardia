@@ -70,9 +70,18 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setEtiquetas(initialValues.etiquetas || []);
       setDescripcion(initialValues.descripcion || "");
       setDate(initialValues.date || getToday());
+    } else {
+      // Limpiar todos los campos al crear nueva nota
+      setNombre("");
+      setContenido("");
+      setTipo(tiposNotas[0]?.id || "");
+      setTema(temas[0]?.id || "");
+      setEtiquetas([]);
+      setDescripcion("");
+      setDate(getToday());
     }
     // eslint-disable-next-line
-  }, [JSON.stringify(initialValues)]);
+  }, [JSON.stringify(initialValues), tiposNotas, temas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +90,20 @@ const NotaForm: React.FC<NotaFormProps> = ({
   };
 
   const handleEtiquetasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEtiquetas(e.target.value.split(",").map(et => et.trim()).filter(Boolean));
+    // Permite etiquetas con espacios y comas, separando solo por comas reales
+    setEtiquetas(
+      e.target.value
+        .split(/\s*,\s*/)
+        .map(et => et.trim())
+        .filter(Boolean)
+    );
+  };
+
+  // Al hacer click en un tag sugerido, lo agrega si no está presente
+  const handleAgregarEtiqueta = (etiqueta: string) => {
+    if (!etiquetas.includes(etiqueta)) {
+      setEtiquetas([...etiquetas, etiqueta]);
+    }
   };
 
   return (
@@ -157,7 +179,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
       </div>
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1 flex flex-col gap-2">
-          <label className="block text-sm font-medium mb-1">Etiquetas (separadas por coma)</label>
+          <label className="block text-sm font-medium mb-1">Tags</label>
           <div className="relative">
             <input
               type="text"
@@ -170,7 +192,19 @@ const NotaForm: React.FC<NotaFormProps> = ({
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {etiquetasDisponibles.map((et, idx) => (
-              <span key={idx} className="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs">{et}</span>
+              <button
+                type="button"
+                key={idx}
+                className={`px-2 py-0.5 rounded text-xs border transition focus:outline-none ${
+                  etiquetas.includes(et)
+                    ? 'bg-accent text-primary border-accent'
+                    : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/30'
+                }`}
+                onClick={() => handleAgregarEtiqueta(et)}
+                tabIndex={0}
+              >
+                {et}
+              </button>
             ))}
           </div>
         </div>
