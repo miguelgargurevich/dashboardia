@@ -44,13 +44,13 @@ export async function GET(request: NextRequest) {
         nombre: `${nota.title}.md`, // Formato .md por compatibilidad con frontend
         nombreSinExtension: nota.title,
         content: nota.content, // Contenido desde base de datos
-        rutaRelativa: `notes/${nota.id}`, // Ruta virtual basada en ID de base de datos
-        fechaModificacion: nota.updatedAt,
+        rutaRelativa: `notes/${nota.id}`,
         tamaño: nota.content?.length || 0,
         tipo: nota.tipo,
         descripcion: nota.descripcion,
         tags: nota.tags,
-        status: nota.status
+        status: nota.status,
+        date: nota.date || nota.createdAt || nota.updatedAt
       }));
       
       return NextResponse.json({
@@ -76,13 +76,13 @@ export async function GET(request: NextRequest) {
         nombre: `${nota.title}.md`, // Formato .md por compatibilidad con frontend
         nombreSinExtension: nota.title,
         content: nota.content, // Contenido desde base de datos
-        rutaRelativa: `notes/${nota.id}`, // Ruta virtual basada en ID de base de datos
-        fechaModificacion: nota.updatedAt,
+        rutaRelativa: `notes/${nota.id}`,
         tamaño: nota.content?.length || 0,
         tipo: nota.tipo,
         descripcion: nota.descripcion,
         tags: nota.tags,
-        status: nota.status
+        status: nota.status,
+        date: nota.date || nota.createdAt || nota.updatedAt
       });
     });
     

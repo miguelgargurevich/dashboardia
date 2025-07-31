@@ -10,7 +10,7 @@ interface NotaFormValues {
   descripcion?: string;
   tema: string;
   priority?: string;
-  date?: string;
+  date?: string; // Único campo de fecha
 }
 
 interface Tema {
@@ -90,7 +90,6 @@ const NotaForm: React.FC<NotaFormProps> = ({
   };
 
   const handleEtiquetasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Permite etiquetas con espacios y comas, separando solo por comas reales
     setEtiquetas(
       e.target.value
         .split(/\s*,\s*/)

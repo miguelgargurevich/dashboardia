@@ -20,7 +20,7 @@ const iconos = [
 
 const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccionado, onEdit, onDelete, emptyMessage }) => {
   return (
-    <div className="bg-secondary rounded-lg p-6 h-full min-h-96">
+    <div className="bg-secondary rounded-lg p-6 h-full">
       {eventoSeleccionado ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
           <div className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
@@ -39,6 +39,8 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
                 >
                   <FaEdit /> Editar
                 </button>
+                {/* Botón eliminar oculto temporalmente */}
+                {/*
                 <button
                   onClick={() => onDelete(eventoSeleccionado.id)}
                   className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
@@ -46,6 +48,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
                 >
                   <FaTrash /> Eliminar
                 </button>
+                */}
               </div>
             </div>
             {eventoSeleccionado.description && (

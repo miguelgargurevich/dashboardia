@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 // Importar el formulario de nota de forma dinámica para evitar SSR
 const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
+import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
+import EventoForm from '../components/eventos/EventoForm';
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import Modal from '../components/Modal';
@@ -69,6 +71,31 @@ interface NotaFormValues {
 }
 
 const Calendar: React.FC = () => {
+  // --- Estado y lógica para edición y eliminación de eventos ---
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [showEventForm, setShowEventForm] = useState(false);
+
+  // @ts-ignore
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setShowEventForm(true);
+  };
+
+  // @ts-ignore
+  const handleDeleteEvent = async (event: Event) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este evento?')) return;
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/events/calendar/${event.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Error al eliminar evento');
+      fetchEvents();
+    } catch (e) {
+      alert('No se pudo eliminar el evento.');
+    }
+  };
   // Estado para tipos de nota y etiquetas disponibles
   const [tiposNotas, setTiposNotas] = useState<any[]>([]);
   const [etiquetasDisponibles, setEtiquetasDisponibles] = useState<string[]>([]);
@@ -285,7 +312,6 @@ interface TipoRecurso {
   // --- Estado y lógica para edición y eliminación de notas ---
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [showNoteForm, setShowNoteForm] = useState(false);
-  const [showNewNoteForm, setShowNewNoteForm] = useState(false);
 
   // @ts-ignore
   const handleEditNote = (note) => {
@@ -293,9 +319,7 @@ interface TipoRecurso {
     setShowNoteForm(true);
   };
 
-  const handleNewNote = () => {
-    setShowNewNoteForm(true);
-  };
+
 
   // @ts-ignore
   const handleDeleteNote = async (note) => {
@@ -323,10 +347,7 @@ interface TipoRecurso {
     setEditingNote(null);
   };
 
-  const handleNoteFormSaved = () => {
-    handleCloseNoteForm();
-    fetchNotes();
-  };
+
 
   // Filtros para la vista de lista
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -641,7 +662,7 @@ interface TipoRecurso {
                 </div>
                 {/* Cierre correcto del bloque de lista de eventos */}
 
-                {/* Panel de Eventos del Día */}
+                {/* Panel de Eventos del Día (cards de detalle de eventos genéricos) */}
                 <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
@@ -656,76 +677,14 @@ interface TipoRecurso {
                         <p className="text-gray-400 mt-2 text-sm">Cargando eventos...</p>
                       </div>
                     ) : selectedDayEvents.length > 0 ? (
-                      <div className="space-y-3">
-                        {selectedDayEvents.map((event, index) => (
-                          <div key={`selected-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-yellow-400">
-                                  {/* Icono según el tipo/título del evento */}
-                                  {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                                  {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                                  {event.title.toLowerCase().includes('reunión') && <FaUsers />}
-                                  {event.title.toLowerCase().includes('webinar') && <FaRobot />}
-                                  {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                                  {event.title.toLowerCase().includes('demo') && <FaLaptop />}
-                                  {/* Icono genérico si no coincide */}
-                                  {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
-                                </span>
-                                <h5 className="font-semibold text-white text-sm">{event.title}</h5>
-                              </div>
-                              {event.modo && (
-                                <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
-                                  {event.modo}
-                                </span>
-                              )}
-                            </div>
-                            {event.description && (
-                              <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
-                            )}
-                            <div className="flex items-center justify-between text-xs">
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-400">
-                                  {new Date(event.startDate).toLocaleDateString('es-ES')}
-                                  {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
-                                </span>
-                              </div>
-                              {event.location && (
-                                <span className="text-gray-400">
-                                  📍 {event.location}
-                                </span>
-                              )}
-                            </div>
-                            {/* Información adicional del evento */}
-                            <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                              <div className="flex flex-wrap gap-2 text-xs mb-2">
-                                <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">Modo: {event.modo && event.modo.trim() !== '' ? event.modo : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 Día Envío: {event.diaEnvio && event.diaEnvio.trim() !== '' ? event.diaEnvio : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 Query: {event.query && event.query.trim() !== '' ? (event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query) : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 Recursos: {event.relatedResources && event.relatedResources.length > 0 ? event.relatedResources.length : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🗂️ Tipo: {event.eventType && event.eventType.trim() !== '' ? event.eventType : '-'}</span>
-                                <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🔁 Recurrencia: {event.recurrencePattern && event.recurrencePattern.trim() !== '' ? event.recurrencePattern : '-'}</span>
-                              </div>
-                              {/* Recursos relacionados */}
-                              {event.relatedResources && event.relatedResources.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {event.relatedResources.slice(0, 3).map((resource, idx) => (
-                                    <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
-                                      📎 {resource}
-                                    </span>
-                                  ))}
-                                  {event.relatedResources.length > 3 && (
-                                    <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
-                                      +{event.relatedResources.length - 3} más
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                      <div className="space-y-1">
+                        {selectedDayEvents.map((evento, idx) => (
+                          <DetalleEventoPanel
+                            key={`detalle-evento-dia-${evento.id}-${idx}`}
+                            eventoSeleccionado={evento}
+                            onEdit={() => handleEditEvent(evento)}
+                            onDelete={() => handleDeleteEvent(evento)}
+                          />
                         ))}
                       </div>
                     ) : (
@@ -750,6 +709,7 @@ interface TipoRecurso {
                   <h3 className="text-lg font-bold text-green-400 mb-2 flex items-center gap-2">
                     <FaRegStickyNote className="text-green-400" /> Notas del Día
                   </h3>
+                  {/* Botón para nueva nota dentro del panel */}
                   {/* Crear nueva nota */}
                   <div className="mb-4 space-y-2">
                     {/* Campo de fecha editable para la nota diaria */}
@@ -985,69 +945,12 @@ interface TipoRecurso {
                     })
                     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                     .map((event, index) => (
-                      <div key={`list-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-yellow-400">
-                              {/* Icono según el tipo/título del evento */}
-                              {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                              {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                              {event.title.toLowerCase().includes('reunión') && <FaUsers />}
-                              {event.title.toLowerCase().includes('webinar') && <FaRobot />}
-                              {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                              {event.title.toLowerCase().includes('demo') && <FaLaptop />}
-                              {/* Icono genérico si no coincide */}
-                              {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
-                            </span>
-                            <h5 className="font-semibold text-white text-sm">{event.title}</h5>
-                          </div>
-                          {event.modo && (
-                            <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10">
-                              {event.modo}
-                            </span>
-                          )}
-                        </div>
-                        {event.description && (
-                          <p className="text-gray-300 text-xs mb-2 line-clamp-2">{event.description}</p>
-                        )}
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-400">
-                              {new Date(event.startDate).toLocaleDateString('es-ES')}
-                              {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString('es-ES')}`}
-                            </span>
-                          </div>
-                          {event.location && (
-                            <span className="text-gray-400">
-                              📍 {event.location}
-                            </span>
-                          )}
-                        </div>
-                        {/* Información adicional del evento */}
-                        <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                          <div className="flex flex-wrap gap-2 text-xs mb-2">
-                            <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">Modo: {event.modo && event.modo.trim() !== '' ? event.modo : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 Validador: {event.validador && event.validador.trim() !== '' ? event.validador : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 Código Dana: {event.codigoDana && event.codigoDana.trim() !== '' ? event.codigoDana : '-'}</span>
-                            <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">🔔 Notificación: {event.nombreNotificacion && event.nombreNotificacion.trim() !== '' ? event.nombreNotificacion : '-'}</span>
-                          </div>
-                          {/* Recursos relacionados */}
-                          {event.relatedResources && event.relatedResources.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {event.relatedResources.slice(0, 3).map((resource, idx) => (
-                                <span key={idx} className="px-2 py-1 bg-gray-600/20 text-gray-300 text-xs rounded truncate max-w-24">
-                                  📎 {resource}
-                                </span>
-                              ))}
-                              {event.relatedResources.length > 3 && (
-                                <span className="px-2 py-1 bg-gray-600/20 text-gray-400 text-xs rounded">
-                                  +{event.relatedResources.length - 3} más
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <DetalleEventoPanel
+                        key={`list-event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}-${event.startDate}`}
+                        eventoSeleccionado={event}
+                        onEdit={() => handleEditEvent(event)}
+                        onDelete={() => handleDeleteEvent(event)}
+                      />
                     )))}
                   {([...events, ...recurringEvents].filter(event => {
                     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1075,53 +978,9 @@ interface TipoRecurso {
       </div>
       
 
-      {/* Botón para nueva nota */}
-      <div className="flex justify-end mb-2">
-        <button
-          className="px-4 py-2 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition flex items-center gap-2 shadow"
-          onClick={e => { e.preventDefault(); handleNewNote(); }}
-        >
-          <FaPlus /> Nueva Nota
-        </button>
-      </div>
 
-      {/* Modal para nueva nota */}
-      {showNewNoteForm && (
-        <Modal open={showNewNoteForm} onClose={() => setShowNewNoteForm(false)} title="Nueva Nota" maxWidth="max-w-2xl">
-          <NotaForm
-            temas={temas}
-            tiposNotas={tiposNotas}
-            etiquetasDisponibles={Array.from(new Set(notes.flatMap(n => n.tags || [])))}
-            onSubmit={async (values) => {
-              // Crear nota en backend
-              const token = getToken();
-              const res = await fetch('/api/daily-notes', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  title: values.nombre,
-                  content: values.contenido,
-                  date: values.date,
-                  tags: values.etiquetas,
-                  tema: values.tema
-                })
-              });
-              if (!res.ok) {
-                alert('Error al crear nota');
-                return;
-              }
-              setShowNewNoteForm(false);
-              fetchNotes();
-            }}
-            onCancel={() => setShowNewNoteForm(false)}
-            loading={false}
-            submitLabel="Guardar nota"
-          />
-        </Modal>
-      )}
+
+
 
       {/* Modal para editar nota */}
       {showNoteForm && editingNote && (
@@ -1164,6 +1023,35 @@ interface TipoRecurso {
             onCancel={handleCloseNoteForm}
             loading={false}
             submitLabel="Guardar nota"
+          />
+        </Modal>
+      )}
+
+      {/* Modal para editar evento */}
+      {showEventForm && editingEvent && (
+        <Modal open={showEventForm} onClose={() => setShowEventForm(false)} title="Editar evento" maxWidth="max-w-2xl">
+          <EventoForm
+            initialValues={editingEvent}
+            onSubmit={async (values) => {
+              // Actualizar evento en backend
+              const token = getToken();
+              await fetch(`/api/events/calendar/${editingEvent.id}`,
+                {
+                  method: 'PUT',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(values)
+                }
+              );
+              setShowEventForm(false);
+              setEditingEvent(null);
+              fetchEvents();
+            }}
+            onCancel={() => setShowEventForm(false)}
+            loading={false}
+            submitLabel="Guardar evento"
           />
         </Modal>
       )}

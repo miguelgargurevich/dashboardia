@@ -26,8 +26,6 @@ interface Evento {
   isRecurring?: boolean;
   recurrencePattern?: string;
   eventType?: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 interface EventosKnowledgePanelProps {

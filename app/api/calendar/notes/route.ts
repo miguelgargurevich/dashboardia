@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // Adaptar las notas del modelo unificado al formato que espera el calendario
     const adaptedNotes = data.map((note: any) => ({
       id: note.id,
-      date: note.date || note.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+      date: note.date, // Solo usar el campo de fecha unificado
       title: note.title,
       content: note.content,
       type: note.tipo || 'otro', // Mapear 'tipo' a 'type'

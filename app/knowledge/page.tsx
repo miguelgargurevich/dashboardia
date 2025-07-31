@@ -32,10 +32,8 @@ interface NotasMD {
   descripcion?: string;
   status?: string;
   priority?: string;
-  date?: string;
+  date?: string; // Único campo de fecha
   relatedResources?: string[];
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 const KnowledgePage: React.FC = () => {
@@ -227,14 +225,12 @@ const KnowledgePage: React.FC = () => {
               tipo: tipo,
               contenido: notaInfo.content || notaInfo.contenido || '', // Usar content de la base de datos o contenido como fallback
               etiquetas: etiquetas,
-              // Campos adicionales del modelo unificado
               descripcion: notaInfo.descripcion,
               status: notaInfo.status,
               priority: notaInfo.priority,
+              // Usar solo el campo de fecha unificado
               date: notaInfo.date,
-              relatedResources: notaInfo.relatedResources,
-              createdAt: notaInfo.createdAt || notaInfo.fechaModificacion,
-              updatedAt: notaInfo.updatedAt || notaInfo.fechaModificacion
+              relatedResources: notaInfo.relatedResources
             });
           } catch (error) {
             console.error(`Error procesando nota ${notaInfo.nombreSinExtension}:`, error);
