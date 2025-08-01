@@ -44,6 +44,9 @@ app.use(express.json());
 // Configurar CORS según el entorno
 app.use(cors(envConfig.config.cors));
 
+// Manejar preflight requests explícitamente
+app.options('*', cors(envConfig.config.cors));
+
 // Middleware de logging (solo en desarrollo)
 if (envConfig.config.logging.requests) {
   app.use((req, res, next) => {

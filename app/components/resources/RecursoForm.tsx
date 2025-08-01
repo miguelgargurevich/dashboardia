@@ -96,111 +96,119 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
         <FaPaperclip className="text-accent text-2xl" />
         <h2 className="text-xl font-bold text-accent">{initialValues ? 'Editar Recurso' : 'Nuevo Recurso'}</h2>
       </div>
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="relative">
-            <input
-              type="text"
-              className="input-std w-full pl-10"
-              value={titulo}
-              onChange={e => setTitulo(e.target.value)}
-              placeholder="Título del recurso"
-              required
-            />
-            <FaPaperclip className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-          <div className="relative">
-            <input
-              type="text"
-              className="input-std w-full pl-10"
-              value={descripcion}
-              onChange={e => setDescripcion(e.target.value)}
-              placeholder="Descripción breve"
-            />
-            <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="relative">
-            <select
-              className="input-std w-full pl-10 appearance-none"
-              value={tipo}
-              onChange={e => setTipo(e.target.value)}
-              required
-            >
-              {tiposRecursos.map(t => (
-                <option key={t.id} value={t.id}>{t.nombre}</option>
-              ))}
-            </select>
-            <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-          <div className="relative">
-            <select
-              className="input-std w-full pl-10 appearance-none"
-              value={tema}
-              onChange={e => setTema(e.target.value)}
-              required
-            >
-              {temas.map(t => (
-                <option key={t.id} value={t.id}>{t.nombre}</option>
-              ))}
-            </select>
-            <FaBook className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-        </div>
+      
+      {/* Primera fila: Título */}
+      <div className="relative">
+        <input
+          type="text"
+          className="input-std w-full pl-10"
+          value={titulo}
+          onChange={e => setTitulo(e.target.value)}
+          placeholder="Título del recurso"
+          required
+        />
+        <FaPaperclip className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
       </div>
+
+      {/* Segunda fila: Tipo y Tema */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex flex-col gap-2">
-          <label className="block text-sm font-medium mb-1">Archivo (opcional)</label>
-          <input
-            type="file"
-            className="input-std w-full border-dashed border-2 border-accent bg-transparent text-white"
-            onChange={e => setArchivo(e.target.files ? e.target.files[0] : null)}
-          />
-        </div>
-        <div className="flex-1 flex flex-col gap-2">
-          <div className="relative">
-            <input
-              type="url"
-              className="input-std w-full pl-10"
-              value={url}
-              onChange={e => setUrl(e.target.value)}
-              placeholder="https://..."
-            />
-            <FaLink className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex flex-col gap-2">
-          <label className="block text-sm font-medium mb-1">Tags</label>
-          <div className="relative">
-            <input
-              type="text"
-              className="input-std w-full pl-10"
-              value={etiquetas.join(", ")}
-              onChange={handleEtiquetasChange}
-              placeholder="Ej: importante, referencia, externo"
-            />
-            <FaHashtag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {etiquetasDisponibles.map((et, idx) => (
-              <button
-                type="button"
-                key={idx}
-                className={`px-2 py-0.5 rounded text-xs border transition focus:outline-none ${
-                  etiquetas.includes(et)
-                    ? 'bg-accent text-primary border-accent'
-                    : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/30'
-                }`}
-                onClick={() => handleAgregarEtiqueta(et)}
-                tabIndex={0}
-              >
-                {et}
-              </button>
+        <div className="flex-1 relative">
+          <select
+            className="input-std w-full pl-10 appearance-none"
+            value={tipo}
+            onChange={e => setTipo(e.target.value)}
+            required
+          >
+            {tiposRecursos.map(t => (
+              <option key={t.id} value={t.id}>{t.nombre}</option>
             ))}
+          </select>
+          <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+        </div>
+        <div className="flex-1 relative">
+          <select
+            className="input-std w-full pl-10 appearance-none"
+            value={tema}
+            onChange={e => setTema(e.target.value)}
+            required
+          >
+            {temas.map(t => (
+              <option key={t.id} value={t.id}>{t.nombre}</option>
+            ))}
+          </select>
+          <FaBook className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+        </div>
+      </div>
+
+      {/* Tercera fila: Descripción */}
+      <div className="relative">
+        <textarea
+          className="input-std w-full min-h-[80px] pl-10"
+          value={descripcion}
+          onChange={e => setDescripcion(e.target.value)}
+          placeholder="Descripción del recurso"
+          rows={4}
+        />
+        <FaStickyNote className="absolute left-3 top-4 text-accent" />
+      </div>
+
+      {/* Cuarta fila: Archivo y URL */}
+      <div className="flex flex-col gap-4">
+        <h3 className="text-sm font-medium text-gray-300">Contenido del recurso</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="block text-sm text-gray-400">Archivo (opcional)</label>
+            <input
+              type="file"
+              className="input-std w-full border-dashed border-2 border-accent/30 bg-transparent text-white p-3 rounded-lg hover:border-accent/50 transition-colors"
+              onChange={e => setArchivo(e.target.files ? e.target.files[0] : null)}
+            />
           </div>
+          <div className="flex flex-col gap-2">
+            <label className="block text-sm text-gray-400">URL (opcional)</label>
+            <div className="relative">
+              <input
+                type="url"
+                className="input-std w-full pl-10"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                placeholder="https://..."
+              />
+              <FaLink className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quinta fila: Etiquetas */}
+      <div className="flex flex-col gap-2">
+        <label className="block text-sm font-medium mb-1">Tags</label>
+        <div className="relative">
+          <input
+            type="text"
+            className="input-std w-full pl-10"
+            value={etiquetas.join(", ")}
+            onChange={handleEtiquetasChange}
+            placeholder="Ej: importante, referencia, externo"
+          />
+          <FaHashtag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+        </div>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {etiquetasDisponibles.map((et, idx) => (
+            <button
+              type="button"
+              key={idx}
+              className={`px-2 py-0.5 rounded text-xs border transition focus:outline-none ${
+                etiquetas.includes(et)
+                  ? 'bg-accent text-primary border-accent'
+                  : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/30'
+              }`}
+              onClick={() => handleAgregarEtiqueta(et)}
+              tabIndex={0}
+            >
+              {et}
+            </button>
+          ))}
         </div>
       </div>
       <div className="flex gap-2 justify-end mt-4">

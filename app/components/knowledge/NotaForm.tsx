@@ -8,7 +8,6 @@ interface NotaFormValues {
   contenido: string;
   tipo: string;
   etiquetas?: string[];
-  descripcion?: string;
   tema: string;
   priority?: string;
   date?: string; // Único campo de fecha
@@ -56,7 +55,6 @@ const NotaForm: React.FC<NotaFormProps> = ({
   const [tipo, setTipo] = useState(initialValues?.tipo || (tiposNotas[0]?.id || ""));
   const [tema, setTema] = useState(initialValues?.tema || (temas[0]?.id || ""));
   const [etiquetas, setEtiquetas] = useState<string[]>(initialValues?.etiquetas || []);
-  const [descripcion, setDescripcion] = useState(initialValues?.descripcion || "");
   const [recursosModalOpen, setRecursosModalOpen] = useState(false);
   // Estado para los detalles de los recursos seleccionados
   const [recursosSeleccionados, setRecursosSeleccionados] = useState<{ id: string; titulo: string; tipo?: string; descripcion?: string }[]>([]);
@@ -74,7 +72,6 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setTipo(initialValues.tipo || (tiposNotas[0]?.id || ""));
       setTema(initialValues.tema || (temas[0]?.id || ""));
       setEtiquetas(initialValues.etiquetas || []);
-      setDescripcion(initialValues.descripcion || "");
       setDate(initialValues.date || getToday());
       setSelectedRecursos(initialValues.relatedResources || []);
     } else {
@@ -83,7 +80,6 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setTipo(tiposNotas[0]?.id || "");
       setTema(temas[0]?.id || "");
       setEtiquetas([]);
-      setDescripcion("");
       setDate(getToday());
       setSelectedRecursos([]);
     }
@@ -107,7 +103,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const values = { nombre, contenido, tipo, etiquetas, descripcion, tema, date, relatedResources: selectedRecursos };
+    const values = { nombre, contenido, tipo, etiquetas, tema, date, relatedResources: selectedRecursos };
     await onSubmit(values);
   };
 
@@ -133,114 +129,104 @@ const NotaForm: React.FC<NotaFormProps> = ({
         <FaRegStickyNote className="text-accent text-2xl" />
         <h2 className="text-xl font-bold text-accent">{initialValues ? 'Editar Nota' : 'Nueva Nota'}</h2>
       </div>
+      
+      {/* Primera fila: Título y Fecha */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="relative">
-            <input
-              type="text"
-              className="input-std w-full pl-10"
-              value={nombre}
-              onChange={e => setNombre(e.target.value)}
-              placeholder="Título de la nota"
-              required
-            />
-            <FaRegStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-                <div className="relative">
-                  <input
-                    type="date"
-                    className="input-std w-full pl-10"
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    placeholder="Fecha de la nota"
-                    required
-                  />
-                  <FaRegStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-                </div>
-          <div className="relative">
-            <textarea
-              className="input-std w-full min-h-[120px] pl-10"
-              value={contenido}
-              onChange={e => setContenido(e.target.value)}
-              placeholder="Contenido de la nota"
-              rows={6}
-              required
-            />
-            <FaStickyNote className="absolute left-3 top-4 text-accent" />
-          </div>
+        <div className="flex-1 relative">
+          <input
+            type="text"
+            className="input-std w-full pl-10"
+            value={nombre}
+            onChange={e => setNombre(e.target.value)}
+            placeholder="Título de la nota"
+            required
+          />
+          <FaRegStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
         </div>
-        <div className="flex-1 flex flex-col gap-3">
-          <div className="relative">
-            <select
-              className="input-std w-full pl-10 appearance-none"
-              value={tipo}
-              onChange={e => setTipo(e.target.value)}
-              required
-            >
-              {tiposNotas.map(t => (
-                <option key={t.id} value={t.id}>{t.nombre}</option>
-              ))}
-            </select>
-            <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-          <div className="relative">
-            <select
-              className="input-std w-full pl-10 appearance-none"
-              value={tema}
-              onChange={e => setTema(e.target.value)}
-              required
-            >
-              {temas.map(t => (
-                <option key={t.id} value={t.id}>{t.nombre}</option>
-              ))}
-            </select>
-            <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
+        <div className="w-full md:w-48 relative">
+          <input
+            type="date"
+            className="input-std w-full pl-10"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            required
+          />
+          <FaRegStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
         </div>
       </div>
+
+      {/* Segunda fila: Tipo y Tema */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 flex flex-col gap-2">
-          <label className="block text-sm font-medium mb-1">Tags</label>
-          <div className="relative">
-            <input
-              type="text"
-              className="input-std w-full pl-10"
-              value={etiquetas.join(", ")}
-              onChange={handleEtiquetasChange}
-              placeholder="Ej: importante, tarea, urgente"
-            />
-            <FaHashtag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {etiquetasDisponibles.map((et, idx) => (
-              <button
-                type="button"
-                key={idx}
-                className={`px-2 py-0.5 rounded text-xs border transition focus:outline-none ${
-                  etiquetas.includes(et)
-                    ? 'bg-accent text-primary border-accent'
-                    : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/30'
-                }`}
-                onClick={() => handleAgregarEtiqueta(et)}
-                tabIndex={0}
-              >
-                {et}
-              </button>
+        <div className="flex-1 relative">
+          <select
+            className="input-std w-full pl-10 appearance-none"
+            value={tipo}
+            onChange={e => setTipo(e.target.value)}
+            required
+          >
+            {tiposNotas.map(t => (
+              <option key={t.id} value={t.id}>{t.nombre}</option>
             ))}
-          </div>
+          </select>
+          <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
         </div>
-        <div className="flex-1 flex flex-col gap-2">
-          <label className="block text-sm font-medium mb-1">Descripción (opcional)</label>
-          <div className="relative">
-            <input
-              type="text"
-              className="input-std w-full pl-10"
-              value={descripcion}
-              onChange={e => setDescripcion(e.target.value)}
-              placeholder="Descripción breve"
-            />
-            <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
+        <div className="flex-1 relative">
+          <select
+            className="input-std w-full pl-10 appearance-none"
+            value={tema}
+            onChange={e => setTema(e.target.value)}
+            required
+          >
+            {temas.map(t => (
+              <option key={t.id} value={t.id}>{t.nombre}</option>
+            ))}
+          </select>
+          <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+        </div>
+      </div>
+
+      {/* Tercera fila: Contenido */}
+      <div className="relative">
+        <textarea
+          className="input-std w-full min-h-[120px] pl-10"
+          value={contenido}
+          onChange={e => setContenido(e.target.value)}
+          placeholder="Contenido de la nota"
+          rows={6}
+          required
+        />
+        <FaStickyNote className="absolute left-3 top-4 text-accent" />
+      </div>
+
+      {/* Cuarta fila: Etiquetas */}
+      <div className="flex flex-col gap-2">
+        <label className="block text-sm font-medium mb-1">Tags</label>
+        <div className="relative">
+          <input
+            type="text"
+            className="input-std w-full pl-10"
+            value={etiquetas.join(", ")}
+            onChange={handleEtiquetasChange}
+            placeholder="Ej: importante, tarea, urgente"
+          />
+          <FaHashtag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
+        </div>
+        <div className="flex flex-wrap gap-1 mt-1">
+          {etiquetasDisponibles.map((et, idx) => (
+            <button
+              type="button"
+              key={idx}
+              className={`px-2 py-0.5 rounded text-xs border transition focus:outline-none ${
+                etiquetas.includes(et)
+                  ? 'bg-accent text-primary border-accent'
+                  : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/30'
+              }`}
+              onClick={() => handleAgregarEtiqueta(et)}
+              tabIndex={0}
+            >
+              {et}
+            </button>
+          ))}
         </div>
       </div>
       <div>

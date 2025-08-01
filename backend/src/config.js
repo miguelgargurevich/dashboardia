@@ -27,17 +27,38 @@ const config = {
     database: process.env.DATABASE_URL_PROD || process.env.DATABASE_URL,
     port: process.env.PORT || 4000,
     cors: {
-      origin: [
-        // Vercel deployments
-        "https://dashboard-ia-v3.vercel.app", 
-        "https://dashboardia-git-main-miguel-gargurevichs-projects.vercel.app",
-        "https://dashboardia.vercel.app",
-        // Render backend (para comunicación interna)
-        "https://dashboardia.onrender.com",
-        // Desarrollo local
-        "http://localhost:3000",
-        "http://localhost:3001"
-      ],
+      origin: function (origin, callback) {
+        // Lista de dominios permitidos
+        const allowedOrigins = [
+          // Vercel deployments
+          "https://dashboard-ia-v3.vercel.app", 
+          "https://dashboardia-git-main-miguel-gargurevichs-projects.vercel.app",
+          "https://dashboardia.vercel.app",
+          "https://dashboardia-ten.vercel.app",
+          // Render backend (para comunicación interna)
+          "https://dashboardia.onrender.com",
+          // Desarrollo local
+          "http://localhost:3000",
+          "http://localhost:3001"
+        ];
+        
+        // Permitir requests sin origin (como Postman, apps móviles, etc.)
+        if (!origin) return callback(null, true);
+        
+        // Verificar si está en la lista exacta
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        
+        // Permitir cualquier subdominio de vercel.app para miguelgargurevich
+        if (origin.match(/^https:\/\/.*\.vercel\.app$/)) {
+          return callback(null, true);
+        }
+        
+        // Rechazar otros orígenes
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization']
