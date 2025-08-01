@@ -25,7 +25,11 @@ const config = {
     database: process.env.DATABASE_URL_PROD || process.env.DATABASE_URL,
     port: process.env.PORT || 4000,
     cors: {
-      origin: ["https://tu-frontend-produccion.com"],
+      origin: [
+        "https://dashboard-ia-v3.vercel.app", 
+        "https://*.vercel.app",
+        "https://dashboardia.onrender.com"
+      ],
       credentials: true
     },
     swagger: {
