@@ -1,3 +1,4 @@
+// import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -32,9 +33,13 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
   const router = useRouter();
 
   const handleEventClick = (event: Event) => {
-    // Extraer la fecha directamente del string sin convertir a Date para evitar problemas de zona horaria
-    const dateString = formatFechaDDMMYYYY(event.startDate);
-    
+    // Extraer solo la parte de la fecha (YYYY-MM-DD) para evitar problemas de zona horaria
+    let dateString = event.startDate;
+    if (dateString.includes('T')) {
+      dateString = dateString.split('T')[0];
+    } else if (dateString.length > 10) {
+      dateString = dateString.slice(0, 10);
+    }
     // Si hay callback, usarla para comunicarse con el calendario del home
     if (onEventClick) {
       onEventClick(dateString);

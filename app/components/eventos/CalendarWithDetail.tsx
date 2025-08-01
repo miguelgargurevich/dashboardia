@@ -116,6 +116,8 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
             const dayContent = getDayContent(dayKey);
             const isSelected = selectedDate === dayKey;
             const isToday = day === todayDay && mon === todayMonth && year === todayYear;
+            // Detectar si hay eventos de alerta en el día (solo por recurrencePattern)
+            const hasAlertEvent = dayContent.events.some(ev => ev.recurrencePattern?.toLowerCase() === 'alerta');
             return (
               <div
                 key={day}
@@ -123,11 +125,22 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
                   ${isSelected ? 'ring-2 ring-accent bg-accent/20' : 'border-accent/30 hover:border-accent/60'}
                   ${isToday ? 'border-2 border-blue-400' : ''}
                   ${dayContent.hasContent ? 'bg-accent/10' : 'bg-primary/40'}
+                  ${hasAlertEvent ? 'animate-pulse border-red-500 shadow-lg shadow-red-400/30' : ''}
                 `}
                 onClick={() => setSelectedDate(dayKey)}
               >
                 <span className={`text-sm font-medium mb-1 ${dayContent.hasContent ? 'text-accent' : 'text-white'}`}>
                   {day}
+                  {/* Icono de alerta si hay evento de alerta */}
+                  {hasAlertEvent && (
+                    <span className="ml-1 inline-block align-middle" title="Evento de alerta">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="red" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-alert-triangle animate-bounce">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3l-8.47-14.14a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </span>
+                  )}
                 </span>
                 {/* Contenido del día - Solo eventos */}
                 <div className="flex flex-col gap-1 w-full overflow-hidden">
@@ -146,7 +159,8 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
                           ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-600/40 font-semibold' 
                           : 'bg-yellow-500/80 text-black'
                       }`}>
-                        {event.title}
+                         {/* Comentado por el usuairo */}
+                        {/* {event.title} */}
                       </div>
                     </div>
                   ))}

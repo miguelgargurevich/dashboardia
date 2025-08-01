@@ -63,8 +63,10 @@ export default function Home() {
     setVisibleMonth(`${year}-${String(month + 1).padStart(2, '0')}`);
   };
   const goToToday = () => {
-    setVisibleMonth(today.toISOString().slice(0,7));
-    setSelectedDate(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`);
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    setVisibleMonth(`${year}-${month}`);
+    setSelectedDate(`${year}-${month}-${String(today.getDate()).padStart(2, '0')}`);
   };
   // Obtener eventos del día seleccionado
   const selectedDayEvents = events.filter(event => {
@@ -194,6 +196,9 @@ export default function Home() {
                   token={token || ''}
                   onEventClick={(date: string) => {
                     setSelectedDate(date);
+                    // Actualizar el mes visible si el evento es de otro mes
+                    const [year, month] = date.split('-');
+                    setVisibleMonth(`${year}-${month}`);
                     setTriggerDateSelection(prev => prev + 1);
                   }}
                 />

@@ -595,7 +595,7 @@ interface Note {
                                     ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-600/40 font-semibold' 
                                     : 'bg-yellow-500/80 text-black'
                                 }`}>
-                                  {event.recurrencePattern !== 'ninguno' && '🔄 '}{event.title}
+                                  {event.title}
                                 </div>
                               </div>
                             ))}
