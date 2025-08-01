@@ -72,7 +72,13 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   const fetchNotes = async () => {
     setLoadingNotas(true);
     try {
-      const res = await fetch('/api/daily-notes');
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/calendar/notes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
       if (!res.ok) throw new Error('Error al cargar notas');
       const data = await res.json();
       setNotasState(Array.isArray(data) ? data : []);
@@ -106,7 +112,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
       let res;
       if (modoForm === 'editar' && notaEditando?.id) {
         // Actualizar nota existente
-        res = await fetch(`/api/daily-notes/${notaEditando.id}`, {
+        res = await fetch(`/api/calendar/notes/${notaEditando.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -116,7 +122,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
         });
       } else {
         // Crear nueva nota
-        res = await fetch('/api/daily-notes', {
+        res = await fetch('/api/calendar/notes', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -188,7 +194,7 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
                 const isSelected = notaSeleccionada?.id === nota.id;
                 return (
                   <button
-                    key={nota.id || index}
+                    key={nota.id ? `nota-${nota.id}` : `nota-index-${index}`}
                     onClick={() => setNotaSeleccionada(nota)}
                     className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 cursor-pointer
                       ${isSelected

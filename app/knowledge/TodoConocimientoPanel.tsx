@@ -1,7 +1,9 @@
 "use client";
 import EventoForm from "../components/eventos/EventoForm";
+import NotaForm from "../components/knowledge/NotaForm";
+import RecursoForm from "../components/resources/RecursoForm";
 import Modal from "../components/Modal";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaSearch, FaFileAlt, FaBook, FaCalendarAlt } from "react-icons/fa";
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 
@@ -12,6 +14,8 @@ interface Nota {
   tipo: string;
   etiquetas?: string[];
   descripcion?: string;
+  tema?: string;
+  date?: string;
 }
 
 interface Recurso {
@@ -20,6 +24,30 @@ interface Recurso {
   titulo: string;
   descripcion?: string;
   tags: string[];
+  url?: string;
+  filePath?: string;
+}
+
+interface Tema {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  icono: React.ReactNode;
+  color: string;
+}
+
+interface TipoNota {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+}
+
+interface TipoRecurso {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
 }
 
 interface Evento {
@@ -48,6 +76,17 @@ interface TodoConocimientoPanelProps {
   setRecursoSeleccionado: (recurso: Recurso | null) => void;
   eventoSeleccionado: Evento | null;
   setEventoSeleccionado: (evento: Evento | null) => void;
+  // Nuevas props para los formularios
+  temas: Tema[];
+  tiposNotas: TipoNota[];
+  tiposRecursos: TipoRecurso[];
+  etiquetasDisponibles: string[];
+  onNotaEdit?: (nota: Nota) => void;
+  onRecursoEdit?: (recurso: Recurso) => void;
+  onEventoEdit?: (evento: Evento) => void;
+  cargarNotas?: () => void;
+  cargarRecursos?: () => void;
+  cargarEventos?: () => void;
 }
 
 const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
@@ -59,26 +98,57 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
   recursoSeleccionado,
   setRecursoSeleccionado,
   eventoSeleccionado,
-  setEventoSeleccionado
+  setEventoSeleccionado,
+  temas,
+  tiposNotas,
+  tiposRecursos,
+  etiquetasDisponibles,
+  onNotaEdit,
+  onRecursoEdit,
+  onEventoEdit,
+  cargarNotas = () => { window.location.reload(); },
+  cargarRecursos = () => { window.location.reload(); },
+  cargarEventos = () => { window.location.reload(); }
 }) => {
-  // Nuevo layout basado en el diseño proporcionado
   // Estados y lógica adaptados
   const [busqueda, setBusqueda] = useState("");
   const [filtroEtiqueta, setFiltroEtiqueta] = useState("");
   // El estado de selección se maneja en el padre
 
-  // ...existing code...
   // Determinar el item seleccionado actual
   let itemSeleccionado: any = null;
-  if (notaSeleccionada) itemSeleccionado = { ...notaSeleccionada, origen: 'nota' };
-  else if (recursoSeleccionado) itemSeleccionado = { ...recursoSeleccionado, origen: 'recurso' };
-  else if (eventoSeleccionado) itemSeleccionado = { ...eventoSeleccionado, origen: 'evento', evento: eventoSeleccionado };
-  // Estados para edición de evento
+  if (notaSeleccionada) {
+    itemSeleccionado = { 
+      ...notaSeleccionada, 
+      id: notaSeleccionada.id ? `nota-${notaSeleccionada.id}` : `nota-temp-${notas.findIndex(n => n.nombre === notaSeleccionada.nombre)}`,
+      origen: 'nota' 
+    };
+  }
+  else if (recursoSeleccionado) {
+    itemSeleccionado = { 
+      ...recursoSeleccionado, 
+      id: `recurso-${recursoSeleccionado.id}`,
+      origen: 'recurso' 
+    };
+  }
+  else if (eventoSeleccionado) {
+    itemSeleccionado = { 
+      ...eventoSeleccionado, 
+      id: `evento-${eventoSeleccionado.id}`,
+      origen: 'evento', 
+      evento: eventoSeleccionado 
+    };
+  }
+  
+  // Estados para edición
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [mostrarFormularioEvento, setmostrarFormularioEvento] = useState(false);
+  const [notaEditando, setNotaEditando] = useState<Nota | null>(null);
+  const [mostrarFormularioNota, setMostrarFormularioNota] = useState(false);
+  const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
+  const [mostrarFormularioRecurso, setMostrarFormularioRecurso] = useState(false);
+  
   const [token] = useState<string | null>(typeof window !== 'undefined' ? localStorage.getItem('token') : null);
-  // Recarga eventos (dummy, deberías pasar cargarEventos real por props si lo necesitas)
-  const cargarEventos = () => { window.location.reload(); };
 
   // Handler para guardar cambios de evento (PUT)
   const handleGuardarEvento = async (values: any) => {
@@ -106,47 +176,100 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
     setEventoEditando(null);
   };
 
+  // Handlers para edición de notas
+  const handleGuardarNota = async (values: any) => {
+    if (!notaEditando?.id || !token) return;
+    try {
+      const res = await fetch(`/api/calendar/notes/${notaEditando.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      });
+      if (!res.ok) throw new Error('Error al guardar la nota');
+      setMostrarFormularioNota(false);
+      setNotaEditando(null);
+      cargarNotas();
+    } catch (err) {
+      alert('Ocurrió un error al guardar la nota.');
+    }
+  };
+
+  const handleCancelarNota = () => {
+    setMostrarFormularioNota(false);
+    setNotaEditando(null);
+  };
+
+  // Handlers para edición de recursos
+  const handleGuardarRecurso = async (values: any) => {
+    if (!recursoEditando?.id || !token) return;
+    try {
+      const res = await fetch(`/api/resources/${recursoEditando.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(values)
+      });
+      if (!res.ok) throw new Error('Error al guardar el recurso');
+      setMostrarFormularioRecurso(false);
+      setRecursoEditando(null);
+      cargarRecursos();
+    } catch (err) {
+      alert('Ocurrió un error al guardar el recurso.');
+    }
+  };
+
+  const handleCancelarRecurso = () => {
+    setMostrarFormularioRecurso(false);
+    setRecursoEditando(null);
+  };
+
   // ...existing code...
 
 
-  // Unificar tipos y etiquetas disponibles
-  const etiquetasDisponibles = Array.from(new Set([
-    ...(notas.flatMap(n => n.etiquetas || [])),
-    ...(recursos.flatMap(r => r.tags || []))
-  ])).filter(Boolean);
   // Unificar items
   const allItems = [
-    ...notas.map(n => ({
-      id: n.id || n.nombre,
+    ...notas.map((n, index) => ({
+      id: n.id ? `nota-${n.id}` : `nota-temp-${index}`,
       tipo: n.tipo,
       titulo: n.nombre,
       descripcion: n.descripcion,
       contenido: n.contenido,
       tags: n.etiquetas || [],
-      origen: "nota"
+      origen: "nota" as const,
+      originalId: n.id,
+      originalIndex: index
     })),
-    ...recursos.map(r => ({
-      id: r.id,
+    ...recursos.map((r, index) => ({
+      id: `recurso-${r.id}`,
       tipo: r.tipo,
       titulo: r.titulo,
       descripcion: r.descripcion,
       tags: r.tags,
-      origen: "recurso"
+      origen: "recurso" as const,
+      originalId: r.id,
+      originalIndex: index
     })),
-    ...eventos.map(e => {
+    ...eventos.map((e, index) => {
       // No incluir la fecha en la descripción, solo la ubicación si existe
       let descripcion = '';
       if (e.location) {
         descripcion = e.location;
       }
       return {
-        id: e.id,
+        id: `evento-${e.id}`,
         tipo: e.eventType || "evento",
         titulo: e.title,
         descripcion,
         tags: [],
-        origen: "evento",
-        evento: e
+        origen: "evento" as const,
+        evento: e,
+        originalId: e.id,
+        originalIndex: index
       };
     })
   ];
@@ -176,7 +299,6 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
                   className="flex-1 input-std"
                 />
               </div>
-              {/* Filtro por tipo removido por solicitud */}
               {etiquetasDisponibles.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">Filtrar por etiqueta</label>
@@ -221,8 +343,9 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
                     icon: <FaCalendarAlt className="text-yellow-300" />
                   };
                   // Mostrar solo la fecha de inicio en formato dd/mm/yyyy
-                  if ('evento' in item && item.evento && item.evento.startDate) {
-                    const fecha = formatFechaDDMMYYYY(item.evento.startDate);
+                  if ('evento' in item && item.evento && typeof item.evento === 'object' && 'startDate' in item.evento) {
+                    const evento = item.evento as Evento;
+                    const fecha = formatFechaDDMMYYYY(evento.startDate);
                     fechaEvento = (
                       <p className="text-xs text-yellow-200 mb-1">
                         {fecha}
@@ -237,15 +360,19 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
                     onClick={() => {
                       // Al seleccionar, cerrar otros paneles
                       if (item.origen === 'nota') {
-                        setNotaSeleccionada(notas.find(n => (n.id || n.nombre) === item.id) || null);
+                        const notaEncontrada = notas.find(n => 
+                          item.originalId ? n.id === item.originalId : n.nombre === item.titulo
+                        );
+                        setNotaSeleccionada(notaEncontrada || null);
                         setRecursoSeleccionado(null);
                         setEventoSeleccionado(null);
                       } else if (item.origen === 'recurso') {
-                        setRecursoSeleccionado(recursos.find(r => r.id === item.id) || null);
+                        setRecursoSeleccionado(recursos.find(r => r.id === item.originalId) || null);
                         setNotaSeleccionada(null);
                         setEventoSeleccionado(null);
                       } else if (item.origen === 'evento') {
-                      setEventoSeleccionado('evento' in item ? (item.evento || null) : null);
+                        const eventoEncontrado = eventos.find(e => e.id === item.originalId);
+                        setEventoSeleccionado(eventoEncontrado || null);
                         setNotaSeleccionada(null);
                         setRecursoSeleccionado(null);
                       }
@@ -265,7 +392,41 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
                         {temaInfo.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white text-base truncate flex-1">{item.titulo}</h3>
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-white text-base truncate flex-1">{item.titulo}</h3>
+                          {isSelected && (
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (item.origen === 'nota') {
+                                  const nota = notas.find(n => 
+                                    item.originalId ? n.id === item.originalId : n.nombre === item.titulo
+                                  );
+                                  if (nota) {
+                                    setNotaEditando(nota);
+                                    setMostrarFormularioNota(true);
+                                  }
+                                } else if (item.origen === 'recurso') {
+                                  const recurso = recursos.find(r => r.id === item.originalId);
+                                  if (recurso) {
+                                    setRecursoEditando(recurso);
+                                    setMostrarFormularioRecurso(true);
+                                  }
+                                } else if (item.origen === 'evento') {
+                                  const evento = eventos.find(e => e.id === item.originalId);
+                                  if (evento) {
+                                    setEventoEditando(evento);
+                                    setmostrarFormularioEvento(true);
+                                  }
+                                }
+                              }}
+                              className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors cursor-pointer"
+                              title="Editar"
+                            >
+                              ✏️
+                            </div>
+                          )}
+                        </div>
                         <p className={`text-xs mb-1 font-medium ${temaInfo.color.split(' ')[1] || 'text-accent'}`}>{temaInfo.nombre}</p>
                         {/* Fecha para eventos */}
                         {fechaEvento}
@@ -328,6 +489,57 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
               }}
               onCancel={handleCancelarEvento}
               submitLabel={eventoEditando ? "Guardar cambios" : "Crear evento"}
+            />
+          </Modal>
+
+          {/* Modal de edición de nota */}
+          <Modal
+            open={mostrarFormularioNota}
+            onClose={handleCancelarNota}
+            title="Editar nota"
+            maxWidth="max-w-lg"
+          >
+            <NotaForm
+              initialValues={notaEditando ? {
+                nombre: notaEditando.nombre,
+                contenido: notaEditando.contenido,
+                tipo: notaEditando.tipo,
+                etiquetas: notaEditando.etiquetas,
+                descripcion: notaEditando.descripcion,
+                tema: notaEditando.tema || '',
+                date: notaEditando.date
+              } : undefined}
+              temas={temas}
+              tiposNotas={tiposNotas}
+              etiquetasDisponibles={etiquetasDisponibles}
+              onSubmit={handleGuardarNota}
+              onCancel={handleCancelarNota}
+              submitLabel="Guardar cambios"
+            />
+          </Modal>
+
+          {/* Modal de edición de recurso */}
+          <Modal
+            open={mostrarFormularioRecurso}
+            onClose={handleCancelarRecurso}
+            title="Editar recurso"
+            maxWidth="max-w-lg"
+          >
+            <RecursoForm
+              initialValues={recursoEditando ? {
+                titulo: recursoEditando.titulo,
+                descripcion: recursoEditando.descripcion,
+                tipo: recursoEditando.tipo,
+                tema: '', // Necesitarás mapear esto según tu lógica
+                url: recursoEditando.url,
+                etiquetas: recursoEditando.tags
+              } : undefined}
+              temas={temas}
+              tiposRecursos={tiposRecursos}
+              etiquetasDisponibles={etiquetasDisponibles}
+              onSubmit={handleGuardarRecurso}
+              onCancel={handleCancelarRecurso}
+              submitLabel="Guardar cambios"
             />
           </Modal>
         </div>

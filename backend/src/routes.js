@@ -155,7 +155,7 @@ router.get('/api/tickets/stats', async (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 // GET /api/resources/recent?limit=10&skip=0
-router.get('/api/resources/recent', async (req, res) => {
+router.get('/api/resources/recent', requireAuth, async (req, res) => {
   const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 10, 50));
   const skip = Math.max(0, parseInt(req.query.skip) || 0);
   try {
@@ -172,7 +172,7 @@ router.get('/api/resources/recent', async (req, res) => {
 
 // Recursos por tipo
 // GET /api/resources?tipo=video|nota|archivo&limit=10&skip=0
-router.get('/api/resources', async (req, res) => {
+router.get('/api/resources', requireAuth, async (req, res) => {
   const { tipo, categoria, estado, page = 1, limit = 50 } = req.query;
   const limitNum = Math.max(1, Math.min(parseInt(limit) || 50, 100));
   const skip = (Math.max(1, parseInt(page)) - 1) * limitNum;
@@ -207,7 +207,7 @@ router.get('/api/resources', async (req, res) => {
 
 // Crear nuevo recurso
 // POST /api/resources
-router.post('/api/resources', async (req, res) => {
+router.post('/api/resources', requireAuth, async (req, res) => {
   try {
     const {
       tipo,
@@ -250,7 +250,7 @@ router.post('/api/resources', async (req, res) => {
 
 // Obtener recurso por ID
 // GET /api/resources/:id
-router.get('/api/resources/:id', async (req, res) => {
+router.get('/api/resources/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -270,7 +270,7 @@ router.get('/api/resources/:id', async (req, res) => {
 
 // Actualizar recurso
 // PUT /api/resources/:id
-router.put('/api/resources/:id', async (req, res) => {
+router.put('/api/resources/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -307,7 +307,7 @@ router.put('/api/resources/:id', async (req, res) => {
 
 // Eliminar recurso
 // DELETE /api/resources/:id
-router.delete('/api/resources/:id', async (req, res) => {
+router.delete('/api/resources/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -536,31 +536,11 @@ router.get('/api/events/:id', async (req, res) => {
   const id = req.params.id;
   try {
     const event = await prisma.event.findUnique({
-      where: { id },
-      include: {
-        resources: {
-          include: {
-            resource: {
-              select: {
-                id: true,
-                titulo: true,
-                tipo: true,
-                descripcion: true
-              }
-            }
-          }
-        }
-      }
+      where: { id }
     });
     if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
     
-    // Transformar la estructura de recursos para que sea más fácil de usar en el frontend
-    const transformedEvent = {
-      ...event,
-      recursos: event.resources.map(r => r.resource)
-    };
-    
-    res.json(transformedEvent);
+    res.json(event);
   } catch (err) {
     console.error('Error en GET /api/events/:id:', err);
     res.status(500).json({ error: 'Error obteniendo detalles de evento', details: err.message });
@@ -1049,7 +1029,7 @@ router.post('/api/assistant', async (req, res) => {
         message: 'El servidor de IA no está disponible actualmente. Por favor, intenta de nuevo más tarde.'
       }});
     }
-    return res.status(200).json({ response: text });
+    return res.status(200).json({ reply: text });
   } catch (error) {
     return res.status(503).json({ error: {
       code: 503,
@@ -1967,6 +1947,10 @@ router.get('/api/notes/:id', requireAuth, async (req, res) => {
 // POST /api/notes - Crear nueva nota
 router.post('/api/notes', requireAuth, async (req, res) => {
   try {
+    console.log('🟢 Backend: Creating note with body:', req.body);
+    console.log('🔑 Backend: Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+    console.log('👤 Backend: Authenticated user:', req.user);
+    
     const {
       title,
       content,
@@ -1977,16 +1961,26 @@ router.post('/api/notes', requireAuth, async (req, res) => {
       context,
       keyPoints = [],
       status = 'activo',
-      userId
+      userId,
+      date,
+      priority,
+      relatedResources = []
     } = req.body;
+    
+    // Debug específico del campo date
+    console.log('🔍 Backend: date field received:', date);
+    console.log('🔍 Backend: date type:', typeof date);
+    console.log('🔍 Backend: date value details:', JSON.stringify({ date }));
     
     // Validaciones básicas
     if (!title || !content || !tema) {
+      console.log('❌ Backend: Missing required fields');
       return res.status(400).json({ 
         error: 'Faltan campos requeridos: title, content, tema' 
       });
     }
     
+    console.log('🚀 Backend: Creating note in database...');
     const note = await prisma.note.create({
       data: {
         title,
@@ -1998,13 +1992,17 @@ router.post('/api/notes', requireAuth, async (req, res) => {
         context,
         keyPoints,
         status,
-        userId
+        userId,
+        date,
+        priority,
+        relatedResources
       }
     });
     
+    console.log('✅ Backend: Note created successfully:', note);
     res.status(201).json(note);
   } catch (error) {
-    console.error('Error creando nota:', error);
+    console.error('❌ Backend: Error creating note:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });

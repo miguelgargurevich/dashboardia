@@ -10,7 +10,6 @@ import RecursosArchivosPanel from '../components/resources/RecursosArchivosPanel
 import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
-import TodoConocimientoPanel from './TodoConocimientoPanel';
 import DetalleNotaPanel from '../components/knowledge/DetalleNotaPanel';
 import DetalleRecursoPanel from '../components/resources/DetalleRecursoPanel';
 import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
@@ -51,36 +50,10 @@ const KnowledgePage: React.FC = () => {
   }, []);
 
   const [token, setToken] = useState<string | null>(null);
-  // Estado para los filtros de Todo el Conocimiento
-  const [filtros, setFiltros] = useState({ notas: true, recursos: true, eventos: true });
-  // Eventos para TodoConocimientoPanel (eventos del mes actual)
-  const [eventosParaTodoConocimiento, setEventosParaTodoConocimiento] = useState<any[]>([]);
-  useEffect(() => {
-    async function fetchEventos() {
-      if (!token) return;
-      try {
-        const now = new Date();
-        const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        const res = await fetch(`/api/events/calendar?month=${month}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setEventosParaTodoConocimiento(Array.isArray(data) ? data : []);
-        }
-      } catch (e) {
-        setEventosParaTodoConocimiento([]);
-      }
-    }
-    fetchEventos();
-  }, [token]);
-  
-  // Estado para selección de evento en TodoConocimientoPanel
-  const [eventoSeleccionado, setEventoSeleccionado] = useState<any | null>(null);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [seccionActiva, setSeccionActiva] = useState('todo');
+  const [seccionActiva, setSeccionActiva] = useState('todos');
   const [temaSeleccionado, setTemaSeleccionado] = useState<string | null>(null);
   const [notasMD, setNotasMD] = useState<NotasMD[]>([]);
   const [notaSeleccionada, setNotaSeleccionada] = useState<NotasMD | null>(null);
@@ -582,17 +555,6 @@ const KnowledgePage: React.FC = () => {
 
         <div className="flex flex-wrap gap-4 mb-8">
           <button
-            onClick={() => { setSeccionActiva('todo'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              seccionActiva === 'todo'
-                ? 'bg-accent text-secondary' 
-                : 'bg-secondary text-accent hover:bg-accent/10'
-            }`}
-          >
-            <FaLayerGroup />
-            Todo el conocimiento
-          </button>
-          <button
             onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               seccionActiva === 'temas' || seccionActiva === 'todos'
@@ -627,123 +589,9 @@ const KnowledgePage: React.FC = () => {
           </button>
         </div>
 
-        {/* Panel Todo el conocimiento con filtros y botones de acción */}
+        {/* Contenido de las secciones */}
         {!tiposNotas.length ? (
           <div className="p-8 text-center text-gray-500">Cargando tipos de nota...</div>
-        ) : seccionActiva === 'todo' ? (
-          <>
-            <div className="flex flex-wrap gap-3 mb-6">
-              <button
-                onClick={() => setFiltros(f => ({ ...f, notas: !f.notas }))}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border ${
-                  filtros.notas
-                    ? 'bg-accent/20 text-accent border-accent/30'
-                    : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
-                }`}
-              >
-                {filtros.notas ? <FaEye className="text-accent text-base" /> : <FaEye className="text-gray-400 text-base" />}
-                Notas
-              </button>
-              <button
-                onClick={() => setFiltros(f => ({ ...f, recursos: !f.recursos }))}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border ${
-                  filtros.recursos
-                    ? 'bg-accent/20 text-accent border-accent/30'
-                    : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
-                }`}
-              >
-                {filtros.recursos ? <FaEye className="text-accent text-base" /> : <FaEye className="text-gray-400 text-base" />}
-                Recursos
-              </button>
-              <button
-                onClick={() => setFiltros(f => ({ ...f, eventos: !f.eventos }))}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border ${
-                  filtros.eventos
-                    ? 'bg-accent/20 text-accent border-accent/30'
-                    : 'bg-secondary text-gray-300 border-transparent hover:bg-accent/10 hover:text-accent'
-                }`}
-              >
-                {filtros.eventos ? <FaEye className="text-accent text-base" /> : <FaEye className="text-gray-400 text-base" />}
-                Eventos
-              </button>
-            </div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Todo el conocimiento</h2>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
-                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                   Nota
-                </button>
-                <button
-                  onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
-                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                   Recurso
-                </button>
-                <button
-                  onClick={() => setMostrarFormularioEvento(true)}
-                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                   Evento
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <TodoConocimientoPanel
-                  notas={filtros.notas ? notasMD : []}
-                  recursos={filtros.recursos ? recursos : []}
-                  eventos={filtros.eventos ? eventosParaTodoConocimiento : []}
-                  notaSeleccionada={notaSeleccionada}
-                  setNotaSeleccionada={setNotaSeleccionada as (nota: any) => void}
-                  recursoSeleccionado={recursoSeleccionado}
-                  setRecursoSeleccionado={setRecursoSeleccionado as (recurso: any) => void}
-                  eventoSeleccionado={eventoSeleccionado}
-                  setEventoSeleccionado={setEventoSeleccionado as (evento: any) => void}
-                />
-              </div>
-              <div className="lg:col-span-2">
-                {notaSeleccionada ? (
-                  <DetalleNotaPanel
-                    notaSeleccionada={notaSeleccionada as any}
-                    temas={temas}
-                    descargarNota={descargarNota as (nota: any) => void}
-                    eliminarNota={eliminarNota as (nota: any) => void}
-                    renderizarContenidoMarkdown={renderizarContenidoMarkdown}
-                    onEdit={() => setMostrarFormularioNota(true)}
-                  />
-                ) : recursoSeleccionado ? (
-                  <DetalleRecursoPanel
-                    recurso={recursoSeleccionado}
-                    temas={temas}
-                    getTipoRecursoLabel={getTipoRecursoLabel}
-                    formatFileSize={formatFileSize}
-                    onEdit={() => setMostrarFormularioRecurso(true)}
-                    onDelete={eliminarRecurso}
-                  />
-                ) : eventoSeleccionado ? (
-                  <DetalleEventoPanel
-                    eventoSeleccionado={eventoSeleccionado}
-                    onEdit={() => setMostrarFormularioEvento(true)}
-                    onDelete={() => {}}
-                    emptyMessage="Selecciona un evento para ver sus detalles"
-                  />
-                ) : (
-                   <div className="flex items-center justify-center h-full text-gray-400">
-                      <div className="text-center">
-                        <FaEye className="text-4xl mb-4 mx-auto" />
-                        <p>{'Selecciona una nota, recurso o evento para ver sus detalles'}</p>
-                      </div>
-                    </div>
-                )}
-              </div>
-            </div>
-          </>
         ) : null}
 
 

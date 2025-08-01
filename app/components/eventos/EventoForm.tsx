@@ -75,15 +75,26 @@ const EventoForm: React.FC<EventoFormProps> = ({
   useEffect(() => {
     if (initialValues?.relatedResources && initialValues.relatedResources.length > 0) {
       // Cargar detalles de los recursos seleccionados
-      fetch('/api/resources')
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data.recursos)) {
-            setRecursosSeleccionados(
-              data.recursos.filter((r: any) => initialValues.relatedResources?.includes(r.id))
-            );
-          }
-        });
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch('/api/resources', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data.recursos)) {
+              setRecursosSeleccionados(
+                data.recursos.filter((r: any) => initialValues.relatedResources?.includes(r.id))
+              );
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching resources:', error);
+          });
+      }
     } else {
       setRecursosSeleccionados([]);
     }

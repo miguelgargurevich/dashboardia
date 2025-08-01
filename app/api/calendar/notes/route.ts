@@ -7,8 +7,8 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    // Agregar el filtro de tema para actividades diarias
-    searchParams.set('tema', 'actividades-diarias');
+    // Eliminar el filtro forzado de tema para mostrar todas las notas
+    // searchParams.set('tema', 'actividades-diarias'); // Comentado para mostrar todas las notas
     const queryString = searchParams.toString();
     
     console.log('🔍 Calendar API: Request received');
@@ -69,16 +69,25 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    console.log('🟢 Frontend API: Creating note with body:', body);
+    console.log('� Frontend API: body.date value:', body.date);
+    console.log('🔍 Frontend API: body.date type:', typeof body.date);
+    console.log('�🔑 Frontend API: Authorization header:', request.headers.get('Authorization') ? 'Present' : 'Missing');
+    
     // Mapear datos del frontend al formato del backend
     const noteData = {
       ...body,
-      tema: 'actividades-diarias',
+      tema: body.tema || 'notificaciones', // Tema por defecto: notificaciones
       // Mapear 'type' a 'tipo' si viene del frontend
       tipo: body.type || body.tipo || 'personal'
     };
     
     // Remover el campo 'type' para evitar conflictos
     delete noteData.type;
+    
+    console.log('🔍 Frontend API: noteData.date value:', noteData.date);
+    console.log('🔍 Frontend API: noteData.date type:', typeof noteData.date);
+    console.log('🚀 Frontend API: Sending to backend:', noteData);
     
     // Usar el endpoint unificado de notas en lugar del endpoint específico de daily-notes
     const response = await fetch(`${BACKEND_URL}/api/notes`, {
@@ -90,9 +99,13 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(noteData),
     });
 
+    console.log('📡 Frontend API: Backend response status:', response.status);
+    
     const data = await response.json();
+    console.log('📦 Frontend API: Backend response data:', data);
     
     if (!response.ok) {
+      console.error('❌ Frontend API: Backend error:', data);
       return NextResponse.json(data, { status: response.status });
     }
 
@@ -103,9 +116,10 @@ export async function POST(request: NextRequest) {
       date: data.date || data.createdAt || new Date().toISOString().split('T')[0]
     };
 
+    console.log('✅ Frontend API: Success, returning:', adaptedResponse);
     return NextResponse.json(adaptedResponse, { status: 201 });
   } catch (error) {
-    console.error('Error creating daily note:', error);
+    console.error('❌ Frontend API: Error creating note:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }

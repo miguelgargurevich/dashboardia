@@ -199,7 +199,7 @@ interface Note {
     setLoadingNotes(true);
     try {
       const token = getToken();
-      const res = await fetch(`/api/daily-notes?month=${visibleMonth}`, {
+      const res = await fetch(`/api/calendar/notes?month=${visibleMonth}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Error al cargar notas');
@@ -213,12 +213,25 @@ interface Note {
   };
   // Crear nota
   const createNote = async () => {
-    if (!noteTitle.trim() && !noteContent.trim()) return;
+    console.log('🟢 createNote called with:', { noteTitle, noteContent, noteTema, selectedDate });
+    
+    if (!noteTitle.trim() && !noteContent.trim()) {
+      alert('Por favor, ingresa al menos un título o contenido para la nota.');
+      return;
+    }
+    
     setCreatingNote(true);
     setUploadingFiles(false);
+    
     try {
       const token = getToken();
+      if (!token) {
+        alert('No tienes permisos para crear notas. Por favor, inicia sesión nuevamente.');
+        return;
+      }
+      
       let relatedResources: string[] = [];
+      
       // Subir archivos si hay
       if (noteFiles.length > 0) {
         setUploadingFiles(true);
@@ -227,49 +240,76 @@ interface Note {
           formData.append('file', file);
           formData.append('titulo', file.name);
           // Usar el primer tema dinámico como fallback
-          const temaFallback = temas[0]?.id || 'actividades-diarias';
+          const temaFallback = temas[0]?.id || 'notificaciones';
           formData.append('tema', noteTema || temaFallback);
           formData.append('tags', JSON.stringify(noteTags.split(',').map(t => t.trim()).filter(Boolean)));
-          const resUpload = await fetch('/api/resources/upload', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-          });
-          if (resUpload.ok) {
-            const data = await resUpload.json();
-            if (data.recurso && data.recurso.id) {
-              relatedResources.push(data.recurso.id);
+          
+          try {
+            const resUpload = await fetch('/api/resources/upload', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${token}` },
+              body: formData
+            });
+            
+            if (resUpload.ok) {
+              const data = await resUpload.json();
+              if (data.recurso && data.recurso.id) {
+                relatedResources.push(data.recurso.id);
+              }
+            } else {
+              console.error('Error uploading file:', file.name, await resUpload.text());
             }
+          } catch (uploadError) {
+            console.error('Upload error for file:', file.name, uploadError);
           }
         }
         setUploadingFiles(false);
       }
+      
       // Crear la nota con los recursos asociados
-      const res = await fetch('/api/daily-notes', {
+      const notePayload = {
+        title: noteTitle,
+        content: noteContent,
+        date: selectedDate,
+        tags: noteTags.split(',').map(t => t.trim()).filter(Boolean),
+        tema: noteTema || 'notificaciones', // Fallback tema
+        relatedResources
+      };
+      
+      console.log('� DEBUG - selectedDate value:', selectedDate);
+      console.log('🔍 DEBUG - selectedDate type:', typeof selectedDate);
+      console.log('�🚀 Sending note payload:', notePayload);
+      
+      const res = await fetch('/api/calendar/notes', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          title: noteTitle,
-          content: noteContent,
-          date: selectedDate,
-          tags: noteTags.split(',').map(t => t.trim()).filter(Boolean),
-          tema: noteTema,
-          relatedResources
-        }),
+        body: JSON.stringify(notePayload),
       });
-      if (!res.ok) throw new Error('Error al crear nota');
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Error creating note:', res.status, errorText);
+        throw new Error(`Error al crear nota: ${res.status} - ${errorText}`);
+      }
+      
+      // Limpiar formulario solo si todo salió bien
       setNoteTitle('');
       setNoteContent('');
       setNoteTags('');
       setNoteTema('');
       setNoteFiles([]);
       fetchNotes();
-    } catch {}
-    setCreatingNote(false);
-    setUploadingFiles(false);
+      
+    } catch (error) {
+      console.error('Error in createNote:', error);
+      alert(`Error al crear la nota: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setCreatingNote(false);
+      setUploadingFiles(false);
+    }
   };
 
 
@@ -294,7 +334,7 @@ interface Note {
     if (!window.confirm('¿Seguro que deseas eliminar esta nota?')) return;
     try {
       const token = getToken();
-      const res = await fetch(`/api/daily-notes/${note.id}`, {
+      const res = await fetch(`/api/calendar/notes/${note.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -801,7 +841,7 @@ interface Note {
                     <button
                       className="w-full px-6 py-3 bg-green-500 text-white rounded-xl font-bold text-lg hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-3 shadow-lg mt-4"
                       onClick={createNote}
-                      disabled={creatingNote || uploadingFiles || (!noteTitle.trim() && !noteContent.trim())}
+                      disabled={creatingNote || uploadingFiles}
                     >
                       {creatingNote || uploadingFiles ? (
                         <>
@@ -953,7 +993,7 @@ interface Note {
             onSubmit={async (values) => {
               // Actualizar nota en backend
               const token = getToken();
-              await fetch(`/api/daily-notes/${editingNote.id}`,
+              await fetch(`/api/calendar/notes/${editingNote.id}`,
                 {
                   method: 'PUT',
                   headers: {
