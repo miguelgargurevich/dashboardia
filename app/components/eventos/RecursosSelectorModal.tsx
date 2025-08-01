@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaPlus, FaTimes, FaCheck, FaFileAlt, FaTag, FaAlignLeft } from "react-icons/fa";
+import { FaSearch, FaCheck, FaFileAlt, FaTag, FaLink, FaFileArchive, FaVideo, FaRobot, FaUserTie, FaWpforms } from "react-icons/fa";
 
 interface Recurso {
   id: string;
@@ -18,21 +18,65 @@ interface RecursosSelectorModalProps {
 }
 
 const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onClose, onSelect, selectedIds, token }) => {
+  // Mapeo de iconos y colores por tipo
+  const tipoIcono: Record<string, JSX.Element> = {
+    url: <FaLink />,
+    archivo: <FaFileArchive />,
+    video: <FaVideo />,
+    "ia-automatizacion": <FaRobot />,
+    "contactos-externos": <FaUserTie />,
+    "plantillas-formularios": <FaWpforms />,
+    default: <FaFileAlt />,
+  };
+
+  const tipoColor: Record<string, string> = {
+    url: "bg-blue-500/20 text-blue-400 border-blue-400/30",
+    archivo: "bg-green-500/20 text-green-400 border-green-400/30",
+    video: "bg-purple-500/20 text-purple-400 border-purple-400/30",
+    "ia-automatizacion": "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
+    "contactos-externos": "bg-orange-500/20 text-orange-400 border-orange-400/30",
+    "plantillas-formularios": "bg-pink-500/20 text-pink-400 border-pink-400/30",
+    default: "bg-gray-500/20 text-gray-400 border-gray-400/30",
+  };
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
   const [seleccionados, setSeleccionados] = useState<string[]>(selectedIds);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     fetch("/api/resources", {
       headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
     })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data.recursos)) {
-          setRecursos(data.recursos);
+      .then(async res => {
+        if (!res.ok) {
+          let msg = "Error al cargar recursos.";
+          if (res.status === 401) msg = "No autorizado. Verifica tu sesión.";
+          setError(msg);
+          setRecursos([]);
+          return;
         }
-      });
+        const data = await res.json();
+        // Leer recursos desde data.resources (formato real de la API)
+        if (Array.isArray(data.resources)) {
+          setRecursos(data.resources);
+        } else if (Array.isArray(data)) {
+          setRecursos(data);
+        } else if (Array.isArray(data.recursos)) {
+          setRecursos(data.recursos);
+        } else {
+          setRecursos([]);
+          setError("Respuesta inesperada del servidor.");
+        }
+      })
+      .catch(() => {
+        setError("No se pudo conectar al servidor.");
+        setRecursos([]);
+      })
+      .finally(() => setLoading(false));
   }, [token]);
 
   useEffect(() => {
@@ -40,43 +84,18 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
   }, [selectedIds, open]);
 
   const tipos = Array.from(new Set(recursos.map(r => r.tipo).filter(Boolean)));
+  // Mapeo de iconos para los tipos en el filtro
+  const tipoIconoSmall: Record<string, JSX.Element> = {
+    url: <FaLink className="inline-block mr-2 text-blue-400" />,
+    archivo: <FaFileArchive className="inline-block mr-2 text-green-400" />,
+    video: <FaVideo className="inline-block mr-2 text-purple-400" />,
+    "ia-automatizacion": <FaRobot className="inline-block mr-2 text-cyan-400" />,
+    "contactos-externos": <FaUserTie className="inline-block mr-2 text-orange-400" />,
+    "plantillas-formularios": <FaWpforms className="inline-block mr-2 text-pink-400" />,
+  };
 
   // Estado para agregar recurso
-  const [agregando, setAgregando] = useState(false);
-  const [nuevoTitulo, setNuevoTitulo] = useState("");
-  const [nuevoTipo, setNuevoTipo] = useState("");
-  const [nuevaDescripcion, setNuevaDescripcion] = useState("");
-  const [agregandoLoading, setAgregandoLoading] = useState(false);
 
-  const handleAgregarRecurso = async () => {
-    if (!nuevoTitulo.trim()) return;
-    setAgregandoLoading(true);
-    try {
-      const res = await fetch("/api/resources", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ titulo: nuevoTitulo, tipo: nuevoTipo, descripcion: nuevaDescripcion })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.id) {
-          // Refrescar lista y seleccionar el nuevo recurso
-          const nuevoRecurso = { id: data.id, titulo: nuevoTitulo, tipo: nuevoTipo, descripcion: nuevaDescripcion };
-          setRecursos(prev => [nuevoRecurso, ...prev]);
-          setSeleccionados(sel => [data.id, ...sel]);
-          setAgregando(false);
-          setNuevoTitulo("");
-          setNuevoTipo("");
-          setNuevaDescripcion("");
-        }
-      }
-    } finally {
-      setAgregandoLoading(false);
-    }
-  };
 
   const recursosFiltrados = recursos.filter(r =>
     (!busqueda || r.titulo.toLowerCase().includes(busqueda.toLowerCase())) &&
@@ -99,7 +118,7 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-fade-in">
-      <div className="bg-gradient-to-br from-secondary/95 to-primary/95 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col border border-accent/40 overflow-hidden">
+      <div className="bg-gradient-to-br from-secondary/95 to-primary/95 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[96vh] flex flex-col border border-accent/40 overflow-hidden">
         {/* Header sticky */}
         <div className="bg-secondary border-b border-accent/20 p-6 rounded-t-xl flex items-center justify-between sticky top-0 z-10">
           <div>
@@ -134,32 +153,43 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
               >
                 <option value="">Todos los tipos</option>
                 {tipos.map(tipo => (
-                  <option key={tipo} value={tipo}>{tipo}</option>
+                  <option key={tipo ?? "default"} value={tipo ?? "default"}>
+                    {tipo ? tipoIconoSmall[tipo] : null}{tipo ?? "Sin tipo"}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
-            {recursosFiltrados.length === 0 ? (
+            {loading ? (
+              <div className="text-gray-400 col-span-2 text-center py-8 text-lg animate-pulse">Cargando recursos...</div>
+            ) : error ? (
+              <div className="text-red-400 col-span-2 text-center py-8 text-lg">{error}</div>
+            ) : recursosFiltrados.length === 0 ? (
               <div className="text-gray-400 col-span-2 text-center py-8 text-lg">No hay recursos disponibles.</div>
             ) : (
               recursosFiltrados.map(recurso => (
-                <label key={recurso.id} className={`group flex items-start gap-4 p-5 rounded-2xl border border-accent/10 bg-secondary/90 shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-150 ${seleccionados.includes(recurso.id) ? 'ring-2 ring-accent/80 border-accent/40 bg-accent/10' : 'hover:border-accent/40 hover:bg-accent/5'}`}>
-                  <input
-                    type="checkbox"
-                    checked={seleccionados.includes(recurso.id)}
-                    onChange={() => toggleSeleccion(recurso.id)}
-                    className="accent-accent w-5 h-5 mt-1"
-                  />
+                <div
+                  key={recurso.id}
+                  onClick={() => toggleSeleccion(recurso.id)}
+                  className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors duration-150 select-none cursor-pointer shadow-lg
+                    ${seleccionados.includes(recurso.id)
+                      ? 'bg-accent/20 text-accent border-accent/30 border-2'
+                      : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'}
+                  `}
+                >
+                  <span className={`flex items-center justify-center w-10 h-10 rounded-lg text-xl border ${tipoColor[recurso.tipo || "default"]}`}>{tipoIcono[recurso.tipo || "default"]}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-white truncate text-base group-hover:text-accent transition-colors">{recurso.titulo}</span>
-                      {recurso.tipo && <span className="text-xs text-accent bg-accent/10 rounded-full px-3 py-0.5 ml-2 font-semibold uppercase tracking-wide">{recurso.tipo}</span>}
+                      <span className="font-semibold truncate text-base group-hover:text-accent transition-colors">{recurso.titulo}</span>
+                      {recurso.tipo && <span className={`text-xs font-semibold uppercase tracking-wide px-3 py-0.5 rounded-full ${tipoColor[recurso.tipo] || tipoColor.default}`}>{recurso.tipo}</span>}
                     </div>
-                    {recurso.descripcion && <div className="text-xs text-gray-300 mt-1 truncate italic">{recurso.descripcion}</div>}
+                    {recurso.descripcion && <div className="text-xs text-gray-400 mt-1 truncate italic">{recurso.descripcion}</div>}
                   </div>
-                  {seleccionados.includes(recurso.id) && <FaCheck className="text-accent text-xl ml-2 animate-bounce" />}
-                </label>
+                  <span className="flex items-center ml-4">
+                    {seleccionados.includes(recurso.id) && <FaCheck className="text-accent text-xl animate-bounce" />}
+                  </span>
+                </div>
               ))
             )}
           </div>
