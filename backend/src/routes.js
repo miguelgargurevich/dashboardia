@@ -353,6 +353,98 @@ router.get('/api/events/:id', async (req, res) => {
   }
 });
 
+// GET /api/events - Listar todos los eventos
+router.get('/api/events', async (req, res) => {
+  try {
+    const events = await prisma.event.findMany({
+      orderBy: { startDate: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startDate: true,
+        endDate: true,
+        location: true,
+        createdAt: true,
+        eventType: true,
+        recurrencePattern: true
+      }
+    });
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo eventos', details: err.message });
+  }
+});
+
+// POST /api/events - Crear evento
+router.post('/api/events', async (req, res) => {
+  try {
+    const event = await prisma.event.create({
+      data: req.body,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startDate: true,
+        endDate: true,
+        location: true,
+        createdAt: true,
+        eventType: true,
+        recurrencePattern: true
+      }
+    });
+    res.json(event);
+  } catch (err) {
+    res.status(500).json({ error: 'Error creando evento', details: err.message });
+  }
+});
+
+// PUT /api/events/:id - Actualizar evento
+router.put('/api/events/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const event = await prisma.event.update({
+      where: { id },
+      data: req.body,
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        startDate: true,
+        endDate: true,
+        location: true,
+        createdAt: true,
+        eventType: true,
+        recurrencePattern: true
+      }
+    });
+    res.json(event);
+  } catch (err) {
+    if (err.code === 'P2025') {
+      res.status(404).json({ error: 'Evento no encontrado' });
+    } else {
+      res.status(500).json({ error: 'Error actualizando evento', details: err.message });
+    }
+  }
+});
+
+// DELETE /api/events/:id - Eliminar evento
+router.delete('/api/events/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    await prisma.event.delete({
+      where: { id }
+    });
+    res.json({ success: true, message: 'Evento eliminado correctamente' });
+  } catch (err) {
+    if (err.code === 'P2025') {
+      res.status(404).json({ error: 'Evento no encontrado' });
+    } else {
+      res.status(500).json({ error: 'Error eliminando evento', details: err.message });
+    }
+  }
+});
+
 // === RUTAS PARA GESTIÓN DE URLs ===
 
 // Obtener todas las URLs con filtros opcionales
