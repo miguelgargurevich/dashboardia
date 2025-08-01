@@ -33,7 +33,8 @@ import {
   FaUsers,
   FaRobot,
   FaClipboardList,
-  FaLaptop
+  FaLaptop,
+  FaExclamationTriangle
 } from "react-icons/fa";
 
 
@@ -168,7 +169,7 @@ interface Note {
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [noteTags, setNoteTags] = useState(''); // tags separados por coma
-  const [noteTema, setNoteTema] = useState('');
+  const [noteTema, setNoteTema] = useState('notificaciones');
   const [creatingNote, setCreatingNote] = useState(false);
   const [noteFiles, setNoteFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -689,6 +690,37 @@ interface Note {
                         max="2100-12-31"
                       />
                     </div>
+                    {/* Selección de tema para la nota */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <label className="text-green-300 font-semibold text-sm" htmlFor="note-tema-select">Tema:</label>
+                      <div className="relative w-full">
+                        <select
+                          id="note-tema-select"
+                          className="input-std w-full pl-10 appearance-none border border-green-400/30 rounded-lg bg-primary text-white text-base focus:ring-2 focus:ring-blue-400/40 focus:outline-none"
+                          value={noteTema}
+                          onChange={e => setNoteTema(e.target.value)}
+                          disabled={creatingNote}
+                        >
+                          <option value="">Selecciona un tema</option>
+                          {temas.map((tema: any) => (
+                            <option key={tema.id} value={tema.id}>{tema.nombre || tema.id}</option>
+                          ))}
+                        </select>
+                        {/* Ícono react-icon según el tipo de tema */}
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-green-400">
+                          {noteTema === 'notificaciones' && <FaBell />}
+                          {noteTema === 'capacitacion' && <FaChalkboardTeacher />}
+                          {noteTema === 'incidente' && <FaExclamationTriangle />}
+                          {noteTema === 'mantenimiento' && <FaTools />}
+                          {noteTema === 'reunion' && <FaUsers />}
+                          {noteTema === 'robotica' && <FaRobot />}
+                          {noteTema === 'documento' && <FaFileAlt />}
+                          {noteTema === 'otro' && <FaTag />}
+                          {/* Default icon if no match */}
+                          {!['notificaciones','capacitacion','incidente','mantenimiento','reunion','robotica','documento','otro'].includes(noteTema) && <FaTag />}
+                        </span>
+                      </div>
+                    </div>
                     <input
                       type="text"
                       className="w-full px-4 py-3 rounded-lg bg-primary border border-green-400/30 text-white text-base"
@@ -713,6 +745,7 @@ interface Note {
                       onChange={e => setNoteTags(e.target.value)}
                       disabled={creatingNote}
                     />
+                    
                     <div
                   className={`transition-all duration-200 border-2 rounded-xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer relative group
                     ${isDragging ? 'border-green-400 bg-green-900/30 ring-4 ring-green-400/40' : 'border-dashed border-green-400/40 bg-primary/40 hover:bg-green-900/10'}`}
