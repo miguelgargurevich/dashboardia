@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import RecursosSelectorModal from "./RecursosSelectorModal";
 import { FaFileAlt, FaStickyNote, FaTag, FaHashtag, FaRegStickyNote } from "react-icons/fa";
 
 interface NotaFormValues {
@@ -11,6 +12,7 @@ interface NotaFormValues {
   tema: string;
   priority?: string;
   date?: string; // Único campo de fecha
+  relatedResources?: string[];
 }
 
 interface Tema {
@@ -55,6 +57,10 @@ const NotaForm: React.FC<NotaFormProps> = ({
   const [tema, setTema] = useState(initialValues?.tema || (temas[0]?.id || ""));
   const [etiquetas, setEtiquetas] = useState<string[]>(initialValues?.etiquetas || []);
   const [descripcion, setDescripcion] = useState(initialValues?.descripcion || "");
+  const [recursosModalOpen, setRecursosModalOpen] = useState(false);
+  // Estado para los detalles de los recursos seleccionados
+  const [recursosSeleccionados, setRecursosSeleccionados] = useState<{ id: string; titulo: string; tipo?: string; descripcion?: string }[]>([]);
+  const [selectedRecursos, setSelectedRecursos] = useState<string[]>(initialValues?.relatedResources || []);
   const getToday = () => {
     const today = new Date();
     return today.toISOString().slice(0, 10);
@@ -70,8 +76,8 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setEtiquetas(initialValues.etiquetas || []);
       setDescripcion(initialValues.descripcion || "");
       setDate(initialValues.date || getToday());
+      setSelectedRecursos(initialValues.relatedResources || []);
     } else {
-      // Limpiar todos los campos al crear nueva nota
       setNombre("");
       setContenido("");
       setTipo(tiposNotas[0]?.id || "");
@@ -79,13 +85,29 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setEtiquetas([]);
       setDescripcion("");
       setDate(getToday());
+      setSelectedRecursos([]);
     }
-    // eslint-disable-next-line
   }, [JSON.stringify(initialValues), tiposNotas, temas]);
+
+  // Cargar detalles de los recursos seleccionados
+  useEffect(() => {
+    if (selectedRecursos.length > 0) {
+      fetch('/api/resources', {
+        headers: typeof window !== 'undefined' && localStorage.getItem('token') ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : undefined
+      })
+        .then(res => res.json())
+        .then(data => {
+          const recursos = Array.isArray(data.resources) ? data.resources : Array.isArray(data.recursos) ? data.recursos : Array.isArray(data) ? data : [];
+          setRecursosSeleccionados(recursos.filter((r: any) => selectedRecursos.includes(r.id)));
+        });
+    } else {
+      setRecursosSeleccionados([]);
+    }
+  }, [selectedRecursos]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const values = { nombre, contenido, tipo, etiquetas, descripcion, tema, date };
+    const values = { nombre, contenido, tipo, etiquetas, descripcion, tema, date, relatedResources: selectedRecursos };
     await onSubmit(values);
   };
 
@@ -106,7 +128,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-secondary/90 to-primary/90 rounded-2xl shadow-2xl border border-accent/30 p-6 max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">
+    <form onSubmit={handleSubmit} className="bg-gradient-to-br from-secondary/90 to-primary/90 rounded-2xl shadow-2xl border border-accent/30 p-6 max-w-2xl mx-auto flex flex-col gap-6 animate-fade-in">      
       <div className="flex items-center gap-2 mb-2">
         <FaRegStickyNote className="text-accent text-2xl" />
         <h2 className="text-xl font-bold text-accent">{initialValues ? 'Editar Nota' : 'Nueva Nota'}</h2>
@@ -220,6 +242,34 @@ const NotaForm: React.FC<NotaFormProps> = ({
             <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">Recursos Relacionados</label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {recursosSeleccionados.length === 0 ? (
+            <span className="text-gray-400 text-sm">Ningún recurso seleccionado.</span>
+          ) : (
+            recursosSeleccionados.map(r => (
+              <span key={r.id} className="px-2 py-1 bg-gray-700/40 text-gray-200 text-xs rounded flex items-center gap-1">
+                <FaFileAlt className="inline-block mr-1 text-accent" />{r.titulo}
+                {r.tipo && <span className="ml-1 text-gray-400">({r.tipo})</span>}
+              </span>
+            ))
+          )}
+        </div>
+        <button type="button" className="px-3 py-1 rounded bg-accent text-primary font-bold hover:bg-accent/80 transition" onClick={() => setRecursosModalOpen(true)}>
+          Seleccionar recursos
+        </button>
+        <RecursosSelectorModal
+          open={recursosModalOpen}
+          onClose={() => setRecursosModalOpen(false)}
+          onSelect={recursos => {
+            setSelectedRecursos(recursos.map(r => r.id));
+            setRecursosModalOpen(false);
+          }}
+          selectedIds={selectedRecursos}
+          token={typeof window !== 'undefined' ? localStorage.getItem('token') : undefined}
+        />
       </div>
       <div className="flex gap-2 justify-end mt-4">
         {onCancel && (
