@@ -85,6 +85,7 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
 
   const tipos = Array.from(new Set(recursos.map(r => r.tipo).filter(Boolean)));
   // Mapeo de iconos para los tipos en el filtro
+  // Iconos para mostrar en la UI, pero no en <option>
   const tipoIconoSmall: Record<string, JSX.Element> = {
     url: <FaLink className="inline-block mr-2 text-blue-400" />,
     archivo: <FaFileArchive className="inline-block mr-2 text-green-400" />,
@@ -154,7 +155,7 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
                 <option value="">Todos los tipos</option>
                 {tipos.map(tipo => (
                   <option key={tipo ?? "default"} value={tipo ?? "default"}>
-                    {tipo ? tipoIconoSmall[tipo] : null}{tipo ?? "Sin tipo"}
+                    {tipo ?? "Sin tipo"}
                   </option>
                 ))}
               </select>
