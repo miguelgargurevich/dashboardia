@@ -8,6 +8,51 @@ const prisma = new PrismaClient();
 // router.use(requireAuth); // Comentado para proteger solo rutas privadas
 
 // Endpoint: Estadísticas de tickets agrupadas
+/**
+ * @swagger
+ * /api/tickets/stats:
+ *   get:
+ *     summary: Obtener estadísticas de tickets agrupadas
+ *     description: Retorna estadísticas de tickets agrupadas por diferentes criterios
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: groupBy
+ *         schema:
+ *           type: string
+ *           enum: [tipo, estado, sistema, fecha, usuario]
+ *           default: tipo
+ *         description: Campo por el cual agrupar las estadísticas
+ *     responses:
+ *       200:
+ *         description: Estadísticas de tickets agrupadas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _count:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                   usuario:
+ *                     type: string
+ *                     description: Presente cuando groupBy=usuario
+ *                   createdAt:
+ *                     type: string
+ *                     description: Presente cuando groupBy=fecha
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/tickets/stats?groupBy=tipo|estado|sistema|fecha|usuario
 router.get('/api/tickets/stats', async (req, res) => {
   const groupBy = req.query.groupBy || 'tipo';
@@ -68,6 +113,47 @@ router.get('/api/tickets/stats', async (req, res) => {
 });
 
 // Recursos recientes (archivos, notas, videos)
+/**
+ * @swagger
+ * /api/resources/recent:
+ *   get:
+ *     summary: Obtener recursos recientes
+ *     description: Retorna una lista de recursos ordenados por fecha de carga descendente
+ *     tags: [Resources]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Número máximo de recursos a retornar
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Número de recursos a omitir para paginación
+ *     responses:
+ *       200:
+ *         description: Lista de recursos recientes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Resource'
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/resources/recent?limit=10&skip=0
 router.get('/api/resources/recent', async (req, res) => {
   const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 10, 50));
@@ -239,6 +325,47 @@ router.delete('/api/resources/:id', async (req, res) => {
 });
 
 // Próximos eventos
+/**
+ * @swagger
+ * /api/events/upcoming:
+ *   get:
+ *     summary: Obtener próximos eventos
+ *     description: Retorna una lista de eventos futuros ordenados por fecha de inicio
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 5
+ *         description: Número máximo de eventos a retornar
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Número de eventos a omitir para paginación
+ *     responses:
+ *       200:
+ *         description: Lista de próximos eventos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Event'
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/events/upcoming?limit=5&skip=0
 router.get('/api/events/upcoming', async (req, res) => {
   const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 5, 50));
@@ -270,6 +397,39 @@ router.get('/api/events/upcoming', async (req, res) => {
 });
 
 // Eventos para calendario
+/**
+ * @swagger
+ * /api/events/calendar:
+ *   get:
+ *     summary: Obtener eventos para el calendario
+ *     description: Retorna eventos filtrados por mes para mostrar en el calendario
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: string
+ *           pattern: '^\\d{4}-\\d{2}$'
+ *           example: '2025-08'
+ *         description: Mes en formato YYYY-MM para filtrar eventos
+ *     responses:
+ *       200:
+ *         description: Lista de eventos del mes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Event'
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/events/calendar?month=YYYY-MM
 router.get('/api/events/calendar', async (req, res) => {
   const month = req.query.month;
@@ -328,6 +488,49 @@ router.get('/api/events/calendar', async (req, res) => {
 });
 
 // Detalles de evento
+/**
+ * @swagger
+ * /api/events/{id}:
+ *   get:
+ *     summary: Obtener detalles de un evento específico
+ *     description: Retorna los detalles completos de un evento incluyendo recursos relacionados
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID único del evento
+ *     responses:
+ *       200:
+ *         description: Detalles del evento
+ *         content:
+ *           application/json:
+ *             schema:
+ *               allOf:
+ *                 - $ref: '#/components/schemas/Event'
+ *                 - type: object
+ *                   properties:
+ *                     recursos:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Resource'
+ *       404:
+ *         description: Evento no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/events/:id
 router.get('/api/events/:id', async (req, res) => {
   const id = req.params.id;
@@ -994,6 +1197,44 @@ router.get('/api/tickets/distribucion', requireAuth, async (req, res) => {
 });
 
 // Estadísticas de tickets por tipo (para gráfico de barras)
+/**
+ * @swagger
+ * /api/tickets/por-prioridad:
+ *   get:
+ *     summary: Estadísticas de tickets por prioridad
+ *     description: Obtiene la distribución de tickets agrupados por nivel de prioridad
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Distribución de tickets por prioridad
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   prioridad:
+ *                     type: string
+ *                     description: Nivel de prioridad
+ *                     enum: [Baja, Media, Alta, Crítica]
+ *                   count:
+ *                     type: integer
+ *                     description: Cantidad de tickets en esta prioridad
+ *                   _count:
+ *                     type: object
+ *                     properties:
+ *                       prioridad:
+ *                         type: integer
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/api/tickets/por-prioridad', requireAuth, async (req, res) => {
   try {
     const tipos = await prisma.ticket.groupBy({
@@ -1016,6 +1257,49 @@ router.get('/api/tickets/por-prioridad', requireAuth, async (req, res) => {
 });
 
 // Tendencia semanal de tickets (para gráfico de líneas)
+/**
+ * @swagger
+ * /api/tickets/tendencia-semanal:
+ *   get:
+ *     summary: Tendencia semanal de tickets
+ *     description: Obtiene estadísticas de tickets creados en los últimos 7 días
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tendencia semanal de tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 dailyData:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                         description: Fecha del día
+ *                       count:
+ *                         type: integer
+ *                         description: Cantidad de tickets creados
+ *                 totalThisWeek:
+ *                   type: integer
+ *                   description: Total de tickets esta semana
+ *                 averagePerDay:
+ *                   type: number
+ *                   format: float
+ *                   description: Promedio de tickets por día
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/api/tickets/tendencia-semanal', requireAuth, async (req, res) => {
   try {
     const ahora = new Date();
@@ -1058,6 +1342,79 @@ router.get('/api/tickets/tendencia-semanal', requireAuth, async (req, res) => {
 // ===== RUTAS PARA NOTAS GENERALES =====
 
 // GET /api/daily-notes?month=YYYY-MM - LEGACY: Redirige al modelo unificado
+/**
+ * @swagger
+ * /api/daily-notes:
+ *   get:
+ *     summary: Obtener notas diarias
+ *     description: Obtiene todas las notas diarias del usuario autenticado con paginación
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Cantidad de notas por página
+ *     responses:
+ *       200:
+ *         description: Lista de notas diarias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 notes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       titulo:
+ *                         type: string
+ *                       contenido:
+ *                         type: string
+ *                       fecha:
+ *                         type: string
+ *                         format: date-time
+ *                       tipo:
+ *                         type: string
+ *                       prioridad:
+ *                         type: string
+ *                       estado:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     totalNotes:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPrevPage:
+ *                       type: boolean
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/api/daily-notes', requireAuth, async (req, res) => {
   try {
     const { month, date } = req.query;
@@ -1219,6 +1576,66 @@ router.delete('/api/daily-notes/:id', requireAuth, async (req, res) => {
 });
 
 // GET /api/daily-notes/stats - Obtener estadísticas de notas diarias
+/**
+ * @swagger
+ * /api/daily-notes/stats:
+ *   get:
+ *     summary: Estadísticas de notas diarias
+ *     description: Obtiene estadísticas agregadas de las notas diarias del usuario
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estadísticas de notas diarias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalNotes:
+ *                   type: integer
+ *                   description: Total de notas creadas
+ *                 notesThisWeek:
+ *                   type: integer
+ *                   description: Notas creadas esta semana
+ *                 notesThisMonth:
+ *                   type: integer
+ *                   description: Notas creadas este mes
+ *                 notesByType:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       tipo:
+ *                         type: string
+ *                       count:
+ *                         type: integer
+ *                 notesByPriority:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       prioridad:
+ *                         type: string
+ *                       count:
+ *                         type: integer
+ *                 notesByStatus:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       estado:
+ *                         type: string
+ *                       count:
+ *                         type: integer
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
   try {
     const { month } = req.query;
@@ -1313,6 +1730,106 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
 });
 
 // GET /api/daily-notes/search - Búsqueda avanzada de notas diarias
+/**
+ * @swagger
+ * /api/daily-notes/search:
+ *   get:
+ *     summary: Buscar notas diarias
+ *     description: Busca notas diarias por título o contenido
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Término de búsqueda
+ *       - in: query
+ *         name: tipo
+ *         schema:
+ *           type: string
+ *         description: Filtrar por tipo de nota
+ *       - in: query
+ *         name: prioridad
+ *         schema:
+ *           type: string
+ *         description: Filtrar por prioridad
+ *       - in: query
+ *         name: estado
+ *         schema:
+ *           type: string
+ *         description: Filtrar por estado
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Cantidad de resultados por página
+ *     responses:
+ *       200:
+ *         description: Resultados de búsqueda
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 notes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       titulo:
+ *                         type: string
+ *                       contenido:
+ *                         type: string
+ *                       fecha:
+ *                         type: string
+ *                         format: date-time
+ *                       tipo:
+ *                         type: string
+ *                       prioridad:
+ *                         type: string
+ *                       estado:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     totalResults:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPrevPage:
+ *                       type: boolean
+ *       400:
+ *         description: Parámetro de búsqueda requerido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
   try {
     const { 

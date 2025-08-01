@@ -11,15 +11,82 @@ const os = require('os');
 require('dotenv').config();
 const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
+// Swagger configuration
+const { specs, swaggerUi } = require('./src/swagger');
+
 // Endpoint para el asistente IA (Gemini)
 
 
 app.use(express.json());
 app.use(cors());
 
+// Swagger UI endpoint
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Dashboard IA Soporte API'
+}));
+
 // Rutas avanzadas del dashboard (protegidas y agrupadas)
 const dashboardRoutes = require('./src/routes');
+
 // Endpoints de autenticación deben ir antes de las rutas avanzadas
+/**
+ * @swagger
+ * /api/login:
+ *   post:
+ *     summary: Autenticar usuario
+ *     description: Autentica un usuario con email y contraseña, retorna un JWT token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email del usuario
+ *                 example: miguel.gargurevich@gmail.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Contraseña del usuario
+ *                 example: mypassword123
+ *     responses:
+ *       200:
+ *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   description: JWT token para autenticación
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *       401:
+ *         description: Credenciales inválidas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 app.post('/api/login', async (req, res) => {
   console.log('Body recibido en login:', req.body);
   const { email, password } = req.body;
@@ -40,6 +107,65 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
+/**
+ * @swagger
+ * /api/signup:
+ *   post:
+ *     summary: Registrar nuevo usuario
+ *     description: Crea un nuevo usuario o actualiza la contraseña si ya existe
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email del usuario
+ *                 example: usuario@ejemplo.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Contraseña del usuario
+ *                 example: mypassword123
+ *     responses:
+ *       200:
+ *         description: Usuario registrado o actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                 created:
+ *                   type: boolean
+ *                   description: Indica si el usuario fue creado
+ *                 updated:
+ *                   type: boolean
+ *                   description: Indica si el usuario fue actualizado
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 app.post('/api/signup', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email y contraseña requeridos' });
@@ -72,6 +198,62 @@ app.post('/api/signup', async (req, res) => {
 
 app.use(dashboardRoutes);
 
+/**
+ * @swagger
+ * /api/assistant:
+ *   post:
+ *     summary: Asistente AI conversacional
+ *     description: Interactúa con el asistente AI usando el modelo Gemini
+ *     tags: [AI Assistant]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - messages
+ *             properties:
+ *               messages:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     role:
+ *                       type: string
+ *                       enum: [user, model, assistant]
+ *                       description: Rol del mensaje
+ *                     content:
+ *                       type: string
+ *                       description: Contenido del mensaje
+ *                 description: Array de mensajes de la conversación
+ *                 example:
+ *                   - role: "user"
+ *                     content: "¿Cuáles son los tickets pendientes?"
+ *     responses:
+ *       200:
+ *         description: Respuesta del asistente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reply:
+ *                   type: string
+ *                   description: Respuesta del asistente AI
+ *       400:
+ *         description: Datos de entrada inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Error del servidor o API de Gemini
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 app.post('/api/assistant', async (req, res) => {
   try {
     const { messages } = req.body;
