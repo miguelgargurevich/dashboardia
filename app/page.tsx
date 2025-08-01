@@ -78,6 +78,11 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [token, setToken] = useState<string | null>(null);
   
+  // Helper function para obtener la URL del backend
+  const getBackendUrl = () => {
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+  };
+  
   // Estados para el calendario
   const today = new Date();
   const todayDay = today.getDate();
@@ -162,11 +167,8 @@ export default function Home() {
 
   // Funciones para edición de eventos
   const handleEditEvent = async (event: Event) => {
-    console.log('Evento recibido para editar:', event);
-    
     // Si el evento ya tiene todos los datos, usarlos directamente
     if (event.titulo || event.descripcion || event.fechaInicio) {
-      console.log('Usando evento con datos completos directamente');
       setEditingEvent(event as EventoData);
       setShowEventForm(true);
       return;
@@ -174,8 +176,8 @@ export default function Home() {
 
     // Si no, obtener los datos completos del evento desde la API
     try {
-      console.log('Obteniendo datos completos del evento desde API...');
-      const response = await fetch(`/api/events/${event.id}`, {
+      const backendUrl = getBackendUrl();
+      const response = await fetch(`${backendUrl}/api/events/${event.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -184,7 +186,6 @@ export default function Home() {
       
       if (response.ok) {
         const eventoCompleto = await response.json();
-        console.log('Evento completo obtenido de la API:', eventoCompleto);
         setEditingEvent(eventoCompleto);
         setShowEventForm(true);
       } else {
@@ -198,9 +199,8 @@ export default function Home() {
 
   const handleSubmitEvent = async (eventoData: any) => {
     try {
-      console.log('Enviando datos del evento:', eventoData);
-      
-      const response = await fetch(`/api/events/${editingEvent?.id}`, {
+      const backendUrl = getBackendUrl();
+      const response = await fetch(`${backendUrl}/api/events/${editingEvent?.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -210,13 +210,11 @@ export default function Home() {
       });
 
       if (response.ok) {
-        console.log('Evento actualizado exitosamente');
         setShowEventForm(false);
         setEditingEvent(null);
         // Refrescar los eventos
         await fetchEventsData();
       } else {
-        console.error('Error al actualizar evento:', response.statusText);
         alert('Error al actualizar el evento');
       }
     } catch (error) {
@@ -228,7 +226,8 @@ export default function Home() {
     
     if (confirm('¿Estás seguro de que deseas eliminar este evento?')) {
       try {
-        const response = await fetch(`/api/events/${event.id}`, {
+        const backendUrl = getBackendUrl();
+        const response = await fetch(`${backendUrl}/api/events/${event.id}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -258,7 +257,8 @@ export default function Home() {
         setLoadingEvents(false);
         return;
       }
-      const response = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
+      const backendUrl = getBackendUrl();
+      const response = await fetch(`${backendUrl}/api/events/calendar?month=${visibleMonth}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -393,8 +393,6 @@ export default function Home() {
                 eventType: editingEvent.tipoEvento || editingEvent.eventType || '',
                 modo: editingEvent.modo || '',
               };
-              console.log('Initial values para el form:', initialValues);
-              console.log('editingEvent completo:', editingEvent);
               return initialValues;
             })()}
             onSubmit={handleSubmitEvent}

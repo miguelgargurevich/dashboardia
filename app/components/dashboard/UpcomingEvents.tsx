@@ -43,6 +43,11 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Obtener URL del backend desde variable de entorno
+  const getBackendUrl = () => {
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+  };
+
   const handleEventClick = (event: Event) => {
     // Extraer solo la parte de la fecha (YYYY-MM-DD) para evitar problemas de zona horaria
     let dateString = event.startDate;
@@ -64,7 +69,8 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
     async function fetchUpcomingEvents() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/events/upcoming?limit=${limit}`, {
+        const backendUrl = getBackendUrl();
+        const res = await fetch(`${backendUrl}/api/events/upcoming?limit=${limit}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

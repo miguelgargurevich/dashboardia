@@ -4,28 +4,63 @@ const express = require('express');
 const app = express();
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const os = require('os');
 require('dotenv').config();
+
+// Importar configuración de entorno
+const envConfig = require('./src/config');
+
+// Validar entorno al inicio
+envConfig.validateEnvironment();
+
+// Inicializar Prisma con la URL correcta según el entorno
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: envConfig.getDatabaseUrl()
+    }
+  }
+});
+
 const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args));
 
-// Swagger configuration
-const { specs, swaggerUi } = require('./src/swagger');
+// Swagger configuration (solo en desarrollo)
+let swaggerUi, specs;
+if (envConfig.config.swagger.enabled) {
+  const swagger = require('./src/swagger');
+  swaggerUi = swagger.swaggerUi;
+  specs = swagger.specs;
+}
+
+envConfig.logger.info(`Iniciando aplicación en modo: ${envConfig.env}`);
 
 // Endpoint para el asistente IA (Gemini)
 
 
 app.use(express.json());
-app.use(cors());
 
-// Swagger UI endpoint
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Dashboard IA Soporte API'
-}));
+// Configurar CORS según el entorno
+app.use(cors(envConfig.config.cors));
+
+// Middleware de logging (solo en desarrollo)
+if (envConfig.config.logging.requests) {
+  app.use((req, res, next) => {
+    envConfig.logger.debug(`${req.method} ${req.path}`, { body: req.body });
+    next();
+  });
+}
+
+// Swagger UI endpoint (solo si está habilitado)
+if (envConfig.config.swagger.enabled && swaggerUi && specs) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Dashboard IA Soporte API'
+  }));
+  envConfig.logger.info('Swagger UI habilitado en /api-docs');
+}
 
 // Rutas avanzadas del dashboard (protegidas y agrupadas)
 const dashboardRoutes = require('./src/routes');
@@ -88,22 +123,28 @@ const dashboardRoutes = require('./src/routes');
  *               $ref: '#/components/schemas/Error'
  */
 app.post('/api/login', async (req, res) => {
-  console.log('Body recibido en login:', req.body);
+  envConfig.logger.debug('Login attempt', { email: req.body.email });
   const { email, password } = req.body;
-  console.log('Login intento:', { email, password });
+  
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    console.log('Usuario no encontrado:', email);
+    envConfig.logger.debug('User not found', { email });
     return res.status(401).json({ error: 'Usuario no encontrado' });
   }
-  console.log('Hash en BD:', user.password);
+  
   const valid = await bcrypt.compare(password, user.password);
-  console.log('Resultado bcrypt.compare:', valid);
   if (!valid) {
-    console.log('Contraseña incorrecta para:', email);
+    envConfig.logger.debug('Invalid password', { email });
     return res.status(401).json({ error: 'Contraseña incorrecta' });
   }
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+  
+  const token = jwt.sign(
+    { id: user.id, email: user.email, role: user.role }, 
+    envConfig.shared.jwt.secret, 
+    { expiresIn: envConfig.shared.jwt.expiresIn }
+  );
+  
+  envConfig.logger.debug('Login successful', { userId: user.id });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
 });
 
@@ -265,19 +306,25 @@ app.post('/api/assistant', async (req, res) => {
         return { role, parts: [{ text: m.content }] };
       })
       .filter(m => m.role === 'user' || m.role === 'model');
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ reply: 'No se encontró la clave de API de Gemini.' });
+    
+    const apiKey = envConfig.shared.gemini.apiKey;
+    if (!apiKey) {
+      envConfig.logger.error('Gemini API key not found');
+      return res.status(500).json({ reply: 'No se encontró la clave de API de Gemini.' });
+    }
+    
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents })
     });
+    
     const data = await response.json();
-    // console.log('Respuesta completa de Gemini:', JSON.stringify(data, null, 2));
+    envConfig.logger.debug('Gemini response received');
     const aiMsg = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No se pudo obtener respuesta.';
     res.json({ reply: aiMsg });
   } catch (err) {
-    console.error('Error en /api/assistant:', err);
+    envConfig.logger.error('Error in /api/assistant:', err);
     res.status(500).json({ reply: 'Error al conectar con Gemini.' });
   }
 });
@@ -373,7 +420,7 @@ app.get('/api/kb', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 4000;
+const port = envConfig.config.port;
 if (require.main === module) {
   app.listen(port, () => {
     const ifaces = os.networkInterfaces();
@@ -388,11 +435,22 @@ if (require.main === module) {
       }
       if (network) break;
     }
-    console.log('\nBackend corriendo!');
+    
+    envConfig.logger.info(`Backend running in ${envConfig.env} mode`);
+    console.log('\n🚀 Backend Dashboard IA Soporte');
+    console.log(`📦 Entorno: ${envConfig.env.toUpperCase()}`);
+    console.log(`🌐 Puerto: ${port}`);
     console.log(`\n  Local:            ${local}`);
-    if (network) console.log(`  On Your Network:  ${network}`);
-    console.log('\nPuedes acceder a la API en /api/login, /api/tickets, etc.');
-    console.log('\nPara detener el servidor usa Ctrl+C.\n');
+    if (network) console.log(`  Network:          ${network}`);
+    
+    if (envConfig.config.swagger.enabled) {
+      console.log(`\n📚 Swagger UI:       ${local}/api-docs`);
+    }
+    
+    console.log('\n🔗 Endpoints disponibles:');
+    console.log('  /api/login, /api/tickets, /api/events, etc.');
+    console.log('\n⚡ Database:', envConfig.isDevelopment() ? 'Local PostgreSQL' : 'Supabase');
+    console.log('\n🛑 Para detener el servidor usa Ctrl+C\n');
   });
 }
 

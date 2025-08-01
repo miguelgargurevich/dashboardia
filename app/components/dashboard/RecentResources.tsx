@@ -50,7 +50,8 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
   useEffect(() => {
     async function fetchResources() {
       setLoading(true);
-      const res = await fetch(`/api/resources/recent?limit=${limit}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const res = await fetch(`${backendUrl}/api/resources/recent?limit=${limit}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
