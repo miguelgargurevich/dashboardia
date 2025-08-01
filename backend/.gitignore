@@ -1,0 +1,54 @@
+# 🔒 ARCHIVOS SENSIBLES - NUNCA SUBIR A GIT
+.env
+.env.*
+*.env
+
+# 📊 Logs y archivos temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 📁 Dependencias
+node_modules/
+
+# 🗄️ Base de datos
+*.db
+*.sqlite
+*.sqlite3
+
+# 🔑 Archivos de claves y certificados
+*.key
+*.pem
+*.p12
+*.crt
+*.cer
+
+# 🎯 Build y distribución
+dist/
+build/
+
+# 📱 OS files
+.DS_Store
+Thumbs.db
+
+# 🛠️ IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 📊 Coverage
+coverage/
+
+# 🗂️ Archivos de respaldo
+*.backup
+*.bak
+
+# ⚠️ RECORDATORIO IMPORTANTE:
+# Los archivos .env contienen claves sensibles como:
+# - Database URLs con passwords
+# - API Keys (Gemini, Supabase, etc.)
+# - JWT Secrets
+# - Claves de acceso S3
+# NUNCA deben ser incluidos en el repositorio

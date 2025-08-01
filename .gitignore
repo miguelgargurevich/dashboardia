@@ -18,10 +18,18 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Env files
+# 🔒 ARCHIVOS SENSIBLES - CRÍTICO: NUNCA SUBIR A GIT
 .env
-.env.local
 .env.*
+*.env
+backend/.env
+backend/.env.*
+
+# ⚠️ VARIABLES DE ENTORNO CON DATOS SENSIBLES:
+# - Database URLs con passwords
+# - API Keys (Gemini, Supabase, JWT, etc.)
+# - Claves de acceso S3
+# - Secrets de autenticación
 
 # Cache
 .cache/

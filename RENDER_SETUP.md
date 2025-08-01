@@ -9,26 +9,40 @@
 # ⚡ VARIABLE CLAVE - ESTO ACTIVA MODO PRODUCCIÓN
 NODE_ENV=production
 
-# 🗄️ BASE DE DATOS (Supabase - ya configurada en tu .env)
-DATABASE_URL_PROD=postgresql://postgres.dtlvqpmyukwcbpllgpue:dkXjecz7593kqLXh@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
-DATABASE_URL=postgresql://postgres.dtlvqpmyukwcbpllgpue:dkXjecz7593kqLXh@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+# 🗄️ BASE DE DATOS (Supabase)
+DATABASE_URL_PROD=postgresql://tu-usuario:tu-password@tu-host.supabase.com:puerto/postgres?pgbouncer=true
+DATABASE_URL=postgresql://tu-usuario:tu-password@tu-host.supabase.com:puerto/postgres
 
 # 🔐 SEGURIDAD
-JWT_SECRET=2e7b8c1f-4a6e-4e2a-9b1a-8f3d2c7e5a9f
+JWT_SECRET=tu-jwt-secret-super-seguro-aqui
 
 # 🤖 IA
-GEMINI_API_KEY=AIzaSyANvyiOzGHJ0mTSNsl8EgSC3S517VeT4ho
+GEMINI_API_KEY=tu-gemini-api-key-aqui
 
 # ☁️ SUPABASE S3 (opcional si usas archivos)
-SUPABASE_S3_ENDPOINT=https://dtlvqpmyukwcbpllgpue.supabase.co/storage/v1/s3
+SUPABASE_S3_ENDPOINT=https://tu-proyecto.supabase.co/storage/v1/s3
 SUPABASE_S3_REGION=us-east-1
-SUPABASE_S3_BUCKET=dashborad
-SUPABASE_S3_ACCESS_KEY_ID=c5c2c77b8154dbc041ffba1c255c3120
-SUPABASE_S3_SECRET_ACCESS_KEY=9e182e63d643190d2a3ae7f63e9853ec870002f2cb4ab189cb05207be928a1d9
-SUPABASE_S3_API_KEY=dashboard-bucket-key
+SUPABASE_S3_BUCKET=tu-bucket-name
+SUPABASE_S3_ACCESS_KEY_ID=tu-access-key-id
+SUPABASE_S3_SECRET_ACCESS_KEY=tu-secret-access-key
+SUPABASE_S3_API_KEY=tu-api-key
 
 # 🌐 PUERTO (Render lo asigna automáticamente)
 PORT=4000
+```
+
+## 🚨 **ADVERTENCIA DE SEGURIDAD CRÍTICA**
+
+⚠️ **Los valores mostrados arriba son EJEMPLOS PLACEHOLDER**  
+⚠️ **NUNCA uses estos valores reales en producción**  
+⚠️ **Reemplaza TODOS los valores con tus claves reales**  
+⚠️ **Configura estas variables directamente en Render, NO en código**
+
+### 📝 **Cómo obtener tus valores reales:**
+1. **Supabase**: Ve a Settings → Database → Connection string
+2. **Gemini**: Ve a Google AI Studio → API Keys
+3. **JWT**: Genera uno seguro: `openssl rand -hex 32`
+4. **S3**: Ve a Supabase → Storage → Settings → S3 API
 ```
 
 ## 🔄 ¿Cómo funciona el cambio automático?
