@@ -54,7 +54,7 @@ async function main() {
     { tipo: 'archivo', titulo: 'Política Seguridad', filePath: '/uploads/politica-seguridad.pdf', tags: ['seguridad', 'pdf'], categoria: 'Seguridad' },
     { tipo: 'url', titulo: 'Portal de Soporte', url: 'https://soporte.empresa.com', tags: ['soporte', 'web'], categoria: 'Soporte' },
     { tipo: 'video', titulo: 'Onboarding IT', url: 'https://youtube.com/onboarding', tags: ['onboarding', 'it'], categoria: 'Recursos Humanos' },
-    { tipo: 'ia-automatizacion', titulo: 'Bot de Tickets', descripcion: 'Automatiza la gestión de tickets', tags: ['ia', 'automatización'], categoria: 'Automatización' },
+    { tipo: 'ia-automatizacion', titulo: 'Bot de Automatización', descripcion: 'Automatiza procesos comunes', tags: ['ia', 'automatización'], categoria: 'Automatización' },
     { tipo: 'contactos-externos', titulo: 'Proveedor de Hosting', descripcion: 'Contacto de soporte hosting', tags: ['hosting', 'contacto'], categoria: 'Infraestructura' },
     { tipo: 'plantillas-formularios', titulo: 'Plantilla Solicitud Acceso', filePath: '/uploads/solicitud-acceso.docx', tags: ['plantilla', 'acceso'], categoria: 'Formularios' },
     { tipo: 'archivo', titulo: 'Manual de Usuario', filePath: '/uploads/manual-usuario.pdf', tags: ['manual', 'usuario'], categoria: 'Documentos' },
@@ -66,53 +66,6 @@ async function main() {
   for (const r of resources) {
     const exists = await prisma.resource.findMany({ where: { titulo: r.titulo }, take: 1 });
     if (exists.length === 0) await prisma.resource.create({ data: r });
-  }
-
-  // Tickets
-  // Tickets variados: diferentes meses, años y picos diarios
-  const ticketTemplates = [
-    { tipo: 'Incidente', estado: 'Abierto', descripcion: 'Error en SharePoint', sistema: 'SharePoint' },
-    { tipo: 'Requerimiento', estado: 'Cerrado', descripcion: 'Solicitar acceso a Teams', sistema: 'Teams' },
-    { tipo: 'Incidente', estado: 'En Proceso', descripcion: 'Problema con Outlook', sistema: 'Outlook' },
-    { tipo: 'Incidente', estado: 'Abierto', descripcion: 'VPN no conecta', sistema: 'VPN' },
-    { tipo: 'Requerimiento', estado: 'Abierto', descripcion: 'Solicitar acceso a carpeta compartida', sistema: 'FileServer' }
-  ];
-  // Configuración de tickets por mes específico
-  // Lógicas de distribución
-  const mesesEspecificos = [0, 3, 6, 9]; // Enero, Abril, Julio, Octubre
-  const cantidadPorMes = 25; // Aumentar la cantidad
-  const feriados = [1, 25]; // Ejemplo: 1 y 25 de cada mes (menos tickets)
-  for (const mes of mesesEspecificos) {
-    for (let i = 0; i < cantidadPorMes; i++) {
-      // Pico semanal: más tickets los lunes
-      const dia = (i % 7 === 0) ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 28) + 1;
-      // Menos tickets en feriados
-      if (feriados.includes(dia) && i % 3 !== 0) continue;
-      // Tendencia creciente: más tickets en meses posteriores
-      const ticketsEsteMes = cantidadPorMes + mes * 2;
-      // Año alterno para variedad
-      const year = (i % 2 === 0) ? now.getFullYear() : now.getFullYear() - 1;
-      let fechaBase = new Date(year, mes, dia);
-      fechaBase.setHours(Math.floor(Math.random() * 23));
-      fechaBase.setMinutes(Math.floor(Math.random() * 59));
-      // Tickets recurrentes: cada lunes, mismo problema
-      const template = (dia % 7 === 1) ? ticketTemplates[3] : ticketTemplates[(i + mes) % ticketTemplates.length];
-      const descripcion = template.descripcion + ` [${year}-${mes+1}-${dia}] #${i}`;
-      const exists = await prisma.ticket.findMany({ where: { descripcion }, take: 1 });
-      // Asignar usuario de soporte aleatorio, pero distribuir equitativamente
-      const soporteUser = soporteUsers[i % soporteUsers.length];
-      if (exists.length === 0) await prisma.ticket.create({ data: { ...template, descripcion, createdAt: fechaBase, userId: soporteUser.id } });
-      // Tendencia creciente: agregar más tickets en meses posteriores
-      if (mes > 0 && i < mes * 2) {
-        let fechaExtra = new Date(year, mes, dia);
-        fechaExtra.setHours(Math.floor(Math.random() * 23));
-        fechaExtra.setMinutes(Math.floor(Math.random() * 59));
-        const descripcionExtra = template.descripcion + ` [${year}-${mes+1}-${dia}] extra#${i}`;
-        const existsExtra = await prisma.ticket.findMany({ where: { descripcion: descripcionExtra }, take: 1 });
-        const soporteUserExtra = soporteUsers[(i + mes) % soporteUsers.length];
-        if (existsExtra.length === 0) await prisma.ticket.create({ data: { ...template, descripcion: descripcionExtra, createdAt: fechaExtra, userId: soporteUserExtra.id } });
-      }
-    }
   }
 
   // Eventos de negocio

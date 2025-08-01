@@ -30,21 +30,6 @@ model User {
   password  String
   role      String   @default("user")
   createdAt DateTime @default(now())
-  tickets   Ticket[]
-}
-
-model Ticket {
-  id          String              @id @default(cuid())
-  tipo        String
-  estado      String
-  sistema     String?
-  descripcion String
-  solucion    String?
-  archivos    String[]
-  userId      String?
-  createdAt   DateTime            @default(now())
-  closedAt    DateTime?
-  user        User?               @relation(fields: [userId], references: [id])
 }
 
 model Resource {
@@ -74,23 +59,6 @@ model Event {
   eventType          EventType          @default(otro)
   recurrencePattern  RecurrencePattern  @default(ninguno)
   relatedResources   String[]
-}
-
-model URL {
-  id          String   @id @default(cuid())
-  titulo      String
-  url         String
-  descripcion String?
-  tema        String   // notificaciones, polizas, tickets, actividades-diarias, emergencias
-  tipoContenido String // video, documento, pagina-contenidos, tutorial, referencia
-  estado      String   @default("pendiente") // pendiente, revisado, archivado
-  prioridad   String   @default("media") // alta, media, baja
-  etiquetas   String[]
-  agregadoPor String?  // nombre o email de quien agregó
-  comentarios String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  fechaRevision DateTime?
 }
 
 model Note {

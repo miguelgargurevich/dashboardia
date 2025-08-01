@@ -7,6 +7,110 @@ const prisma = new PrismaClient();
 // Proteger solo rutas privadas, NO /api/assistant
 // router.use(requireAuth); // Comentado para proteger solo rutas privadas
 
+// Endpoint: Estadísticas de tickets agrupadas
+/**
+ * @swagger
+ * /api/tickets/stats:
+ *   get:
+ *     summary: Obtener estadísticas de tickets agrupadas
+ *     description: Retorna estadísticas de tickets agrupadas por diferentes criterios
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: groupBy
+ *         schema:
+ *           type: string
+ *           enum: [tipo, estado, sistema, fecha, usuario]
+ *           default: tipo
+ *         description: Campo por el cual agrupar las estadísticas
+ *     responses:
+ *       200:
+ *         description: Estadísticas de tickets agrupadas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _count:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                   usuario:
+ *                     type: string
+ *                     description: Presente cuando groupBy=usuario
+ *                   createdAt:
+ *                     type: string
+ *                     description: Presente cuando groupBy=fecha
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// GET /api/tickets/stats?groupBy=tipo|estado|sistema|fecha|usuario
+router.get('/api/tickets/stats', async (req, res) => {
+  const groupBy = req.query.groupBy || 'tipo';
+  let groupField;
+  switch (groupBy) {
+    case 'estado': groupField = 'estado'; break;
+    case 'sistema': groupField = 'sistema'; break;
+    case 'fecha': groupField = 'createdAt'; break;
+    case 'usuario': groupField = 'userId'; break;
+    default: groupField = 'tipo';
+  }
+  try {
+    if (groupBy === 'fecha') {
+      // Agrupar por día (YYYY-MM-DD)
+      const tickets = await prisma.ticket.findMany({ select: { createdAt: true } });
+      const counts = {};
+      for (const t of tickets) {
+        const fecha = t.createdAt.toISOString().slice(0, 10);
+        counts[fecha] = (counts[fecha] || 0) + 1;
+      }
+      const stats = Object.entries(counts).map(([createdAt, count]) => ({ createdAt, _count: { id: count } }));
+      res.json(stats);
+    } else if (groupBy === 'usuario') {
+      // Para usuarios, necesitamos obtener nombres desde la tabla User
+      const stats = await prisma.ticket.groupBy({
+        by: ['userId'],
+        _count: { id: true }
+      });
+      
+      // Obtener nombres de usuarios
+      const userIds = stats.map(s => s.userId).filter(Boolean);
+      const users = await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true }
+      });
+      
+      const userMap = {};
+      users.forEach(user => {
+        userMap[user.id] = user.name;
+      });
+      
+      const formattedStats = stats.map(stat => ({
+        usuario: stat.userId ? userMap[stat.userId] || 'Usuario desconocido' : 'Sin asignar',
+        _count: stat._count
+      }));
+      
+      res.json(formattedStats);
+    } else {
+      const stats = await prisma.ticket.groupBy({
+        by: [groupField],
+        _count: { id: true }
+      });
+      res.json(stats);
+    }
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo estadísticas', details: err.message });
+  }
+});
 
 // Recursos recientes (archivos, notas, videos)
 /**
@@ -535,6 +639,294 @@ router.delete('/api/events/:id', async (req, res) => {
   }
 });
 
+// === RUTAS PARA GESTIÓN DE URLs ===
+
+// Obtener todas las URLs con filtros opcionales
+// GET /api/urls?tema=&estado=&tipoContenido=
+router.get('/api/urls', async (req, res) => {
+  try {
+    const { tema, estado, tipoContenido, page = 1, limit = 50 } = req.query;
+    
+    const where = {};
+    if (tema) where.tema = tema;
+    if (estado) where.estado = estado;
+    if (tipoContenido) where.tipoContenido = tipoContenido;
+    
+    const urls = await prisma.uRL.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (parseInt(page) - 1) * parseInt(limit),
+      take: parseInt(limit)
+    });
+    
+    const total = await prisma.uRL.count({ where });
+    
+    res.json({
+      urls,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo URLs', details: err.message });
+  }
+});
+
+// Crear nueva URL
+// POST /api/urls
+router.post('/api/urls', async (req, res) => {
+  try {
+    const {
+      titulo,
+      url,
+      descripcion,
+      tema,
+      tipoContenido,
+      estado = 'pendiente',
+      prioridad = 'media',
+      etiquetas = [],
+      agregadoPor,
+      comentarios
+    } = req.body;
+
+    // Validaciones básicas
+    if (!titulo || !url || !tema || !tipoContenido) {
+      return res.status(400).json({ 
+        error: 'Campos requeridos: titulo, url, tema, tipoContenido' 
+      });
+    }
+
+    const nuevaUrl = await prisma.uRL.create({
+      data: {
+        titulo,
+        url,
+        descripcion,
+        tema,
+        tipoContenido,
+        estado,
+        prioridad,
+        etiquetas,
+        agregadoPor,
+        comentarios
+      }
+    });
+
+    res.status(201).json(nuevaUrl);
+  } catch (err) {
+    res.status(500).json({ error: 'Error creando URL', details: err.message });
+  }
+});
+
+// Obtener URL por ID
+// GET /api/urls/:id
+router.get('/api/urls/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const url = await prisma.uRL.findUnique({
+      where: { id }
+    });
+    
+    if (!url) {
+      return res.status(404).json({ error: 'URL no encontrada' });
+    }
+    
+    res.json(url);
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo URL', details: err.message });
+  }
+});
+
+// Actualizar URL
+// PUT /api/urls/:id
+router.put('/api/urls/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      titulo,
+      url,
+      descripcion,
+      tema,
+      tipoContenido,
+      estado,
+      prioridad,
+      etiquetas,
+      agregadoPor,
+      comentarios,
+      fechaRevision
+    } = req.body;
+
+    const urlActualizada = await prisma.uRL.update({
+      where: { id },
+      data: {
+        titulo,
+        url,
+        descripcion,
+        tema,
+        tipoContenido,
+        estado,
+        prioridad,
+        etiquetas,
+        agregadoPor,
+        comentarios,
+        fechaRevision: fechaRevision ? new Date(fechaRevision) : undefined,
+        updatedAt: new Date()
+      }
+    });
+
+    res.json(urlActualizada);
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'URL no encontrada' });
+    }
+    res.status(500).json({ error: 'Error actualizando URL', details: err.message });
+  }
+});
+
+// Eliminar URL
+// DELETE /api/urls/:id
+router.delete('/api/urls/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.uRL.delete({
+      where: { id }
+    });
+    
+    res.json({ message: 'URL eliminada correctamente' });
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'URL no encontrada' });
+    }
+    res.status(500).json({ error: 'Error eliminando URL', details: err.message });
+  }
+});
+
+// Marcar URL como revisada
+// PATCH /api/urls/:id/revisar
+router.patch('/api/urls/:id/revisar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { comentarios } = req.body;
+    
+    const urlRevisada = await prisma.uRL.update({
+      where: { id },
+      data: {
+        estado: 'revisado',
+        fechaRevision: new Date(),
+        comentarios: comentarios || undefined,
+        updatedAt: new Date()
+      }
+    });
+    
+    res.json(urlRevisada);
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'URL no encontrada' });
+    }
+    res.status(500).json({ error: 'Error marcando URL como revisada', details: err.message });
+  }
+});
+
+// Obtener estadísticas de URLs
+// GET /api/urls/stats
+router.get('/api/urls/stats', async (req, res) => {
+  try {
+    const estadisticas = await Promise.all([
+      prisma.uRL.groupBy({
+        by: ['tema'],
+        _count: { id: true }
+      }),
+      prisma.uRL.groupBy({
+        by: ['estado'],
+        _count: { id: true }
+      }),
+      prisma.uRL.groupBy({
+        by: ['tipoContenido'],
+        _count: { id: true }
+      }),
+      prisma.uRL.count()
+    ]);
+
+    res.json({
+      porTema: estadisticas[0],
+      porEstado: estadisticas[1],
+      porTipoContenido: estadisticas[2],
+      total: estadisticas[3]
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error obteniendo estadísticas de URLs', details: err.message });
+  }
+});
+
+// === ENDPOINT PARA ASISTENTE IA CON DETECCIÓN DE URLs ===
+
+// Chat con asistente IA usando Gemini
+// POST /api/assistant
+// Prompt del asistente IA directamente en este archivo
+const systemPrompt = [
+  'Eres el asistente virtual de **DashboardIA**, la plataforma de gestión y soporte para equipos, usuarios y administradores.',
+  'Tu misión es ayudar a los usuarios a navegar, aprovechar y entender todas las funcionalidades del sistema, resolviendo dudas y guiando en el uso de herramientas clave.',
+  '',
+  '### 🛠️ Tu Rol:',
+  '- Asistir en español con explicaciones claras, útiles y guiadas.',
+  '- Ser soporte integrado, con tono cercano, paciente y profesional.',
+  '- Adaptarte al nivel de experiencia del usuario (novato o avanzado).',
+  '',
+  '### 👥 Roles de Usuarios:',
+  '- **Administrador**: gestiona usuarios, recursos, tickets, eventos y configuraciones.',
+  '- **Soporte**: atiende tickets, consulta recursos, agenda eventos y actualiza estados.',
+  '- **Usuario**: consulta eventos, notas, recursos, crea tickets y revisa información relevante.',
+  '',
+  '### 🎯 Funcionalidades principales:',
+  '- **Dashboard General**: resumen de eventos próximos, recursos recientes y estadísticas.',
+  '- **Recursos y Archivos**: subir, buscar y relacionar archivos, documentos, enlaces y videos.',
+  '- **Eventos y Calendario**: ver, crear y editar eventos, reuniones y actividades.',
+  '- **Notas y Conocimiento**: agregar notas, consultar base de conocimiento y buscar información.',
+  '- **Configuración**: editar perfil, cambiar contraseña, personalizar notificaciones.',
+  '',
+  '- **Ayuda integrada**:',
+  '  - Explicaciones rápidas (“¿Cómo creo un ticket?”, “¿Dónde subo un archivo?”).',
+  '  - Respuestas a preguntas frecuentes.',
+  '  - Ejemplo: “¿Cómo veo los recursos recientes?” → “Ve al Dashboard y revisa la sección ‘Recursos recientes’.”',
+  '',
+  '### 🗣️ Instrucciones de conversación:',
+  '1. Saluda siempre y pregunta en qué puede ayudar (“¡Hola! Soy tu asistente de DashboardIA. ¿En qué puedo ayudarte hoy?”).',
+  '2. Detecta el rol del usuario y ofrece solo funcionalidades relevantes.',
+  '3. Responde con explicaciones paso a paso y sugiere acciones (“Puedes ir a…”, “Luego haz clic en…”).',
+  '4. Si el usuario está perdido, pregunta si quiere acceder a alguna sección (“¿Quieres ver tus tickets, recursos o eventos?”).',
+  '5. Ofrece ejemplos visuales y enlaces internos (como `/dashboard`, `/tickets`, `/recursos`).',
+  '6. Si reporta un error, sugiere soluciones comunes: recargar, verificar conexión, contactar soporte.',
+  '7. Si pregunta sobre procesos (crear ticket, subir recurso, agendar evento), explica con detalle y paciencia.',
+  '8. Usa formato claro y natural, sin tecnicismos excesivos.',
+  '9. Finaliza con: “¿Te gustaría que te muestre cómo hacerlo o hacerlo contigo?”',
+  '',
+  '### ✅ Objetivo:',
+  '- Guiar al usuario en el uso de las funcionalidades clave.',
+  '- Facilitar la navegación y aumentar la adopción de características.',
+  '- Reducir dudas y mejorar la experiencia general.',
+  '',
+  '### 📘 Ejemplo de usuario → respuesta:',
+  '**Usuario:** “¿Cómo subo un archivo para mi equipo?”',
+  '**Asistente:** “¡Por supuesto! Ve a la sección ‘Recursos’ y haz clic en ‘Subir archivo’. Selecciona el documento y confirma. ¿Quieres que te muestre el botón ahora?”',
+  '',
+  '**Usuario:** “¿Dónde veo los eventos próximos?”',
+  '**Asistente:** “Puedes ver los eventos en el Dashboard o en la sección ‘Calendario’. Allí encontrarás las actividades programadas. ¿Te gustaría que te guíe paso a paso?”',
+  '',
+  '### 📝 Formato de respuesta:',
+  '- Responde siempre en **Markdown** para que el frontend muestre negritas, listas y títulos.',
+  '- Usa **negritas** para palabras clave y títulos de secciones.',
+  '- Sé breve y directo: máximo 3-4 frases por respuesta, salvo que el usuario pida más detalle.',
+  '- Si la respuesta es larga, resume y ofrece ampliar si el usuario lo solicita.',
+  '',
+  'Sigue este formato para todas las interacciones.'
+].join('\n');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+require('dotenv').config();
+
 router.post('/api/assistant', async (req, res) => {
   try {
     // LOG de depuración
@@ -650,6 +1042,66 @@ router.post('/api/assistant', async (req, res) => {
 // ENDPOINTS PARA DASHBOARD ESTADÍSTICO
 // =============================================
 
+// Estadísticas mensuales de tickets por estado
+router.get('/api/tickets/estadisticas-mensuales', requireAuth, async (req, res) => {
+  try {
+    const ahora = new Date();
+    const hace6Meses = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
+    
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        createdAt: {
+          gte: hace6Meses
+        }
+      },
+      select: {
+        createdAt: true,
+        estado: true
+      }
+    });
+    
+    // Agrupar por mes y estado
+    const meses = [];
+    for (let i = 0; i < 6; i++) {
+      const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+      const mesNombre = fecha.toLocaleDateString('es-ES', { month: 'short' });
+      meses.unshift({
+        mes: mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1),
+        resueltos: 0,
+        pendientes: 0,
+        en_proceso: 0
+      });
+    }
+    
+    tickets.forEach(ticket => {
+      const mes = ticket.createdAt.getMonth();
+      const año = ticket.createdAt.getFullYear();
+      const mesIndex = (año - hace6Meses.getFullYear()) * 12 + (mes - hace6Meses.getMonth());
+      
+      if (mesIndex >= 0 && mesIndex < 6) {
+        switch (ticket.estado?.toLowerCase()) {
+          case 'resuelto':
+          case 'cerrado':
+            meses[mesIndex].resueltos++;
+            break;
+          case 'en proceso':
+          case 'en_proceso':
+            meses[mesIndex].en_proceso++;
+            break;
+          default:
+            meses[mesIndex].pendientes++;
+        }
+      }
+    });
+    
+    res.json(meses);
+  } catch (error) {
+    console.error('Error obteniendo estadísticas mensuales de tickets:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Estadísticas mensuales de eventos
 router.get('/api/eventos/estadisticas-mensuales', requireAuth, async (req, res) => {
   try {
     const ahora = new Date();
@@ -702,6 +1154,247 @@ router.get('/api/eventos/estadisticas-mensuales', requireAuth, async (req, res) 
   }
 });
 
+// Estadísticas de distribución de tickets (para gráfico pie)
+router.get('/api/tickets/distribucion', requireAuth, async (req, res) => {
+  try {
+    const distribucion = await prisma.ticket.groupBy({
+      by: ['tipo'],
+      _count: {
+        id: true
+      }
+    });
+    
+    const datos = distribucion.map(item => ({
+      tipo: item.tipo || 'Sin tipo',
+      cantidad: item._count.id
+    }));
+    
+    res.json(datos);
+  } catch (error) {
+    console.error('Error obteniendo distribución de tickets:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Estadísticas de tickets por tipo (para gráfico de barras)
+/**
+ * @swagger
+ * /api/tickets/por-prioridad:
+ *   get:
+ *     summary: Estadísticas de tickets por prioridad
+ *     description: Obtiene la distribución de tickets agrupados por nivel de prioridad
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Distribución de tickets por prioridad
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   prioridad:
+ *                     type: string
+ *                     description: Nivel de prioridad
+ *                     enum: [Baja, Media, Alta, Crítica]
+ *                   count:
+ *                     type: integer
+ *                     description: Cantidad de tickets en esta prioridad
+ *                   _count:
+ *                     type: object
+ *                     properties:
+ *                       prioridad:
+ *                         type: integer
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/api/tickets/por-prioridad', requireAuth, async (req, res) => {
+  try {
+    const tipos = await prisma.ticket.groupBy({
+      by: ['tipo'],
+      _count: {
+        id: true
+      }
+    });
+    
+    const datos = tipos.map(item => ({
+      prioridad: item.tipo || 'Sin tipo',
+      cantidad: item._count.id
+    }));
+    
+    res.json(datos);
+  } catch (error) {
+    console.error('Error obteniendo tickets por tipo:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// Tendencia semanal de tickets (para gráfico de líneas)
+/**
+ * @swagger
+ * /api/tickets/tendencia-semanal:
+ *   get:
+ *     summary: Tendencia semanal de tickets
+ *     description: Obtiene estadísticas de tickets creados en los últimos 7 días
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tendencia semanal de tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 dailyData:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                         description: Fecha del día
+ *                       count:
+ *                         type: integer
+ *                         description: Cantidad de tickets creados
+ *                 totalThisWeek:
+ *                   type: integer
+ *                   description: Total de tickets esta semana
+ *                 averagePerDay:
+ *                   type: number
+ *                   format: float
+ *                   description: Promedio de tickets por día
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/api/tickets/tendencia-semanal', requireAuth, async (req, res) => {
+  try {
+    const ahora = new Date();
+    const hace4Semanas = new Date(ahora.getTime() - (4 * 7 * 24 * 60 * 60 * 1000));
+    
+    const tickets = await prisma.ticket.findMany({
+      where: {
+        createdAt: {
+          gte: hace4Semanas
+        }
+      },
+      select: {
+        createdAt: true
+      }
+    });
+    
+    // Agrupar por semana
+    const semanas = [];
+    for (let i = 0; i < 4; i++) {
+      const inicioSemana = new Date(ahora.getTime() - ((i + 1) * 7 * 24 * 60 * 60 * 1000));
+      const finSemana = new Date(ahora.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
+      
+      const ticketsSemana = tickets.filter(ticket => 
+        ticket.createdAt >= inicioSemana && ticket.createdAt < finSemana
+      );
+      
+      semanas.unshift({
+        semana: `S${4-i}`,
+        tickets: ticketsSemana.length
+      });
+    }
+    
+    res.json(semanas);
+  } catch (error) {
+    console.error('Error obteniendo tendencia semanal:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+// ===== RUTAS PARA NOTAS GENERALES =====
+
+// GET /api/daily-notes?month=YYYY-MM - LEGACY: Redirige al modelo unificado
+/**
+ * @swagger
+ * /api/daily-notes:
+ *   get:
+ *     summary: Obtener notas diarias
+ *     description: Obtiene todas las notas diarias del usuario autenticado con paginación
+ *     tags: [Notes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 10
+ *         description: Cantidad de notas por página
+ *     responses:
+ *       200:
+ *         description: Lista de notas diarias
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 notes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       titulo:
+ *                         type: string
+ *                       contenido:
+ *                         type: string
+ *                       fecha:
+ *                         type: string
+ *                         format: date-time
+ *                       tipo:
+ *                         type: string
+ *                       prioridad:
+ *                         type: string
+ *                       estado:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     totalNotes:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPrevPage:
+ *                       type: boolean
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 router.get('/api/daily-notes', requireAuth, async (req, res) => {
   try {
     const { month, date } = req.query;

@@ -3,7 +3,7 @@ import Modal from '../components/Modal';
 import React, { useState, useEffect } from 'react';
 import NotaForm from '../components/knowledge/NotaForm';
 import RecursoForm from '../components/resources/RecursoForm';
-import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaTicketAlt, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt, FaEye } from 'react-icons/fa';
+import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt, FaEye } from 'react-icons/fa';
 import NotasPanel from '../components/knowledge/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
 import RecursosArchivosPanel from '../components/resources/RecursosArchivosPanel';
@@ -105,7 +105,6 @@ const KnowledgePage: React.FC = () => {
         const iconMap: Record<string, React.ReactNode> = {
           'notificaciones': <FaBell className="text-xl" />,
           'polizas': <FaPrint className="text-xl" />,
-          'tickets': <FaTicketAlt className="text-xl" />,
           'actividades-diarias': <FaClock className="text-xl" />,
           'emergencias': <FaExclamationTriangle className="text-xl" />,
           'kb-conocidos': <FaBrain className="text-xl" />
