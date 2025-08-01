@@ -43,19 +43,6 @@ async function main() {
     }
   }
 
-  // KB
-  const kbs = [
-    { titulo: 'Manual SharePoint', tipo: 'Manual', contenido: 'Contenido de SharePoint', categoria: 'Office', descripcion: 'Guía completa' },
-    { titulo: 'Procedimiento Backup', tipo: 'Procedimiento', contenido: 'Pasos para backup', categoria: 'Infraestructura', descripcion: 'Backup seguro' },
-    { titulo: 'Guía Teams', tipo: 'Manual', contenido: 'Uso de Teams', categoria: 'Colaboración', descripcion: 'Guía rápida' },
-    { titulo: 'Solución Outlook', tipo: 'Procedimiento', contenido: 'Pasos para solucionar problemas de Outlook', categoria: 'Correo', descripcion: 'Solución de errores comunes' },
-    { titulo: 'Manual VPN', tipo: 'Manual', contenido: 'Configuración de VPN corporativa', categoria: 'Redes', descripcion: 'Acceso remoto seguro' }
-  ];
-  for (const kb of kbs) {
-    const exists = await prisma.KBArticle.findMany({ where: { titulo: kb.titulo }, take: 1 });
-    if (exists.length === 0) await prisma.KBArticle.create({ data: kb });
-  }
-
   // Recursos
   const resources = [
     { tipo: 'enlace', titulo: 'Video Azure', url: 'https://youtube.com/azure', tags: ['azure', 'video'], categoria: 'Cloud' },
