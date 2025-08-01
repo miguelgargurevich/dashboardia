@@ -19,9 +19,7 @@ interface Evento {
   modo?: string;
   validador?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   diaEnvio?: string;
-  query?: string;
   relatedResources?: string[];
   isRecurring?: boolean;
   recurrencePattern?: string;
@@ -50,7 +48,6 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     modo: '',
     validador: '',
     codigoDana: '',
-    nombreNotificacion: '',
     isRecurring: false,
     recurrencePattern: '',
     eventType: '',
@@ -93,11 +90,9 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       modo: evento.modo || '',
       validador: evento.validador || '',
       codigoDana: evento.codigoDana || '',
-      nombreNotificacion: evento.nombreNotificacion || '',
       isRecurring: evento.isRecurring || false,
       recurrencePattern: evento.recurrencePattern || '',
       eventType: evento.eventType || '',
-      query: evento.query || '',
       diaEnvio: evento.diaEnvio || '',
       relatedResources: evento.relatedResources || [],
     });
@@ -137,7 +132,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     setmostrarFormularioEvento(false);
     setEventoEditando(null);
     setFormData({
-      title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', nombreNotificacion: '', isRecurring: false, recurrencePattern: '', eventType: ''
+      title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', isRecurring: false, recurrencePattern: '', eventType: ''
     });
     cargarEventos(token);
   };

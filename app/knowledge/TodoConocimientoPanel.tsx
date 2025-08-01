@@ -13,7 +13,6 @@ interface Nota {
   contenido: string;
   tipo: string;
   etiquetas?: string[];
-  descripcion?: string;
   tema?: string;
   date?: string;
 }
@@ -61,7 +60,6 @@ interface Evento {
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   recurrencePattern?: string;
   // Otros campos relevantes pueden agregarse aquí según el modelo de backend
 }
@@ -237,7 +235,7 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
       id: n.id ? `nota-${n.id}` : `nota-temp-${index}`,
       tipo: n.tipo,
       titulo: n.nombre,
-      descripcion: n.descripcion,
+      descripcion: '', // Las notas ya no tienen descripción separada
       contenido: n.contenido,
       tags: n.etiquetas || [],
       origen: "nota" as const,
@@ -505,7 +503,6 @@ const TodoConocimientoPanel: React.FC<TodoConocimientoPanelProps> = ({
                 contenido: notaEditando.contenido,
                 tipo: notaEditando.tipo,
                 etiquetas: notaEditando.etiquetas,
-                descripcion: notaEditando.descripcion,
                 tema: notaEditando.tema || '',
                 date: notaEditando.date
               } : undefined}

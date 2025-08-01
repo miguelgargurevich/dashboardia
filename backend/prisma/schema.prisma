@@ -70,8 +70,6 @@ model Event {
   codigoDana         String?
   diaEnvio           String?
   modo               String?
-  nombreNotificacion String?
-  query              String?
   validador          String?
   eventType          EventType          @default(otro)
   recurrencePattern  RecurrencePattern  @default(ninguno)
@@ -101,7 +99,6 @@ model Note {
   content     String   // Contenido en formato Markdown
   tema        String   // notificaciones, polizas, tickets, actividades-diarias, emergencias, etc
   tipo        String   @default("nota") // procedimiento, manual, guia, nota, checklist, incidente, mantenimiento, reunion, capacitacion
-  descripcion String?  // Descripción corta
   tags        String[] // Etiquetas para búsqueda
   context     String?  // Contexto adicional
   keyPoints   String[] // Puntos clave

@@ -12,12 +12,10 @@ interface Event {
   eventType?: string;
   isRecurring?: boolean;
   diaEnvio?: string;
-  query?: string;
   relatedResources?: string[];
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   // Campos nuevos con nombres en español
   titulo?: string;
   descripcion?: string;

@@ -15,7 +15,6 @@ interface Event {
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   diaEnvio?: string;
   query?: string;
   relatedResources?: string[];
@@ -202,9 +201,6 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
                     )}
                     {event.codigoDana && (
                       <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {event.codigoDana}</span>
-                    )}
-                    {event.nombreNotificacion && (
-                      <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">� {event.nombreNotificacion}</span>
                     )}
                     {event.diaEnvio && (
                       <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {event.diaEnvio}</span>

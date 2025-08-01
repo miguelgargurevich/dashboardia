@@ -31,7 +31,6 @@ interface NotasMD {
   tema: string;
   tipo: string; // ahora string, validado contra tiposNotas
   etiquetas?: string[];
-  descripcion?: string;
   status?: string;
   priority?: string;
   date?: string; // Único campo de fecha
@@ -203,7 +202,6 @@ const KnowledgePage: React.FC = () => {
               tipo: tipo,
               contenido: notaInfo.content || notaInfo.contenido || '', // Usar content de la base de datos o contenido como fallback
               etiquetas: etiquetas,
-              descripcion: notaInfo.descripcion,
               status: notaInfo.status,
               priority: notaInfo.priority,
               // Usar solo el campo de fecha unificado

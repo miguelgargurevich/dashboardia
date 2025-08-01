@@ -12,7 +12,6 @@ interface Event {
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   diaEnvio?: string;
   query?: string;
   description?: string;

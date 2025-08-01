@@ -13,9 +13,7 @@ export interface EventoFormValues {
   modo?: string;
   validador?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   diaEnvio?: string;
-  query?: string;
   relatedResources?: string[];
   //
   isRecurring?: boolean;
@@ -58,10 +56,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
     modo: initialValues?.modo || "",
     validador: initialValues?.validador || "",
     codigoDana: initialValues?.codigoDana || "",
-
-    nombreNotificacion: initialValues?.nombreNotificacion || "",
     diaEnvio: initialValues?.diaEnvio || "",
-    query: initialValues?.query || "",
     relatedResources: initialValues?.relatedResources || [],
     isRecurring: initialValues?.isRecurring || false,
     recurrencePattern: initialValues?.recurrencePattern || "",
@@ -288,17 +283,6 @@ const EventoForm: React.FC<EventoFormProps> = ({
               placeholder="Día de Envío (ej: 6 DE CADA MES)"
             />
             <FaRegCalendarAlt className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-          </div>
-          <div className="relative">
-            <input
-              type="text"
-              name="query"
-              className="input-std w-full pl-10"
-              value={form.query}
-              onChange={handleChange}
-              placeholder="Query (opcional)"
-            />
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
           </div>
         </div>
       </div>

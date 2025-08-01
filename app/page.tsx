@@ -32,9 +32,7 @@ interface EventoData {
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   diaEnvio?: string;
-  query?: string;
 }
 
 interface Event {
@@ -48,12 +46,10 @@ interface Event {
   eventType?: string;
   isRecurring?: boolean;
   diaEnvio?: string;
-  query?: string;
   relatedResources?: string[];
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
   // Campos nuevos con nombres en español
   titulo?: string;
   descripcion?: string;
@@ -384,11 +380,9 @@ export default function Home() {
                 startDate: editingEvent.fechaInicio || editingEvent.startDate || '',
                 endDate: editingEvent.fechaFin || editingEvent.endDate || '',
                 location: editingEvent.ubicacion || editingEvent.location || '',
-                query: editingEvent.query || '',
                 validador: editingEvent.validador || '',
                 codigoDana: editingEvent.codigoDana || '',
                 diaEnvio: editingEvent.diaEnvio || '',
-                nombreNotificacion: editingEvent.nombreNotificacion || '',
                 relatedResources: editingEvent.recursos?.map(r => r.id) || editingEvent.relatedResources || [],
                 eventType: editingEvent.tipoEvento || editingEvent.eventType || '',
                 modo: editingEvent.modo || '',

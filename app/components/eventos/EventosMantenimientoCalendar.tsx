@@ -13,8 +13,7 @@ interface Event {
   validador?: string;
   modo?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
-  description?: string;
+  diaEnvio?: string;
 }
 
 interface Props {
