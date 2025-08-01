@@ -578,330 +578,177 @@ router.get('/api/urls/stats', async (req, res) => {
 
 // === ENDPOINT PARA ASISTENTE IA CON DETECCIÓN DE URLs ===
 
-// Chat con asistente IA que puede gestionar URLs, recursos y notas
+// Chat con asistente IA usando Gemini
 // POST /api/assistant
+// Prompt del asistente IA directamente en este archivo
+const systemPrompt = [
+  'Eres el asistente virtual de **DashboardIA**, la plataforma de gestión y soporte para equipos, usuarios y administradores.',
+  'Tu misión es ayudar a los usuarios a navegar, aprovechar y entender todas las funcionalidades del sistema, resolviendo dudas y guiando en el uso de herramientas clave.',
+  '',
+  '### 🛠️ Tu Rol:',
+  '- Asistir en español con explicaciones claras, útiles y guiadas.',
+  '- Ser soporte integrado, con tono cercano, paciente y profesional.',
+  '- Adaptarte al nivel de experiencia del usuario (novato o avanzado).',
+  '',
+  '### 👥 Roles de Usuarios:',
+  '- **Administrador**: gestiona usuarios, recursos, tickets, eventos y configuraciones.',
+  '- **Soporte**: atiende tickets, consulta recursos, agenda eventos y actualiza estados.',
+  '- **Usuario**: consulta eventos, notas, recursos, crea tickets y revisa información relevante.',
+  '',
+  '### 🎯 Funcionalidades principales:',
+  '- **Dashboard General**: resumen de eventos próximos, recursos recientes y estadísticas.',
+  '- **Recursos y Archivos**: subir, buscar y relacionar archivos, documentos, enlaces y videos.',
+  '- **Eventos y Calendario**: ver, crear y editar eventos, reuniones y actividades.',
+  '- **Notas y Conocimiento**: agregar notas, consultar base de conocimiento y buscar información.',
+  '- **Configuración**: editar perfil, cambiar contraseña, personalizar notificaciones.',
+  '',
+  '- **Ayuda integrada**:',
+  '  - Explicaciones rápidas (“¿Cómo creo un ticket?”, “¿Dónde subo un archivo?”).',
+  '  - Respuestas a preguntas frecuentes.',
+  '  - Ejemplo: “¿Cómo veo los recursos recientes?” → “Ve al Dashboard y revisa la sección ‘Recursos recientes’.”',
+  '',
+  '### 🗣️ Instrucciones de conversación:',
+  '1. Saluda siempre y pregunta en qué puede ayudar (“¡Hola! Soy tu asistente de DashboardIA. ¿En qué puedo ayudarte hoy?”).',
+  '2. Detecta el rol del usuario y ofrece solo funcionalidades relevantes.',
+  '3. Responde con explicaciones paso a paso y sugiere acciones (“Puedes ir a…”, “Luego haz clic en…”).',
+  '4. Si el usuario está perdido, pregunta si quiere acceder a alguna sección (“¿Quieres ver tus tickets, recursos o eventos?”).',
+  '5. Ofrece ejemplos visuales y enlaces internos (como `/dashboard`, `/tickets`, `/recursos`).',
+  '6. Si reporta un error, sugiere soluciones comunes: recargar, verificar conexión, contactar soporte.',
+  '7. Si pregunta sobre procesos (crear ticket, subir recurso, agendar evento), explica con detalle y paciencia.',
+  '8. Usa formato claro y natural, sin tecnicismos excesivos.',
+  '9. Finaliza con: “¿Te gustaría que te muestre cómo hacerlo o hacerlo contigo?”',
+  '',
+  '### ✅ Objetivo:',
+  '- Guiar al usuario en el uso de las funcionalidades clave.',
+  '- Facilitar la navegación y aumentar la adopción de características.',
+  '- Reducir dudas y mejorar la experiencia general.',
+  '',
+  '### 📘 Ejemplo de usuario → respuesta:',
+  '**Usuario:** “¿Cómo subo un archivo para mi equipo?”',
+  '**Asistente:** “¡Por supuesto! Ve a la sección ‘Recursos’ y haz clic en ‘Subir archivo’. Selecciona el documento y confirma. ¿Quieres que te muestre el botón ahora?”',
+  '',
+  '**Usuario:** “¿Dónde veo los eventos próximos?”',
+  '**Asistente:** “Puedes ver los eventos en el Dashboard o en la sección ‘Calendario’. Allí encontrarás las actividades programadas. ¿Te gustaría que te guíe paso a paso?”',
+  '',
+  '### 📝 Formato de respuesta:',
+  '- Responde siempre en **Markdown** para que el frontend muestre negritas, listas y títulos.',
+  '- Usa **negritas** para palabras clave y títulos de secciones.',
+  '- Sé breve y directo: máximo 3-4 frases por respuesta, salvo que el usuario pida más detalle.',
+  '- Si la respuesta es larga, resume y ofrece ampliar si el usuario lo solicita.',
+  '',
+  'Sigue este formato para todas las interacciones.'
+].join('\n');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+require('dotenv').config();
+
 router.post('/api/assistant', async (req, res) => {
   try {
-    const { messages } = req.body;
-    const lastMessage = messages[messages.length - 1];
-    const userMessage = lastMessage.content.toLowerCase();
+    // LOG de depuración
+    // console.log('--- [IA CHAT] Body recibido:', req.body);
+    // console.log('--- [IA CHAT] Headers:', req.headers);
+    const GEMINI_MODEL = 'gemini-2.5-pro';
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-    // === DETECCIÓN DE CREACIÓN DE NOTAS ===
-    if (userMessage.includes('crear nota') || userMessage.includes('nueva nota') || userMessage.includes('agregar nota')) {
-      const respuesta = `📝 **¡Perfecto! Te ayudo a crear una nueva nota.**
-
-Para crear la nota, necesito la siguiente información:
-
-**Datos requeridos:**
-1. **Título**: ¿Cómo se va a llamar la nota?
-2. **Tema**: ¿A qué tema pertenece?
-   - 🔔 notificaciones
-   - 📄 polizas
-   - 🎫 tickets
-   - ⏰ actividades-diarias
-   - 🚨 emergencias
-   - 🧠 kb-conocidos
-3. **Contenido**: ¿Cuál es el contenido de la nota? (puedes usar formato Markdown)
-4. **Etiquetas** (opcional): Lista de etiquetas separadas por comas
-
-**Responde con el formato:**
-\`\`\`
-Título: [Tu título aquí]
-Tema: [notificaciones/polizas/tickets/actividades-diarias/emergencias/kb-conocidos]
-Contenido: [El contenido de la nota en Markdown]
-Etiquetas: [etiqueta1, etiqueta2, etiqueta3]
-\`\`\``;
-
-      return res.json({ reply: respuesta });
+    if (!GEMINI_API_KEY) {
+      return res.status(500).json({ error: { message: 'La clave de API de IA no está configurada en el servidor. Por favor, contacta al administrador.' } });
     }
 
-    // === DETECCIÓN DE CREACIÓN DE RECURSOS ===
-    if (userMessage.includes('crear recurso') || userMessage.includes('agregar recurso') || userMessage.includes('subir recurso')) {
-      const respuesta = `📁 **¡Excelente! Te ayudo a agregar un nuevo recurso.**
-
-Para crear el recurso, necesito la siguiente información:
-
-**Datos requeridos:**
-1. **Título**: ¿Cómo se va a llamar el recurso?
-2. **Tipo**: ¿Qué tipo de recurso es?
-   - 🔗 url (enlace web)
-   - 📁 archivo (archivo subido)
-   - 🎥 video
-   - 📋 documento
-3. **Tema**: ¿A qué tema pertenece?
-   - 🔔 notificaciones
-   - 📄 polizas
-   - 🎫 tickets
-   - ⏰ actividades-diarias
-   - 🚨 emergencias
-   - 🧠 kb-conocidos
-4. **Descripción** (opcional): Describe brevemente el recurso
-5. **URL** (si es tipo URL): La dirección del enlace
-6. **Etiquetas** (opcional): Lista de etiquetas separadas por comas
-
-**Responde con el formato:**
-\`\`\`
-Título: [Tu título aquí]
-Tipo: [url/archivo/video/documento]
-Tema: [notificaciones/polizas/tickets/actividades-diarias/emergencias/kb-conocidos]
-Descripción: [Descripción opcional]
-URL: [Si es tipo URL, la dirección]
-Etiquetas: [etiqueta1, etiqueta2, etiqueta3]
-\`\`\``;
-
-      return res.json({ reply: respuesta });
-    }
-
-    // === PROCESAMIENTO DE DATOS ESTRUCTURADOS PARA NOTAS ===
-    if (userMessage.includes('título:') && userMessage.includes('tema:') && userMessage.includes('contenido:')) {
-      try {
-        const titleMatch = lastMessage.content.match(/título:\s*(.+)/i);
-        const temaMatch = lastMessage.content.match(/tema:\s*(.+)/i);
-        const contenidoMatch = lastMessage.content.match(/contenido:\s*([\s\S]+?)(?=etiquetas:|$)/i);
-        const etiquetasMatch = lastMessage.content.match(/etiquetas:\s*(.+)/i);
-
-        if (titleMatch && temaMatch && contenidoMatch) {
-          const titulo = titleMatch[1].trim();
-          const tema = temaMatch[1].trim();
-          const contenido = contenidoMatch[1].trim();
-          const etiquetas = etiquetasMatch ? etiquetasMatch[1].split(',').map(e => e.trim()).filter(Boolean) : [];
-
-          // Crear contenido de la nota en formato markdown
-          const contenidoCompleto = `# ${titulo}
-
-${contenido}
-
-${etiquetas.length > 0 ? `\n**Etiquetas:** ${etiquetas.join(', ')}` : ''}
-
----
-*Nota creada mediante Asistente IA del Dashboard de Soporte*
-*Fecha: ${new Date().toLocaleDateString('es-ES')}*`;
-
-          // Hacer petición al endpoint de creación de notas
-          const fs = require('fs').promises;
-          const path = require('path');
-          
-          // Crear nombre de archivo
-          const nombreArchivo = `${titulo.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-')}.md`;
-          
-          // Crear ruta de directorio (ajustar para el contexto del backend)
-          const directorioTema = path.join(__dirname, '../../public', 'notas-md', tema);
-          const rutaArchivo = path.join(directorioTema, nombreArchivo);
-
-          // Crear directorio si no existe
-          if (!require('fs').existsSync(directorioTema)) {
-            await fs.mkdir(directorioTema, { recursive: true });
-          }
-
-          // Guardar archivo
-          await fs.writeFile(rutaArchivo, contenidoCompleto, 'utf-8');
-
-          const respuesta = `✅ **¡Nota creada exitosamente!**
-
-📋 **Detalles guardados:**
-- **Título**: ${titulo}
-- **Tema**: ${tema}
-- **Archivo**: ${nombreArchivo}
-- **Ubicación**: \`notas-md/${tema}/${nombreArchivo}\`
-- **Etiquetas**: ${etiquetas.length > 0 ? etiquetas.join(', ') : 'Sin etiquetas'}
-- **Contenido**: ${contenido.substring(0, 100)}${contenido.length > 100 ? '...' : ''}
-
-La nota ha sido creada y está disponible en la sección "Base de Conocimiento" bajo el tema "${tema}".
-
-¿Hay algo más en lo que pueda ayudarte?`;
-
-          return res.json({ reply: respuesta });
-        }
-      } catch (error) {
-        console.error('Error creando nota:', error);
-        return res.json({ 
-          reply: 'Hubo un error al crear la nota. Por favor, intenta nuevamente o créala manualmente desde la interfaz.' 
-        });
+    let message = '';
+    let context = '';
+    let conversationContext = '';
+    if (req.body) {
+      if (req.body.messages && Array.isArray(req.body.messages)) {
+        // Usar el último mensaje como prompt
+        const lastMessage = req.body.messages[req.body.messages.length - 1];
+        message = lastMessage.content || '';
+        // Si hay contexto previo, lo puedes concatenar aquí
+        context = req.body.messages.slice(0, -1).map(m => m.content).join('\n');
+        conversationContext = context;
+      } else {
+        message = req.body.message || '';
+        context = req.body.context || '';
+        conversationContext = req.body.conversationContext || '';
       }
     }
+    if (!message) return res.status(400).json({ error: { message: 'El mensaje es obligatorio.' } });
 
-    // === PROCESAMIENTO DE DATOS ESTRUCTURADOS PARA RECURSOS ===
-    if (userMessage.includes('título:') && userMessage.includes('tipo:') && userMessage.includes('tema:')) {
-      try {
-        const titleMatch = lastMessage.content.match(/título:\s*(.+)/i);
-        const tipoMatch = lastMessage.content.match(/tipo:\s*(.+)/i);
-        const temaMatch = lastMessage.content.match(/tema:\s*(.+)/i);
-        const descMatch = lastMessage.content.match(/descripción:\s*(.+)/i);
-        const urlMatch = lastMessage.content.match(/url:\s*(.+)/i);
-        const etiquetasMatch = lastMessage.content.match(/etiquetas:\s*(.+)/i);
-
-        if (titleMatch && tipoMatch && temaMatch) {
-          const etiquetas = etiquetasMatch ? etiquetasMatch[1].split(',').map(e => e.trim()).filter(Boolean) : [];
-          
-          // Crear el recurso en la base de datos
-          const nuevoRecurso = await prisma.resource.create({
-            data: {
-              titulo: titleMatch[1].trim(),
-              tipo: tipoMatch[1].trim().toLowerCase(),
-              tema: temaMatch[1].trim().toLowerCase(),
-              descripcion: descMatch ? descMatch[1].trim() : '',
-              url: urlMatch ? urlMatch[1].trim() : null,
-              tags: etiquetas,
-              fechaCarga: new Date().toISOString()
-            }
-          });
-
-          const respuesta = `✅ **¡Recurso creado exitosamente!**
-
-📋 **Detalles guardados:**
-- **Título**: ${nuevoRecurso.titulo}
-- **Tipo**: ${nuevoRecurso.tipo}
-- **Tema**: ${nuevoRecurso.tema}
-- **Descripción**: ${nuevoRecurso.descripcion || 'Sin descripción'}
-${nuevoRecurso.url ? `- **URL**: ${nuevoRecurso.url}` : ''}
-- **Etiquetas**: ${etiquetas.length > 0 ? etiquetas.join(', ') : 'Sin etiquetas'}
-
-El recurso ha sido agregado a la base de conocimiento y está disponible en la sección "Recursos".
-
-¿Hay algo más en lo que pueda ayudarte?`;
-
-          return res.json({ reply: respuesta });
-        }
-      } catch (error) {
-        console.error('Error creando recurso:', error);
-        return res.json({ 
-          reply: 'Hubo un error al crear el recurso. Por favor, intenta nuevamente o créalo manualmente desde la interfaz.' 
-        });
-      }
+    // Usar el prompt importado
+    if (!systemPrompt) {
+      return res.status(500).json({ error: 'No se pudo cargar el systemPrompt.' });
     }
 
-    // Detectar si el usuario quiere agregar una URL
-    const urlRegex = /(https?:\/\/[^\s]+)/gi;
-    const urls = lastMessage.content.match(urlRegex);
+    let enhancedPrompt = `${systemPrompt}\n`;
+    if (conversationContext) enhancedPrompt += `CONVERSACIÓN PREVIA:\n${conversationContext}\n`;
+    enhancedPrompt += `\nMENSAJE DEL USUARIO:\n${message}\n`;
 
-    if (urls && (userMessage.includes('agregar') || userMessage.includes('añadir') || userMessage.includes('guardar') || userMessage.includes('url') || userMessage.includes('enlace'))) {
-      // Extraer la primera URL encontrada
-      const url = urls[0];
-      
-      // Crear una respuesta interactiva para recopilar información
-      const respuesta = `🔗 **He detectado una URL en tu mensaje**: ${url}  
-        ¡Perfecto! Te ayudo a agregarla a la base de conocimiento. Necesito algunos datos adicionales:`;
+    const body = {
+      contents: [
+        { role: 'user', parts: [{ text: enhancedPrompt }] }
+      ]
+    };
 
-      return res.json({ reply: respuesta });
-    }
-
-    // Detectar si el usuario está proporcionando información estructurada para una URL
-    if (userMessage.includes('título:') && userMessage.includes('tema:')) {
-      try {
-        // Extraer información del mensaje estructurado
-        const titleMatch = lastMessage.content.match(/título:\s*(.+)/i);
-        const descMatch = lastMessage.content.match(/descripción:\s*(.+)/i);
-        const temaMatch = lastMessage.content.match(/tema:\s*(.+)/i);
-        const tipoMatch = lastMessage.content.match(/tipo:\s*(.+)/i);
-        const prioridadMatch = lastMessage.content.match(/prioridad:\s*(.+)/i);
-
-        if (titleMatch && temaMatch && tipoMatch) {
-          // Buscar URL en mensajes anteriores
-          let urlEncontrada = null;
-          for (let i = messages.length - 2; i >= 0; i--) {
-            const urls = messages[i].content.match(urlRegex);
-            if (urls) {
-              urlEncontrada = urls[0];
-              break;
-            }
-          }
-
-          if (urlEncontrada) {
-            // Crear la URL en la base de datos
-            const nuevaUrl = await prisma.uRL.create({
-              data: {
-                titulo: titleMatch[1].trim(),
-                url: urlEncontrada,
-                descripcion: descMatch ? descMatch[1].trim() : '',
-                tema: temaMatch[1].trim().toLowerCase(),
-                tipoContenido: tipoMatch[1].trim().toLowerCase(),
-                prioridad: prioridadMatch ? prioridadMatch[1].trim().toLowerCase() : 'media',
-                estado: 'pendiente',
-                agregadoPor: 'Asistente IA',
-                etiquetas: []
-              }
-            });
-
-            const respuesta = `✅ **¡URL agregada exitosamente!**
-
-📋 **Detalles guardados:**
-- **Título**: ${nuevaUrl.titulo}
-- **URL**: ${nuevaUrl.url}
-- **Descripción**: ${nuevaUrl.descripcion || 'Sin descripción'}
-- **Tema**: ${nuevaUrl.tema}
-- **Tipo**: ${nuevaUrl.tipoContenido}
-- **Prioridad**: ${nuevaUrl.prioridad}
-- **Estado**: ${nuevaUrl.estado}
-
-La URL ha sido agregada a la base de conocimiento y está lista para ser revisada. Puedes verla en la sección "Enlaces y URLs" de la base de conocimiento.
-
-¿Hay algo más en lo que pueda ayudarte?`;
-
-            return res.json({ reply: respuesta });
-          }
-        }
-      } catch (error) {
-        console.error('Error creando URL:', error);
-        return res.json({ 
-          reply: 'Hubo un error al guardar la URL. Por favor, intenta nuevamente o agrégala manualmente desde la interfaz.' 
-        });
-      }
-    }
-
-    // Detectar consultas sobre URLs existentes
-    if (userMessage.includes('urls') || userMessage.includes('enlaces') || userMessage.includes('links')) {
-      try {
-        const stats = await Promise.all([
-          prisma.uRL.count(),
-          prisma.uRL.count({ where: { estado: 'pendiente' } }),
-          prisma.uRL.count({ where: { estado: 'revisado' } }),
-          prisma.uRL.groupBy({
-            by: ['tema'],
-            _count: { id: true }
-          })
-        ]);
-
-        const [total, pendientes, revisados, porTema] = stats;
-
-        const temaStats = porTema.map(t => `- ${t.tema}: ${t._count.id}`).join('\n');
-
-        const respuesta = `📊 **Estadísticas de URLs en la Base de Conocimiento:**
-
-📈 **Resumen general:**
-- **Total de URLs**: ${total}
-- **Pendientes de revisión**: ${pendientes}
-- **Ya revisadas**: ${revisados}
-
-📋 **URLs por tema:**
-${temaStats}
-
-Para ver todas las URLs o agregar nuevas, ve a la sección "Enlaces y URLs" en la base de conocimiento.
-
-¿Quieres que te ayude con algo específico sobre las URLs?`;
-
-        return res.json({ reply: respuesta });
-      } catch (error) {
-        console.error('Error obteniendo estadísticas de URLs:', error);
-        return res.json({ 
-          reply: 'No pude obtener las estadísticas de URLs en este momento. Intenta nuevamente más tarde.' 
-        });
-      }
-    }
-
-    // Respuesta general para otros mensajes
-    // Si el usuario ya preguntó por nota, recurso, url, etc., intenta continuar el flujo
-    if (messages.some(m => /nota|recurso|url|evento|adjuntar|tema|tag|crear|subir|agregar/i.test(m.content))) {
-      return res.json({ reply: '¿Puedes darme más detalles o la información que falta para completar tu solicitud? Por ejemplo: título, tema, contenido, o adjuntos.' });
-    }
-    // Si no, responde de forma más humana y abierta
-    const respuestaGeneral = '¡Estoy aquí para ayudarte con notas, recursos, eventos, URLs y más! ¿Qué necesitas hacer?';
-    return res.json({ reply: respuestaGeneral });
-    
-  } catch (err) {
-    console.error('Error en asistente:', err);
-    res.status(500).json({ 
-      reply: 'Lo siento, hubo un error procesando tu mensaje. Por favor, intenta nuevamente.' 
+    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
     });
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonErr) {
+      data = {};
+    }
+    if (!response || typeof data !== 'object') {
+      return res.status(503).json({ error: {
+        code: 503,
+        message: 'El servidor de IA no está disponible actualmente. Por favor, asegúrate de que el backend esté en funcionamiento o intenta más tarde.'
+      }});
+    }
+    if (!response.ok) {
+      if (response.status === 429) {
+        return res.status(429).json({ error: {
+          code: 429,
+          message: 'La IA está temporalmente saturada o se ha superado la cuota gratuita. Por favor, intenta nuevamente en unos minutos o contáctanos si el problema persiste.'
+        }});
+      }
+      if (response.status === 0 || !response.status) {
+        return res.status(503).json({ error: {
+          code: 503,
+          message: 'No se pudo conectar con el servicio de IA. Por favor, revisa tu conexión o intenta más tarde.'
+        }});
+      }
+      if (data && typeof data === 'object' && 'error' in data && data.error && data.error.message) {
+        return res.status(response.status).json({ error: {
+          code: response.status,
+          message: data.error.message
+        }});
+      }
+      return res.status(response.status).json({ error: {
+        code: response.status,
+        message: 'El servidor de IA no pudo responder correctamente. Por favor, intenta de nuevo más tarde o contacta soporte si el problema persiste.'
+      }});
+    }
+
+    let text = '';
+    if (data && typeof data === 'object' && 'candidates' in data && Array.isArray(data.candidates)) {
+      text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+    text = text.replace(/€(\d+)/g, '$$$1 USD');
+    if (!text.trim()) {
+      return res.status(503).json({ error: {
+        code: 503,
+        message: 'El servidor de IA no está disponible actualmente. Por favor, intenta de nuevo más tarde.'
+      }});
+    }
+    return res.status(200).json({ response: text });
+  } catch (error) {
+    return res.status(503).json({ error: {
+      code: 503,
+      message: 'El servidor de IA no está disponible actualmente. Por favor, asegúrate de que el backend esté en funcionamiento o intenta más tarde.'
+    }});
   }
 });
 
@@ -1345,7 +1192,7 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
       if (dayStats.notesTypes[note.tipo] !== undefined) {
         dayStats.notesTypes[note.tipo]++;
       }
-      
+
       if (dayStats.priorities[note.priority] !== undefined) {
         dayStats.priorities[note.priority]++;
       }
