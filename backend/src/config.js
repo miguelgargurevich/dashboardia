@@ -7,8 +7,10 @@ const config = {
     database: process.env.DATABASE_URL_DEV,
     port: process.env.PORT_DEV || 4000,
     cors: {
-      origin: ["http://localhost:3000", "http://localhost:3001"],
-      credentials: true
+      origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://127.0.0.1:3000"],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     },
     swagger: {
       enabled: true,
@@ -26,11 +28,19 @@ const config = {
     port: process.env.PORT || 4000,
     cors: {
       origin: [
+        // Vercel deployments
         "https://dashboard-ia-v3.vercel.app", 
-        "https://*.vercel.app",
-        "https://dashboardia.onrender.com"
+        "https://dashboardia-git-main-miguel-gargurevichs-projects.vercel.app",
+        "https://dashboardia.vercel.app",
+        // Render backend (para comunicación interna)
+        "https://dashboardia.onrender.com",
+        // Desarrollo local
+        "http://localhost:3000",
+        "http://localhost:3001"
       ],
-      credentials: true
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
     },
     swagger: {
       enabled: false, // Deshabilitado en producción por seguridad
