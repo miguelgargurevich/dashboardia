@@ -52,7 +52,6 @@ interface Event {
   modo?: string;
   codigoDana?: string;
   diaEnvio?: string;
-  query?: string;
   eventType: EventType;
   recurrencePattern: RecurrencePattern;
   relatedResources?: string[];

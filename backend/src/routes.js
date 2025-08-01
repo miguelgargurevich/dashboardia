@@ -360,9 +360,7 @@ router.get('/api/events/calendar', async (req, res) => {
         modo: true,
         validador: true,
         codigoDana: true,
-        nombreNotificacion: true,
         diaEnvio: true,
-        query: true,
         relatedResources: true
       }
     });
@@ -372,9 +370,7 @@ router.get('/api/events/calendar', async (req, res) => {
       modo: ev.modo ?? '',
       validador: ev.validador ?? '',
       codigoDana: ev.codigoDana ?? '',
-      nombreNotificacion: ev.nombreNotificacion ?? '',
       diaEnvio: ev.diaEnvio ?? '',
-      query: ev.query ?? '',
       relatedResources: ev.relatedResources ?? []
     }));
     res.json(eventsWithDefaults);

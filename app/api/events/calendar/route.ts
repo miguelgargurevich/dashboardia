@@ -12,12 +12,12 @@ export interface Event {
   modo?: 'presencial' | 'virtual' | 'hibrido';
   validador?: string;
   codigoDana?: string;
-  nombreNotificacion?: string;
+  diaEnvio?: string;
   relatedResources?: string[];
-  isRecurring?: boolean;
+  eventType?: string;
   recurrencePattern?: string;
   createdAt: Date;
-  updatedAt: Date;
+  updatedAt?: Date;
 }
 
 // GET /api/events/calendar - Obtener eventos para el calendario
