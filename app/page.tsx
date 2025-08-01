@@ -2,13 +2,70 @@
 import AssistantBubble from './components/AsisstantIA/AssistantBubble';
 import CalendarWithDetail from './components/eventos/CalendarWithDetail';
 import DetalleEventoPanel from './components/eventos/DetalleEventoPanel';
+import EventoForm from './components/eventos/EventoForm';
+import Modal from './components/Modal';
+
+interface EventoData {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  fechaInicio: string;
+  fechaFin: string;
+  tema?: string;
+  tipoEvento?: string;
+  ubicacion?: string;
+  esRecurrente?: boolean;
+  recurrencePattern?: string;
+  recurrenceInterval?: number;
+  recurrenceEndDate?: string;
+  daysOfWeek?: string;
+  recursos?: Array<{ id: string; titulo: string; }>;
+  // Campos legacy para compatibilidad
+  title?: string;
+  startDate?: string;
+  description?: string;
+  endDate?: string;
+  location?: string;
+  eventType?: string;
+  isRecurring?: boolean;
+  relatedResources?: string[];
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  diaEnvio?: string;
+  query?: string;
+}
 
 interface Event {
   id: string;
   title: string;
-  recurrencePattern: string;
+  description?: string;
   startDate: string;
+  endDate?: string;
+  location?: string;
+  recurrencePattern: string;
+  eventType?: string;
+  isRecurring?: boolean;
+  diaEnvio?: string;
+  query?: string;
+  relatedResources?: string[];
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  // Campos nuevos con nombres en español
+  titulo?: string;
+  descripcion?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  ubicacion?: string;
+  tipoEvento?: string;
+  esRecurrente?: boolean;
+  tema?: string;
+  recursos?: Array<{ id: string; titulo: string; }>;
 }
+
 import ProximosEventosCard from './components/dashboard/ProximosEventosCard';
 import { FaRegCalendarAlt } from "react-icons/fa";
 // ...existing code...
@@ -38,6 +95,11 @@ export default function Home() {
   const [showRecurringEvents, setShowRecurringEvents] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [triggerDateSelection, setTriggerDateSelection] = useState<number>(0);
+  
+  // Estados para el modal de edición
+  const [editingEvent, setEditingEvent] = useState<EventoData | null>(null);
+  const [showEventForm, setShowEventForm] = useState(false);
+  
   const weekDays = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
   // Generar días del mes
@@ -93,46 +155,145 @@ export default function Home() {
   };
   // Fetch real de eventos desde la API
   useEffect(() => {
-    async function fetchEvents() {
-      setLoadingEvents(true);
+    fetchEventsData();
+  }, [visibleMonth, token]);
+  // Dummy para notas
+  const hasNotesOnDay = () => false;
+
+  // Funciones para edición de eventos
+  const handleEditEvent = async (event: Event) => {
+    console.log('Evento recibido para editar:', event);
+    
+    // Si el evento ya tiene todos los datos, usarlos directamente
+    if (event.titulo || event.descripcion || event.fechaInicio) {
+      console.log('Usando evento con datos completos directamente');
+      setEditingEvent(event as EventoData);
+      setShowEventForm(true);
+      return;
+    }
+
+    // Si no, obtener los datos completos del evento desde la API
+    try {
+      console.log('Obteniendo datos completos del evento desde API...');
+      const response = await fetch(`/api/events/${event.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const eventoCompleto = await response.json();
+        console.log('Evento completo obtenido de la API:', eventoCompleto);
+        setEditingEvent(eventoCompleto);
+        setShowEventForm(true);
+      } else {
+        alert('Error al cargar los datos del evento');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al cargar los datos del evento');
+    }
+  };
+
+  const handleSubmitEvent = async (eventoData: any) => {
+    try {
+      console.log('Enviando datos del evento:', eventoData);
+      
+      const response = await fetch(`/api/events/${editingEvent?.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventoData),
+      });
+
+      if (response.ok) {
+        console.log('Evento actualizado exitosamente');
+        setShowEventForm(false);
+        setEditingEvent(null);
+        // Refrescar los eventos
+        await fetchEventsData();
+      } else {
+        console.error('Error al actualizar evento:', response.statusText);
+        alert('Error al actualizar el evento');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al actualizar el evento');
+    }
+  };  const handleDeleteEvent = async (event: Event) => {
+    if (!token) return;
+    
+    if (confirm('¿Estás seguro de que deseas eliminar este evento?')) {
       try {
-        if (!token) {
-          setEvents([]);
-          setRecurringEvents([]);
-          setLoadingEvents(false);
-          return;
-        }
-        const response = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
+        const response = await fetch(`/api/events/${event.id}`, {
+          method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
-        if (!response.ok) {
-          setEvents([]);
-          setRecurringEvents([]);
-          setLoadingEvents(false);
-          return;
-        }
-        const eventData = await response.json();
-        if (Array.isArray(eventData)) {
-          setEvents(eventData.filter((event: Event) => event.recurrencePattern === 'ninguno'));
-          setRecurringEvents(eventData.filter((event: Event) => event.recurrencePattern !== 'ninguno'));
+
+        if (response.ok) {
+          // Refrescar eventos después de eliminar
+          await fetchEventsData();
         } else {
-          setEvents([]);
-          setRecurringEvents([]);
+          alert('Error al eliminar el evento');
         }
       } catch (error) {
-        setEvents([]);
-        setRecurringEvents([]);
-      } finally {
-        setLoadingEvents(false);
+        console.error('Error:', error);
+        alert('Error al eliminar el evento');
       }
     }
-    fetchEvents();
-  }, [visibleMonth, token]);
-  // Dummy para notas
-  const hasNotesOnDay = () => false;
+  };
+
+  const fetchEventsData = async () => {
+    setLoadingEvents(true);
+    try {
+      if (!token) {
+        setEvents([]);
+        setRecurringEvents([]);
+        setLoadingEvents(false);
+        return;
+      }
+      const response = await fetch(`/api/events/calendar?month=${visibleMonth}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        setEvents([]);
+        setRecurringEvents([]);
+        setLoadingEvents(false);
+        return;
+      }
+      const eventData = await response.json();
+      if (Array.isArray(eventData)) {
+        // Mantener todos los datos del evento, solo normalizar los campos necesarios
+        const normalizedEvents = eventData.map((evento: any) => ({
+          ...evento,
+          // Asegurar que los campos básicos estén disponibles para CalendarWithDetail
+          title: evento.titulo || evento.title || '',
+          startDate: evento.fechaInicio || evento.startDate || '',
+          recurrencePattern: evento.recurrencePattern || 'ninguno'
+        }));
+        
+        setEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') === 'ninguno'));
+        setRecurringEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') !== 'ninguno'));
+      } else {
+        setEvents([]);
+        setRecurringEvents([]);
+      }
+    } catch (error) {
+      setEvents([]);
+      setRecurringEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -184,8 +345,8 @@ export default function Home() {
                   selectedDayEvents={selectedDayEvents}
                   hasNotesOnDay={hasNotesOnDay}
                   DetalleEventoPanel={DetalleEventoPanel}
-                  handleEditEvent={() => {}}
-                  handleDeleteEvent={() => {}}
+                  handleEditEvent={handleEditEvent}
+                  handleDeleteEvent={handleDeleteEvent}
                 />
 
             </div>
@@ -207,6 +368,41 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+            {/* Modal para editar evento */}
+      {showEventForm && editingEvent && (
+        <Modal 
+          open={showEventForm} 
+          onClose={() => setShowEventForm(false)}
+          title="Editar Evento"
+        >
+          <EventoForm 
+            initialValues={(() => {
+              const initialValues = {
+                title: editingEvent.titulo || editingEvent.title || '',
+                description: editingEvent.descripcion || editingEvent.description || '',
+                startDate: editingEvent.fechaInicio || editingEvent.startDate || '',
+                endDate: editingEvent.fechaFin || editingEvent.endDate || '',
+                location: editingEvent.ubicacion || editingEvent.location || '',
+                query: editingEvent.query || '',
+                validador: editingEvent.validador || '',
+                codigoDana: editingEvent.codigoDana || '',
+                diaEnvio: editingEvent.diaEnvio || '',
+                nombreNotificacion: editingEvent.nombreNotificacion || '',
+                relatedResources: editingEvent.recursos?.map(r => r.id) || editingEvent.relatedResources || [],
+                eventType: editingEvent.tipoEvento || editingEvent.eventType || '',
+                modo: editingEvent.modo || '',
+              };
+              console.log('Initial values para el form:', initialValues);
+              console.log('editingEvent completo:', editingEvent);
+              return initialValues;
+            })()}
+            onSubmit={handleSubmitEvent}
+            onCancel={() => setShowEventForm(false)}
+          />
+        </Modal>
+      )}
+
       {mounted && isLoggedIn && <AssistantBubble />}
     </>
   );

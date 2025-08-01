@@ -334,21 +334,32 @@ router.get('/api/events/:id', async (req, res) => {
   try {
     const event = await prisma.event.findUnique({
       where: { id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        startDate: true,
-        endDate: true,
-        location: true,
-        createdAt: true,
-        eventType: true,
-        recurrencePattern: true
+      include: {
+        resources: {
+          include: {
+            resource: {
+              select: {
+                id: true,
+                titulo: true,
+                tipo: true,
+                descripcion: true
+              }
+            }
+          }
+        }
       }
     });
     if (!event) return res.status(404).json({ error: 'Evento no encontrado' });
-    res.json(event);
+    
+    // Transformar la estructura de recursos para que sea más fácil de usar en el frontend
+    const transformedEvent = {
+      ...event,
+      recursos: event.resources.map(r => r.resource)
+    };
+    
+    res.json(transformedEvent);
   } catch (err) {
+    console.error('Error en GET /api/events/:id:', err);
     res.status(500).json({ error: 'Error obteniendo detalles de evento', details: err.message });
   }
 });

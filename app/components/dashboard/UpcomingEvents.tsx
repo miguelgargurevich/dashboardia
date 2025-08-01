@@ -19,6 +19,17 @@ interface Event {
   diaEnvio?: string;
   query?: string;
   relatedResources?: string[];
+  // Campos adicionales para compatibilidad
+  titulo?: string;
+  descripcion?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  ubicacion?: string;
+  tipoEvento?: string;
+  esRecurrente?: boolean;
+  recurrencePattern?: string;
+  tema?: string;
+  recursos?: Array<{ id: string; titulo: string; }>;
 }
 
 interface Props {

@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAuthHeaders, hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
-interface Props {
-  params: {
-    id: string;
-  };
-}
-
 // GET /api/events/[id] - Obtener evento específico
-export async function GET(request: NextRequest, { params }: Props) {
+export async function GET(
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Validar autenticación
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/events/${id}`, {
       headers: createAuthHeaders(request)
@@ -34,14 +31,17 @@ export async function GET(request: NextRequest, { params }: Props) {
 }
 
 // PUT /api/events/[id] - Actualizar evento
-export async function PUT(request: NextRequest, { params }: Props) {
+export async function PUT(
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Validar autenticación
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();
     }
 
-    const { id } = params;
+    const { id } = await params;
     const eventData = await request.json();
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/events/${id}`, {
@@ -66,14 +66,17 @@ export async function PUT(request: NextRequest, { params }: Props) {
 }
 
 // DELETE /api/events/[id] - Eliminar evento
-export async function DELETE(request: NextRequest, { params }: Props) {
+export async function DELETE(
+  request: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     // Validar autenticación
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/events/${id}`, {
       method: 'DELETE',

@@ -1,7 +1,8 @@
 
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt, FaEdit, FaTrash } from "react-icons/fa";
+import { FaCalendarAlt, FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
+import DetalleEventoPanel from './DetalleEventoPanel';
 
 interface Event {
   id: string;
@@ -13,12 +14,8 @@ interface Event {
   modo?: string;
   codigoDana?: string;
   nombreNotificacion?: string;
-  diaEnvio?: string;
-  query?: string;
   description?: string;
 }
-
-import { FaPlus } from "react-icons/fa";
 
 interface Props {
   token: string | null;
@@ -41,8 +38,7 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(todayDay.toString());
-  const jsDate = new Date();
-  const [visibleMonth, setVisibleMonth] = useState<string>(jsDate.toISOString().slice(0,7));
+  const [visibleMonth, setVisibleMonth] = useState<string>(new Date().toISOString().slice(0,7));
 
   useEffect(() => {
     if (!token) return;
@@ -200,91 +196,16 @@ const EventosMantenimientoCalendar: React.FC<Props> = ({ token, layout, onEdit, 
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {eventsByDay[parseInt(selectedDate)]?.length > 0 ? (
                 eventsByDay[parseInt(selectedDate)].map((event, index) => (
-                  <div key={index} className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-yellow-400">
-                          {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                          {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                          {event.title.toLowerCase().includes('reunión') && <FaUsers />}
-                          {event.title.toLowerCase().includes('webinar') && <FaRobot />}
-                          {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                          {event.title.toLowerCase().includes('demo') && <FaLaptop />}
-                          {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
-                        </span>
-                        <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {event.title}</h5>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            if (typeof onEdit === 'function') onEdit(event);
-                          }}
-                          className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
-                          title="Editar evento"
-                          disabled={!onEdit}
-                        >
-                          <FaEdit /> Editar
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (typeof onDelete === 'function') onDelete(event.id);
-                          }}
-                          className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
-                          title="Eliminar evento"
-                          disabled={!onDelete}
-                        >
-                          <FaTrash /> Eliminar
-                        </button>
-                      </div>
-                    </div>
-                    {event.description && (
-                      <p className="text-gray-300 text-xs mb-2 line-clamp-2"><span className="font-bold text-gray-400 mr-1">Descripción:</span> {event.description}</p>
-                    )}
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400">
-                          <span className="font-bold text-gray-400 mr-1">Fecha:</span> {new Date(event.startDate).toLocaleDateString('es-ES')}
-                          {event.endDate && <span> - {new Date(event.endDate).toLocaleDateString('es-ES')}</span>}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {event.location && (
-                          <span className="text-gray-400">
-                            <span className="font-bold text-gray-400 mr-1">Ubicación:</span> 📍 {event.location}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {(event.validador || event.codigoDana || event.nombreNotificacion || event.modo) && (
-                      <div className="mt-2 pt-2 border-t border-yellow-400/20">
-                        <div className="flex items-center justify-between w-full text-xs">
-                          <div className="flex flex-wrap gap-2">
-                            {event.validador && (
-                              <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
-                                <span className="font-bold text-blue-300 mr-1">Validador:</span> 👤 {event.validador}
-                              </span>
-                            )}
-                            {event.codigoDana && (
-                              <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">
-                                <span className="font-bold text-green-300 mr-1">Código Dana:</span> 🏢 {event.codigoDana}
-                              </span>
-                            )}
-                            {event.nombreNotificacion && (
-                              <span className="px-2 py-1 rounded bg-purple-500/20 text-purple-300">
-                                <span className="font-bold text-purple-300 mr-1">Notificación:</span> 🔔 {event.nombreNotificacion}
-                              </span>
-                            )}
-                          </div>
-                          {event.modo && (
-                            <span className="text-xs text-yellow-400 px-2 py-1 rounded bg-yellow-400/10 ml-2">
-                              <span className="font-bold text-yellow-400 mr-1">Modo:</span> {event.modo}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                   
-                  </div>
+                  <DetalleEventoPanel
+                    key={`evento-${event.id}-${index}`}
+                    eventoSeleccionado={event}
+                    onEdit={() => {
+                      if (typeof onEdit === 'function') onEdit(event);
+                    }}
+                    onDelete={() => {
+                      if (typeof onDelete === 'function') onDelete(event.id);
+                    }}
+                  />
                 ))
               ) : (
                 <div className="text-center py-8">

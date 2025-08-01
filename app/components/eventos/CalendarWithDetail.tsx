@@ -4,8 +4,30 @@ import { FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
 interface Event {
   id: string;
   title: string;
-  recurrencePattern: string;
+  description?: string;
   startDate: string;
+  endDate?: string;
+  location?: string;
+  recurrencePattern: string;
+  eventType?: string;
+  isRecurring?: boolean;
+  diaEnvio?: string;
+  query?: string;
+  relatedResources?: string[];
+  validador?: string;
+  modo?: string;
+  codigoDana?: string;
+  nombreNotificacion?: string;
+  // Campos nuevos con nombres en español
+  titulo?: string;
+  descripcion?: string;
+  fechaInicio?: string;
+  fechaFin?: string;
+  ubicacion?: string;
+  tipoEvento?: string;
+  esRecurrente?: boolean;
+  tema?: string;
+  recursos?: Array<{ id: string; titulo: string; }>;
 }
 
 interface CalendarWithDetailProps {
@@ -193,7 +215,7 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
             <FaRegCalendarAlt />
-            Eventos del Día ({getDayContent(selectedDate).events.length})
+            Eventos del día {selectedDate} ({getDayContent(selectedDate).events.length|| 0})
           </h2>
         </div>
         <div className="space-y-3">

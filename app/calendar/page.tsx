@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 // Importar el formulario de nota de forma dinámica para evitar SSR
 const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
@@ -631,7 +631,7 @@ interface Note {
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
                       <FaCalendarAlt />
-                      Eventos del Día ({selectedDayEvents.length})
+                          Eventos del día {selectedDate} ({selectedDayEvents?.length || 0})
                     </h2>
                   </div>
                   <div className="space-y-3">
@@ -1014,4 +1014,13 @@ interface Note {
   );
 }
 
-export default Calendar;
+// Componente wrapper que maneja Suspense
+function CalendarWrapper() {
+  return (
+    <Suspense fallback={<div>Cargando calendario...</div>}>
+      <Calendar />
+    </Suspense>
+  );
+}
+
+export default CalendarWrapper;
