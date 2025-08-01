@@ -64,7 +64,6 @@ interface NotaFormValues {
   contenido: string;
   tipo: string;
   etiquetas?: string[];
-  descripcion?: string;
   tema: string;
   priority?: string;
   date?: string;
@@ -982,7 +981,6 @@ interface Note {
               contenido: editingNote.content || '',
               tipo: tiposNotas[0]?.id || '',
               etiquetas: editingNote.tags || [],
-              descripcion: '',
               tema: editingNote.tema || temas[0]?.id || '',
               date: editingNote.date
             }}
