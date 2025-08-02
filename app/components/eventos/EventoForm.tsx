@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import RecursosSelectorModal from "./RecursosSelectorModal";
 import {FaPaperclip, FaCalendarAlt, FaRegCalendarAlt, FaRegClock, FaMapMarkerAlt, FaBullseye, FaCheckCircle, FaHashtag, FaTag, FaListOl, FaSyncAlt, FaSearch, FaClipboardList } from "react-icons/fa";
+import { useConfig } from "../../lib/useConfig";
 
 export interface EventoFormValues {
   title: string;
@@ -36,6 +37,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
   loading = false,
   submitLabel = "Guardar evento"
 }) => {
+  const { items: tiposEventos, loading: loadingTipos } = useConfig('eventos');
 
   // Normaliza fecha a formato YYYY-MM-DDTHH:mm para input datetime-local
   function normalizeDate(val?: string) {
@@ -158,13 +160,14 @@ const EventoForm: React.FC<EventoFormProps> = ({
             className="input-std w-full pl-10 appearance-none"
             value={form.eventType}
             onChange={handleChange}
+            disabled={loadingTipos}
           >
             <option value="">Tipo de evento</option>
-            <option value="incidente">Incidente</option>
-            <option value="mantenimiento">Mantenimiento</option>
-            <option value="reunion">Reunión</option>
-            <option value="capacitacion">Capacitación</option>
-            <option value="otro">Otro</option>
+            {tiposEventos.map(tipo => (
+              <option key={tipo.id} value={tipo.nombre}>
+                {tipo.nombre}
+              </option>
+            ))}
           </select>
           <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
         </div>

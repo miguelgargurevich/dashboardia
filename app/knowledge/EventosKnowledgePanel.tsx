@@ -1,8 +1,9 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaListUl, FaSearch, FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop } from 'react-icons/fa';
+import { FaPlus, FaListUl, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
+import { useEventosConfig } from '../lib/useConfig';
 import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import EventosMantenimientoCalendar from '../components/eventos/EventosMantenimientoCalendar';
 import Modal from '../components/Modal';
@@ -38,6 +39,21 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [seccionActiva, setSeccionActiva] = useState<'calendario' | 'lista'>('lista');
+  const { getEventoConfig, loading: configLoading } = useEventosConfig();
+
+  // Función para obtener icono basado en configuración
+  const getEventIcon = (title: string, tipoEvento?: string) => {
+    if (configLoading) {
+      return <FaCalendarAlt />;
+    }
+    
+    const tipo = tipoEvento || title;
+    const config = getEventoConfig(tipo);
+    const IconComponent = config.IconComponent as any;
+    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-yellow-300';
+    
+    return <IconComponent className={colorClass} />;
+  };
   // Estado para el formulario reutilizable
   const [formData, setFormData] = useState<EventoFormValues>({
     title: '',
@@ -237,13 +253,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
-                          {event.title.toLowerCase().includes('mantenimiento') && <FaTools />}
-                          {event.title.toLowerCase().includes('capacitación') && <FaChalkboardTeacher />}
-                          {event.title.toLowerCase().includes('reunión') && <FaUsers />}
-                          {event.title.toLowerCase().includes('webinar') && <FaRobot />}
-                          {event.title.toLowerCase().includes('revisión') && <FaClipboardList />}
-                          {event.title.toLowerCase().includes('demo') && <FaLaptop />}
-                          {!['mantenimiento','capacitación','reunión','webinar','revisión','demo'].some(t => event.title.toLowerCase().includes(t)) && <FaCalendarAlt />}
+                          {getEventIcon(event.title, event.eventType)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>

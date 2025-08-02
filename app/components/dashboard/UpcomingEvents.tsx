@@ -2,8 +2,9 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaClock, FaExclamationTriangle } from "react-icons/fa";
+import { FaCalendarAlt, FaClock, FaExclamationTriangle } from "react-icons/fa";
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
+import { useEventosConfig } from '../../lib/useConfig';
 
 interface Event {
   id: string;
@@ -41,6 +42,7 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { getEventoConfig, loading: configLoading } = useEventosConfig();
 
   // Obtener URL del backend desde variable de entorno
   const getBackendUrl = () => {
@@ -96,15 +98,20 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
     fetchUpcomingEvents();
   }, [token, limit]);
 
-  const getEventIcon = (title: string) => {
-    const titleLower = title.toLowerCase();
-    if (titleLower.includes('mantenimiento')) return <FaTools className="text-yellow-400" />;
-    if (titleLower.includes('capacitación')) return <FaChalkboardTeacher className="text-blue-400" />;
-    if (titleLower.includes('reunión')) return <FaUsers className="text-green-400" />;
-    if (titleLower.includes('webinar')) return <FaRobot className="text-purple-400" />;
-    if (titleLower.includes('revisión')) return <FaClipboardList className="text-orange-400" />;
-    if (titleLower.includes('demo')) return <FaLaptop className="text-pink-400" />;
-    return <FaCalendarAlt className="text-accent" />;
+  const getEventIcon = (title: string, tipoEvento?: string) => {
+    if (configLoading) {
+      return <FaCalendarAlt className="text-accent w-4 h-4" />;
+    }
+    
+    // Usar tipoEvento si está disponible, sino inferir del título
+    const tipo = tipoEvento || title;
+    const config = getEventoConfig(tipo);
+    const IconComponent = config.IconComponent as any;
+    
+    // Extraer color desde la configuración tailwind
+    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
+    
+    return <IconComponent className={`${colorClass} w-4 h-4`} />;
   };
 
   const formatTimeUntil = (eventDate: string) => {
@@ -161,7 +168,7 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
                     {highlight && (
                       <FaExclamationTriangle className="text-red-500 animate-pulse text-2xl" />
                     )}
-                    {getEventIcon(event.title)}
+                    {getEventIcon(event.title, event.tipoEvento)}
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-inherit text-sm leading-tight">
                         {event.title}
