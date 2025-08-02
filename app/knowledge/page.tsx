@@ -11,9 +11,6 @@ import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import { useConfig, getIconComponent } from '../lib/useConfig';
 
-import DetalleNotaPanel from '../components/knowledge/DetalleNotaPanel';
-import DetalleRecursoPanel from '../components/resources/DetalleRecursoPanel';
-import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import EventosKnowledgePanel from "./EventosKnowledgePanel";
 import EventoForm from '../components/eventos/EventoForm';
 
