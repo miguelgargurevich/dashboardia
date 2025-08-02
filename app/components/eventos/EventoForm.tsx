@@ -16,8 +16,6 @@ export interface EventoFormValues {
   codigoDana?: string;
   diaEnvio?: string;
   relatedResources?: string[];
-  //
-  isRecurring?: boolean;
   recurrencePattern?: string;
   eventType?: string;
 }
@@ -60,8 +58,8 @@ const EventoForm: React.FC<EventoFormProps> = ({
     codigoDana: initialValues?.codigoDana || "",
     diaEnvio: initialValues?.diaEnvio || "",
     relatedResources: initialValues?.relatedResources || [],
-    isRecurring: initialValues?.isRecurring || false,
-    recurrencePattern: initialValues?.recurrencePattern || "",
+    recurrencePattern: initialValues?.recurrencePattern || "ninguno",
+    eventType: initialValues?.eventType || "otro"
   });
 
   // Modal de selección de recursos
