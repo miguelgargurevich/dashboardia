@@ -613,71 +613,100 @@ const KnowledgePage: React.FC = () => {
 
         {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'temas' || seccionActiva === 'todos') && (
-          <div className="flex flex-wrap gap-3 mb-6">
-            <button
-              onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                seccionActiva === 'todos'
-                  ? 'bg-accent/20 text-accent border border-accent/30'
-                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-              }`}
-            >
-              {(() => {
-                const IconComponent = getIconComponent('fa-file-alt') as React.ComponentType<{ className?: string }>;
-                return <IconComponent className="text-sm" />;
-              })()}
-              Todas las Notas
-            </button>
-            <button
-              onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                seccionActiva === 'temas'
-                  ? 'bg-accent/20 text-accent border border-accent/30'
-                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-              }`}
-            >
-              {(() => {
-                const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
-                return <IconComponent className="text-sm" />;
-              })()}
-              Por Temas
-            </button>
-          </div>
-
+          <>
+            {/* Header para Notas y Documentos */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
+              <button
+                onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
+                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+              >
+                <FaPlus />
+                Nota
+              </button>
+            </div>
+            
+            {/* Navegación entre tabs */}
+            <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
+              <button
+                onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  seccionActiva === 'todos'
+                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
+                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+                }`}
+              >
+                {(() => {
+                  const IconComponent = getIconComponent('fa-file-alt') as React.ComponentType<{ className?: string }>;
+                  return <IconComponent className="text-sm" />;
+                })()}
+                Todas las Notas
+              </button>
+              <button
+                onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  seccionActiva === 'temas'
+                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
+                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+                }`}
+              >
+                {(() => {
+                  const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
+                  return <IconComponent className="text-sm" />;
+                })()}
+                Por Temas
+              </button>
+            </div>
+          </>
         )}
 
         {/* Subnavegación para Recursos y Archivos - Siempre visible cuando estemos en este contexto */}
         {(seccionActiva === 'tipos' || seccionActiva === 'recursos') && (
-          <div className="flex flex-wrap gap-3 mb-6">
-            <button
-              onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                seccionActiva === 'recursos'
-                  ? 'bg-accent/20 text-accent border border-accent/30'
-                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-              }`}
-            >
-              {(() => {
-                const IconComponent = getIconComponent('fa-video') as React.ComponentType<{ className?: string }>;
-                return <IconComponent className="text-sm" />;
-              })()}
-              Todos los Recursos
-            </button>
-            <button
-              onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                seccionActiva === 'tipos'
-                  ? 'bg-accent/20 text-accent border border-accent/30'
-                  : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
-              }`}
-            >
-              {(() => {
-                const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
-                return <IconComponent className="text-sm" />;
-              })()}
-              Por Tipos
-            </button>
-          </div>
+          <>
+            {/* Header para Recursos y Archivos */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-accent">Gestión de Recursos</h2>
+              <button
+                onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
+                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+              >
+                <FaPlus />
+                Recurso
+              </button>
+            </div>
+            
+            {/* Navegación entre tabs */}
+            <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
+              <button
+                onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  seccionActiva === 'recursos'
+                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
+                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+                }`}
+              >
+                {(() => {
+                  const IconComponent = getIconComponent('fa-video') as React.ComponentType<{ className?: string }>;
+                  return <IconComponent className="text-sm" />;
+                })()}
+                Todos los Recursos
+              </button>
+              <button
+                onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  seccionActiva === 'tipos'
+                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
+                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+                }`}
+              >
+                {(() => {
+                  const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
+                  return <IconComponent className="text-sm" />;
+                })()}
+                Por Tipos
+              </button>
+            </div>
+          </>
         )}
 
         {/* Vista por temas */}
@@ -686,6 +715,10 @@ const KnowledgePage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {temas.map((tema) => {
                 const cantidadDocs = notasMD.filter(nota => nota.tema === tema.id).length;
+                // Obtener el icono directamente desde la configuración
+                const temaConfig = temasConfig.find(t => t.id === tema.id);
+                const IconComponent = getIconComponent(temaConfig?.icono || 'fa-layer-group') as React.ComponentType<{ className?: string }>;
+                
                 return (
                   <button
                     key={tema.id}
@@ -693,13 +726,19 @@ const KnowledgePage: React.FC = () => {
                     className={`text-left p-6 rounded-lg border transition-all duration-300 ${tema.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
                   >
                     <div className="flex items-center gap-4 mb-3">
-                      {tema.icono}
-                      <h3 className="text-lg font-bold">{tema.nombre}</h3>
+                      <div className="p-3 rounded-lg bg-yellow-900/20">
+                        <IconComponent className="text-xl text-yellow-300" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg text-white">{tema.nombre}</h3>
+                        <div className="text-xs opacity-60">
+                          {cantidadDocs} documento{cantidadDocs !== 1 ? 's' : ''}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm mb-3 opacity-80">{tema.descripcion}</p>
-                    <div className="text-xs opacity-60">
-                      {cantidadDocs} documento{cantidadDocs !== 1 ? 's' : ''}
-                    </div>
+                    {tema.descripcion && (
+                      <p className="text-sm opacity-80 leading-relaxed">{tema.descripcion}</p>
+                    )}
                   </button>
                 );
               })}
@@ -713,6 +752,10 @@ const KnowledgePage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {tiposRecursos.map((tipo) => {
                 const cantidadRecursos = recursos.filter(recurso => recurso.tipo === tipo.id).length;
+                // Obtener el icono directamente desde la configuración
+                const tipoConfig = recursosConfig.find(r => r.id === tipo.id);
+                const IconComponent = getIconComponent(tipoConfig?.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
+                
                 return (
                   <button
                     key={tipo.id}
@@ -720,13 +763,19 @@ const KnowledgePage: React.FC = () => {
                     className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
                   >
                     <div className="flex items-center gap-4 mb-3">
-                      {tipo.icono}
-                      <h3 className="text-lg font-bold">{tipo.nombre}</h3>
+                      <div className="p-3 rounded-lg bg-yellow-900/20">
+                        <IconComponent className="text-xl text-yellow-300" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
+                        <div className="text-xs opacity-60">
+                          {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm mb-3 opacity-80">{tipo.descripcion}</p>
-                    <div className="text-xs opacity-60">
-                      {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
-                    </div>
+                    {tipo.descripcion && (
+                      <p className="text-sm opacity-80 leading-relaxed">{tipo.descripcion}</p>
+                    )}
                   </button>
                 );
               })}
@@ -744,18 +793,6 @@ const KnowledgePage: React.FC = () => {
         {/* Vista de todas las Notas */}
         {seccionActiva === 'todos' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
-                  className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                   Nota
-                </button>
-              </div>
-            </div>
             <NotasPanel
               busqueda={busqueda}
               setBusqueda={setBusqueda}
@@ -889,16 +926,6 @@ const KnowledgePage: React.FC = () => {
         {/* Vista de recursos */}
         {seccionActiva === 'recursos' && (
           <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Gestión de Recursos</h2>
-              <button
-                onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
-                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-              >
-                <FaPlus />
-                 Recurso
-              </button>
-            </div>
             <RecursosArchivosPanel
               recursos={recursos}
               temas={temas}
