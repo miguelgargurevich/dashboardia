@@ -8,6 +8,7 @@ import EventoForm from '../components/eventos/EventoForm';
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import Modal from '../components/Modal';
+import { useEventosConfig, getIconComponent } from '../lib/useConfig';
 
 import { 
   FaCalendarAlt, 
@@ -28,12 +29,6 @@ import {
   FaEyeSlash,
   FaPaperclip,
   FaExternalLinkAlt,
-  FaTools,
-  FaChalkboardTeacher,
-  FaUsers,
-  FaRobot,
-  FaClipboardList,
-  FaLaptop,
   FaExclamationTriangle
 } from "react-icons/fa";
 
@@ -69,6 +64,32 @@ interface NotaFormValues {
 }
 
 const Calendar: React.FC = () => {
+  // Hook para obtener configuración de eventos
+  const { items: eventosConfig, getEventoConfig } = useEventosConfig();
+
+  // Función para obtener el icono de un evento o nota
+  const getEventIcon = (tipo: string, categoria: 'evento' | 'nota' = 'evento') => {
+    if (categoria === 'evento') {
+      const config = getEventoConfig(tipo);
+      const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
+      return <IconComponent className="w-4 h-4" />;
+    }
+    
+    // Para notas, usar la configuración de temas
+    const temaConfig = eventosConfig.find(item => 
+      item.nombre.toLowerCase() === tipo.toLowerCase()
+    );
+    
+    if (temaConfig && temaConfig.icono) {
+      const IconComponent = getIconComponent(temaConfig.icono) as React.ComponentType<{ className?: string }>;
+      return <IconComponent className="w-4 h-4" />;
+    }
+    
+    // Icono por defecto
+    const DefaultIcon = getIconComponent('fa-calendar-alt') as React.ComponentType<{ className?: string }>;
+    return <DefaultIcon className="w-4 h-4" />;
+  };
+
   // --- Estado y lógica para edición y eliminación de eventos ---
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [showEventForm, setShowEventForm] = useState(false);
@@ -745,16 +766,7 @@ interface Note {
                         </select>
                         {/* Ícono react-icon según el tipo de tema */}
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-green-400">
-                          {noteTema === 'notificaciones' && <FaBell />}
-                          {noteTema === 'capacitacion' && <FaChalkboardTeacher />}
-                          {noteTema === 'incidente' && <FaExclamationTriangle />}
-                          {noteTema === 'mantenimiento' && <FaTools />}
-                          {noteTema === 'reunion' && <FaUsers />}
-                          {noteTema === 'robotica' && <FaRobot />}
-                          {noteTema === 'documento' && <FaFileAlt />}
-                          {noteTema === 'otro' && <FaTag />}
-                          {/* Default icon if no match */}
-                          {!['notificaciones','capacitacion','incidente','mantenimiento','reunion','robotica','documento','otro'].includes(noteTema) && <FaTag />}
+                          {getEventIcon(noteTema, 'nota')}
                         </span>
                       </div>
                     </div>

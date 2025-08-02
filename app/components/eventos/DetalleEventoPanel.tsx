@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
-import { FaEdit, FaTrash, FaCalendarAlt, FaTools, FaChalkboardTeacher, FaUsers, FaRobot, FaClipboardList, FaLaptop, FaEye } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaCalendarAlt, FaEye } from 'react-icons/fa';
+import { useEventosConfig, useConfig } from '../../lib/useConfig';
 
 export interface DetalleEventoPanelProps {
   eventoSeleccionado: any | null;
@@ -9,16 +10,19 @@ export interface DetalleEventoPanelProps {
   emptyMessage?: string;
 }
 
-const iconos = [
-  { key: 'mantenimiento', icon: <FaTools /> },
-  { key: 'capacitación', icon: <FaChalkboardTeacher /> },
-  { key: 'reunión', icon: <FaUsers /> },
-  { key: 'webinar', icon: <FaRobot /> },
-  { key: 'revisión', icon: <FaClipboardList /> },
-  { key: 'demo', icon: <FaLaptop /> },
-];
-
 const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccionado, onEdit, onDelete, emptyMessage }) => {
+  // Hooks para obtener configuración
+  const { getEventoConfig } = useEventosConfig();
+  const { items: temasConfig } = useConfig('temas');
+
+  // Función para obtener el color de un tema
+  const getColorTema = (temaNombre: string) => {
+    const tema = temasConfig.find((item: any) => 
+      item.nombre.toLowerCase() === temaNombre?.toLowerCase()
+    );
+    return tema?.color || 'bg-accent/20 text-accent';
+  };
+
   return (
     <div className="bg-secondary rounded-lg p-6 h-full">
       {eventoSeleccionado ? (
@@ -27,7 +31,11 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400">
-                  {iconos.find(i => eventoSeleccionado.title?.toLowerCase().includes(i.key))?.icon || <FaCalendarAlt />}
+                  {(() => {
+                    const config = getEventoConfig(eventoSeleccionado.eventType || eventoSeleccionado.tipoEvento || 'evento');
+                    const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
+                    return <IconComponent className="w-4 h-4" />;
+                  })()}
                 </span>
                 <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {eventoSeleccionado.title}</h5>
               </div>
@@ -56,16 +64,16 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
             )}
             <div className="flex flex-wrap gap-2 text-xs mb-2">
               {eventoSeleccionado.diaEnvio && (
-                <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 <span className="font-bold">Día de envío:</span> {eventoSeleccionado.diaEnvio}</span>
+                <span className={`px-2 py-1 rounded ${getColorTema('fecha')}`}>📅 <span className="font-bold">Día de envío:</span> {eventoSeleccionado.diaEnvio}</span>
               )}
               {eventoSeleccionado.query && (
-                <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={eventoSeleccionado.query}>🔎 <span className="font-bold">Query:</span> {eventoSeleccionado.query.length > 20 ? eventoSeleccionado.query.slice(0,20) + '…' : eventoSeleccionado.query}</span>
+                <span className={`px-2 py-1 rounded ${getColorTema('query')}`} title={eventoSeleccionado.query}>🔎 <span className="font-bold">Query:</span> {eventoSeleccionado.query.length > 20 ? eventoSeleccionado.query.slice(0,20) + '…' : eventoSeleccionado.query}</span>
               )}
               {eventoSeleccionado.relatedResources && eventoSeleccionado.relatedResources.length > 0 && (
-                <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 <span className="font-bold">Recursos:</span> {eventoSeleccionado.relatedResources.length}</span>
+                <span className={`px-2 py-1 rounded ${getColorTema('recursos')}`}>📎 <span className="font-bold">Recursos:</span> {eventoSeleccionado.relatedResources.length}</span>
               )}
               {eventoSeleccionado.isRecurring && (
-                <span className="px-2 py-1 rounded bg-pink-500/20 text-pink-300">🔁 <span className="font-bold">Recurrente:</span> {eventoSeleccionado.recurrencePattern || 'Sí'}</span>
+                <span className={`px-2 py-1 rounded ${getColorTema('recurrente')}`}>🔁 <span className="font-bold">Recurrente:</span> {eventoSeleccionado.recurrencePattern || 'Sí'}</span>
               )}
               {eventoSeleccionado.eventType && (
                 <span className="px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">🏷️ <span className="font-bold">Tipo:</span> {eventoSeleccionado.eventType}</span>

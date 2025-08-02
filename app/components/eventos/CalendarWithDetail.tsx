@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
+import { useEventosConfig } from '../../lib/useConfig';
 
 interface Event {
   id: string;
@@ -85,6 +86,9 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
   handleEditEvent,
   handleDeleteEvent
 }) => {
+  // Hook para obtener configuración de eventos
+  const { getEventoConfig } = useEventosConfig();
+
   // El panel debe mostrar todos los eventos del día seleccionado
 
   return (
@@ -176,8 +180,14 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
                     >
                       <div className={`text-xs px-1 py-0.5 rounded truncate ${
                         event.recurrencePattern !== 'ninguno' 
-                          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-600/40 font-semibold' 
-                          : 'bg-yellow-500/80 text-black'
+                          ? (() => {
+                              const config = getEventoConfig(event.eventType || 'evento');
+                              return config.color + ' border font-semibold';
+                            })()
+                          : (() => {
+                              const config = getEventoConfig(event.eventType || 'evento');
+                              return config.color;
+                            })()
                       }`}>
                          {/* Comentado por el usuairo */}
                         {/* {event.title} */}

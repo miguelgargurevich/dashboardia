@@ -201,22 +201,22 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
                 <div className="flex items-center justify-between text-xs mb-2">
                   <div className="flex flex-wrap gap-2">
                     {event.modo && (
-                      <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">{event.modo}</span>
+                      <span className="px-2 py-1 rounded bg-accent/20 text-accent/90">{event.modo}</span>
                     )}
                     {event.validador && (
-                      <span className="px-2 py-1 rounded bg-green-500/20 text-green-300">👤 {event.validador}</span>
+                      <span className="px-2 py-1 rounded bg-accent/20 text-accent/90">👤 {event.validador}</span>
                     )}
                     {event.codigoDana && (
-                      <span className="px-2 py-1 rounded bg-green-700/20 text-green-400">🏢 {event.codigoDana}</span>
+                      <span className="px-2 py-1 rounded bg-accent/20 text-accent/90">🏢 {event.codigoDana}</span>
                     )}
                     {event.diaEnvio && (
-                      <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 {event.diaEnvio}</span>
+                      <span className="px-2 py-1 rounded bg-accent/20 text-accent/90">📅 {event.diaEnvio}</span>
                     )}
                     {event.query && (
                       <span className="px-2 py-1 rounded bg-gray-500/20 text-gray-300" title={event.query}>🔎 {event.query.length > 20 ? event.query.slice(0,20) + '…' : event.query}</span>
                     )}
                     {event.relatedResources && event.relatedResources.length > 0 && (
-                      <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">📎 {event.relatedResources.length}</span>
+                      <span className="px-2 py-1 rounded bg-accent/20 text-accent/90">📎 {event.relatedResources.length}</span>
                     )}
                   </div>
                   {event.location && (

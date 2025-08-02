@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaSearch, FaCheck, FaFileAlt, FaTag, FaLink, FaFileArchive, FaVideo, FaRobot, FaUserTie, FaWpforms } from "react-icons/fa";
+import { FaSearch, FaCheck, FaFileAlt, FaTag } from "react-icons/fa";
+import { useConfig, getIconComponent } from "../../lib/useConfig";
 
 interface Recurso {
   id: string;
@@ -18,26 +19,23 @@ interface RecursosSelectorModalProps {
 }
 
 const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onClose, onSelect, selectedIds, token }) => {
-  // Mapeo de iconos y colores por tipo
-  const tipoIcono: Record<string, JSX.Element> = {
-    url: <FaLink />,
-    archivo: <FaFileArchive />,
-    video: <FaVideo />,
-    "ia-automatizacion": <FaRobot />,
-    "contactos-externos": <FaUserTie />,
-    "plantillas-formularios": <FaWpforms />,
-    default: <FaFileAlt />,
+  // Hook para obtener configuración de recursos
+  const { items: recursosConfig } = useConfig('recursos');
+
+  // Función para obtener configuración de un tipo de recurso
+  const getRecursoConfig = (tipo: string) => {
+    const config = recursosConfig.find((item: any) => 
+      item.nombre.toLowerCase() === tipo.toLowerCase() ||
+      tipo.toLowerCase().includes(item.nombre.toLowerCase())
+    );
+
+    return {
+      icono: config?.icono || 'fa-file-alt',
+      color: config?.color || 'bg-gray-500/20 text-gray-400 border-gray-400/30',
+      IconComponent: getIconComponent(config?.icono || 'fa-file-alt')
+    };
   };
 
-  const tipoColor: Record<string, string> = {
-    url: "bg-blue-500/20 text-blue-400 border-blue-400/30",
-    archivo: "bg-green-500/20 text-green-400 border-green-400/30",
-    video: "bg-purple-500/20 text-purple-400 border-purple-400/30",
-    "ia-automatizacion": "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
-    "contactos-externos": "bg-orange-500/20 text-orange-400 border-orange-400/30",
-    "plantillas-formularios": "bg-pink-500/20 text-pink-400 border-pink-400/30",
-    default: "bg-gray-500/20 text-gray-400 border-gray-400/30",
-  };
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
@@ -84,19 +82,6 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
   }, [selectedIds, open]);
 
   const tipos = Array.from(new Set(recursos.map(r => r.tipo).filter(Boolean)));
-  // Mapeo de iconos para los tipos en el filtro
-  // Iconos para mostrar en la UI, pero no en <option>
-  const tipoIconoSmall: Record<string, JSX.Element> = {
-    url: <FaLink className="inline-block mr-2 text-blue-400" />,
-    archivo: <FaFileArchive className="inline-block mr-2 text-green-400" />,
-    video: <FaVideo className="inline-block mr-2 text-purple-400" />,
-    "ia-automatizacion": <FaRobot className="inline-block mr-2 text-cyan-400" />,
-    "contactos-externos": <FaUserTie className="inline-block mr-2 text-orange-400" />,
-    "plantillas-formularios": <FaWpforms className="inline-block mr-2 text-pink-400" />,
-  };
-
-  // Estado para agregar recurso
-
 
   const recursosFiltrados = recursos.filter(r =>
     (!busqueda || r.titulo.toLowerCase().includes(busqueda.toLowerCase())) &&
@@ -179,11 +164,17 @@ const RecursosSelectorModal: React.FC<RecursosSelectorModalProps> = ({ open, onC
                       : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'}
                   `}
                 >
-                  <span className={`flex items-center justify-center w-10 h-10 rounded-lg text-xl border ${tipoColor[recurso.tipo || "default"]}`}>{tipoIcono[recurso.tipo || "default"]}</span>
+                  <span className={`flex items-center justify-center w-10 h-10 rounded-lg text-xl border ${getRecursoConfig(recurso.tipo || "default").color}`}>
+                    {(() => {
+                      const config = getRecursoConfig(recurso.tipo || "default");
+                      const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
+                      return <IconComponent className="w-5 h-5" />;
+                    })()}
+                  </span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold truncate text-base group-hover:text-accent transition-colors">{recurso.titulo}</span>
-                      {recurso.tipo && <span className={`text-xs font-semibold uppercase tracking-wide px-3 py-0.5 rounded-full ${tipoColor[recurso.tipo] || tipoColor.default}`}>{recurso.tipo}</span>}
+                      {recurso.tipo && <span className={`text-xs font-semibold uppercase tracking-wide px-3 py-0.5 rounded-full ${getRecursoConfig(recurso.tipo).color}`}>{recurso.tipo}</span>}
                     </div>
                     {recurso.descripcion && <div className="text-xs text-gray-400 mt-1 truncate italic">{recurso.descripcion}</div>}
                   </div>

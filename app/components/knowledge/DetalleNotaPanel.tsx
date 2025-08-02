@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaDownload, FaTrash, FaEye, FaFileAlt, FaEdit } from 'react-icons/fa';
+import { useConfig } from '../../lib/useConfig';
 
 interface Nota {
   id: string;
@@ -32,6 +33,16 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
   renderizarContenidoMarkdown,
   onEdit,
 }) => {
+  // Hook para obtener configuración de temas
+  const { items: temasConfig } = useConfig('temas');
+
+  // Función para obtener el color de un tema
+  const getColorTema = (temaNombre: string) => {
+    const tema = temasConfig.find((item: any) => 
+      item.nombre.toLowerCase() === temaNombre?.toLowerCase()
+    );
+    return tema?.color || 'bg-accent/20 text-accent';
+  };
     return (
     <div className="bg-secondary rounded-lg p-6 h-full">
       {notaSeleccionada ? (
@@ -82,7 +93,7 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
                 <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">🏷️ <span className="font-bold">Etiquetas:</span> {notaSeleccionada.etiquetas.join(', ')}</span>
               )}
               {notaSeleccionada.date && (
-                <span className="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">📅 <span className="font-bold">Fecha:</span> {notaSeleccionada.date}</span>
+                <span className={`px-2 py-1 rounded ${getColorTema('fecha')}`}>📅 <span className="font-bold">Fecha:</span> {notaSeleccionada.date}</span>
               )}
             </div>
           </div>
