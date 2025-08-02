@@ -1,50 +1,104 @@
-// Definición de Tema para tipado de temas
+// Definición de interfaces para tipado
 interface Tema {
   id: string;
   nombre: string;
   descripcion: string;
   color: string;
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+interface TipoEvento {
+  id: string;
+  nombre: string;
+  icono: string;
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface TipoNota {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface TipoRecurso {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  color: string;
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 "use client";
 import React, { useState, useEffect } from 'react';
-
-
 import { FaCog, FaLayerGroup, FaCalendarAlt, FaChevronRight, FaFolderOpen, FaStickyNote } from 'react-icons/fa';
 import TemasConfigPanel from './TemasConfigPanel';
 import RecursosConfigPanel from './RecursosConfigPanel';
 import TiposNotasConfigPanel from './TiposNotasConfigPanel';
+import TiposEventosConfigPanel from './TiposEventosConfigPanel';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 
-
 const ConfiguracionPage: React.FC = () => {
-  const [panel, setPanel] = useState<'temas' | 'recursos' | 'tiposNotas' | 'otros'>('temas');
-  // Eliminado: tiposNotas y su useEffect, ahora en TiposNotasConfigPanel
-
-  // EventosConfigPanel maneja su propio estado
+  const [panel, setPanel] = useState<'temas' | 'recursos' | 'tiposNotas' | 'tiposEventos' | 'otros'>('temas');
+  
+  // Estados para los datos de configuración (ahora desde base de datos)
   const [temas, setTemas] = useState<Tema[]>([]);
-  const [tiposRecursos, setTiposRecursos] = useState<any[]>([]);
+  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
+  const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
+  const [tiposNotas, setTiposNotas] = useState<TipoNota[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Cargar temas y tipos de recursos desde los JSON centralizados al montar
+  // Cargar datos desde las APIs de configuración
   useEffect(() => {
-    fetch('/temas.json')
-      .then(res => res.json())
-      .then((data) => {
-        setTemas(data);
-      });
-    fetch('/tiposRecursos.json')
-      .then(res => res.json())
-      .then((data) => {
-        setTiposRecursos(data);
-      });
-  }, []);
-  // const [token, setToken] = useState<string | null>(null); // Ya no se usa
+    const cargarConfiguraciones = async () => {
+      try {
+        setLoading(true);
+        
+        // Cargar todas las configuraciones en paralelo
+        const [temasRes, tiposRecursosRes, tiposEventosRes, tiposNotasRes] = await Promise.all([
+          fetch('/api/config/temas'),
+          fetch('/api/config/tipos-recursos'),
+          fetch('/api/config/tipos-eventos'),
+          fetch('/api/config/tipos-notas')
+        ]);
 
-  // Form state con todos los campos relevantes
-  // Eliminado: formData y lógica de eventos, ahora en EventosConfigPanel
+        if (temasRes.ok) {
+          const temasData = await temasRes.json();
+          setTemas(temasData);
+        }
 
-  useEffect(() => {
-    // const t = localStorage.getItem('token'); // Ya no se usa
-    // setToken(t); // Ya no se usa
+        if (tiposRecursosRes.ok) {
+          const recursosData = await tiposRecursosRes.json();
+          setTiposRecursos(recursosData);
+        }
+
+        if (tiposEventosRes.ok) {
+          const eventosData = await tiposEventosRes.json();
+          setTiposEventos(eventosData);
+        }
+
+        if (tiposNotasRes.ok) {
+          const notasData = await tiposNotasRes.json();
+          setTiposNotas(notasData);
+        }
+
+      } catch (error) {
+        console.error('Error cargando configuraciones:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarConfiguraciones();
   }, []);
 
 
@@ -77,6 +131,13 @@ const ConfiguracionPage: React.FC = () => {
             {panel === 'tiposNotas' && <FaChevronRight className="ml-auto" />}
           </button>
           <button
+            className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'tiposEventos' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
+            onClick={() => setPanel('tiposEventos')}
+          >
+            <FaCalendarAlt /> Tipos de Eventos
+            {panel === 'tiposEventos' && <FaChevronRight className="ml-auto" />}
+          </button>
+          <button
             className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-colors text-left ${panel === 'otros' ? 'bg-accent/20 text-accent font-bold' : 'hover:bg-accent/10 text-gray-300'}`}
             onClick={() => setPanel('otros')}
           >
@@ -86,20 +147,34 @@ const ConfiguracionPage: React.FC = () => {
         </aside>
         {/* Panel de contenido */}
         <section className="flex-1">
-          {panel === 'temas' && (
-            <TemasConfigPanel temas={temas} onChange={setTemas} />
-          )}
-          {panel === 'recursos' && (
-            <RecursosConfigPanel tiposRecursos={tiposRecursos} onChange={setTiposRecursos} />
-          )}
-          {panel === 'tiposNotas' && (
-            <TiposNotasConfigPanel />
-          )}
-          {panel === 'otros' && (
-            <div className="mt-4">
-              <h2 className="text-xl font-bold text-accent mb-2">Otras Configuraciones</h2>
-              <p className="text-gray-400">Aquí podrás agregar y administrar otros parámetros y catálogos del sistema próximamente.</p>
+          {loading ? (
+            <div className="bg-secondary rounded-xl shadow-lg p-6">
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
+                <p className="mt-2 text-gray-400">Cargando configuraciones...</p>
+              </div>
             </div>
+          ) : (
+            <>
+              {panel === 'temas' && (
+                <TemasConfigPanel temas={temas} onChange={setTemas} />
+              )}
+              {panel === 'recursos' && (
+                <RecursosConfigPanel tiposRecursos={tiposRecursos} onChange={setTiposRecursos} />
+              )}
+              {panel === 'tiposNotas' && (
+                <TiposNotasConfigPanel />
+              )}
+              {panel === 'tiposEventos' && (
+                <TiposEventosConfigPanel tiposEventos={tiposEventos} onChange={setTiposEventos} />
+              )}
+              {panel === 'otros' && (
+                <div className="bg-secondary rounded-xl shadow-lg p-6">
+                  <h2 className="text-xl font-bold text-accent mb-2">Otras Configuraciones</h2>
+                  <p className="text-gray-400">Aquí podrás agregar y administrar otros parámetros y catálogos del sistema próximamente.</p>
+                </div>
+              )}
+            </>
           )}
         </section>
       </div>
