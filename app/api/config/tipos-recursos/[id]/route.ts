@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthHeaders, hasValidAuth, createUnauthorizedResponse } from '../../../../lib/auth';
 
 // PUT /api/config/tipos-recursos/[id] - Actualizar tipo de recurso
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Validar autenticación
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();
     }
 
+    const { id } = await params;
     const body = await request.json();
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/tipos-recursos/${params.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/tipos-recursos/${id}`, {
       method: 'PUT',
       headers: {
         ...createAuthHeaders(request),
@@ -36,14 +37,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/config/tipos-recursos/[id] - Eliminar tipo de recurso
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Validar autenticación
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();
     }
+
+    const { id } = await params;
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/tipos-recursos/${params.id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/tipos-recursos/${id}`, {
       method: 'DELETE',
       headers: createAuthHeaders(request)
     });
