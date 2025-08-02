@@ -17,30 +17,83 @@ interface TemasConfigPanelProps {
   onChange?: (temas: Tema[]) => void;
 }
 
-const colores = [
-  "#3B82F6", // blue
-  "#8B5CF6", // purple
-  "#EAB308", // yellow
-  "#10B981", // green
-  "#EF4444", // red
-  "#06B6D4", // cyan
-  "#EC4899", // pink
-  "#F97316"  // orange
-];
+interface ColorOption {
+  nombre: string;
+  hex: string;
+  tailwind: string;
+}
 
 const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, onChange }) => {
   const [temas, setTemas] = useState<Tema[]>(temasProp || []);
+  const [colores, setColores] = useState<ColorOption[]>([]);
   const [editando, setEditando] = useState<string | null>(null);
   const [agregando, setAgregando] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: colores[0] });
+  const [formData, setFormData] = useState({ nombre: '', descripcion: '', color: '' });
+
+  // Función para obtener el color por su valor tailwind
+  const obtenerColorPorTailwind = (tailwindColor: string) => {
+    if (colores.length === 0) return null;
+    return colores.find(c => c.tailwind === tailwindColor) || colores[0];
+  };
+
+  // Función para obtener el hex de un color tailwind
+  const obtenerHexPorTailwind = (tailwindColor: string) => {
+    if (colores.length === 0) return '#3B82F6'; // Color azul por defecto
+    const colorObj = colores.find(c => c.tailwind === tailwindColor);
+    return colorObj ? colorObj.hex : colores[0].hex;
+  };
 
   // Cargar temas si no se pasan como props
   useEffect(() => {
-    if (!temasProp) {
-      cargarTemas();
-    }
+    const cargarDatos = async () => {
+      await Promise.all([
+        cargarColores(),
+        !temasProp ? cargarTemas() : Promise.resolve()
+      ]);
+    };
+    cargarDatos();
   }, [temasProp]);
+
+  const cargarColores = async () => {
+    try {
+      const response = await fetch('/api/config/colores');
+      if (response.ok) {
+        const data = await response.json();
+        setColores(data);
+        // Solo establecer el primer color como default si no hay formData.color y NO estamos editando
+        if (!formData.color && data.length > 0 && !editando) {
+          setFormData(prev => ({ ...prev, color: data[0].tailwind }));
+        }
+      } else {
+        console.error('Error en respuesta de colores:', response.status);
+        // Usar colores por defecto si falla la API
+        const coloresDefault = [
+          { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+          { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+          { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+          { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+        ];
+        setColores(coloresDefault);
+        if (!formData.color && !editando) {
+          setFormData(prev => ({ ...prev, color: coloresDefault[0].tailwind }));
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando colores:', error);
+      // Usar colores por defecto en caso de error
+      const coloresDefault = [
+        { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+        { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+        { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+        { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+      ];
+      setColores(coloresDefault);
+      if (!formData.color && !editando) {
+        setFormData(prev => ({ ...prev, color: coloresDefault[0].tailwind }));
+      }
+    }
+  };
 
   const cargarTemas = async () => {
     try {
@@ -105,7 +158,11 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
         }
       }
 
-      setFormData({ nombre: '', descripcion: '', color: colores[0] });
+      setFormData({ 
+        nombre: '', 
+        descripcion: '', 
+        color: colores.length > 0 ? colores[0].tailwind : '' 
+      });
     } catch (error) {
       console.error('Error guardando tema:', error);
     } finally {
@@ -114,7 +171,15 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
   };
 
   const manejarEditar = (tema: Tema) => {
-    setFormData({ nombre: tema.nombre, descripcion: tema.descripcion, color: tema.color });
+    console.log('Editando tema:', tema); // Para debug
+    console.log('Colores disponibles:', colores); // Para debug
+    const nuevoFormData = { 
+      nombre: tema.nombre, 
+      descripcion: tema.descripcion, 
+      color: tema.color 
+    };
+    console.log('Nuevo formData:', nuevoFormData); // Para debug
+    setFormData(nuevoFormData);
     setEditando(tema.id);
     setAgregando(false);
   };
@@ -148,15 +213,19 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
   const cancelarEdicion = () => {
     setEditando(null);
     setAgregando(false);
-    setFormData({ nombre: '', descripcion: '', color: colores[0] });
+    setFormData({ 
+      nombre: '', 
+      descripcion: '', 
+      color: colores.length > 0 ? colores[0].tailwind : '' 
+    });
   };
 
-  if (loading && temas.length === 0) {
+  if (colores.length === 0) {
     return (
       <div className="bg-secondary rounded-xl shadow-lg p-6">
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-          <p className="mt-2 text-gray-400">Cargando temas...</p>
+          <p className="mt-2 text-gray-400">Cargando configuración...</p>
         </div>
       </div>
     );
@@ -190,7 +259,7 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                  className="input-std w-full"
                   placeholder="Ej: Notificaciones"
                   required
                 />
@@ -198,13 +267,14 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
                 <div className="flex gap-2">
-                  {colores.map(color => (
+                  {colores.length > 0 && colores.map(colorObj => (
                     <button
-                      key={color}
+                      key={colorObj.tailwind}
                       type="button"
-                      onClick={() => setFormData({ ...formData, color })}
-                      className={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-white' : 'border-gray-600'}`}
-                      style={{ backgroundColor: color }}
+                      onClick={() => setFormData({ ...formData, color: colorObj.tailwind })}
+                      className={`w-8 h-8 rounded-full border-2 ${formData.color === colorObj.tailwind ? 'border-white' : 'border-gray-600'}`}
+                      style={{ backgroundColor: colorObj.hex }}
+                      title={colorObj.nombre}
                     />
                   ))}
                 </div>
@@ -215,7 +285,7 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
               <textarea
                 value={formData.descripcion}
                 onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                className="w-full px-4 py-2 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                 placeholder="Descripción del tema"
                 rows={3}
                 required
@@ -253,20 +323,21 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
                       type="text"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                      className="input-std w-full"
                       required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
                     <div className="flex gap-2">
-                      {colores.map(color => (
+                      {colores.length > 0 && colores.map(colorObj => (
                         <button
-                          key={color}
+                          key={colorObj.tailwind}
                           type="button"
-                          onClick={() => setFormData({ ...formData, color })}
-                          className={`w-8 h-8 rounded-full border-2 ${formData.color === color ? 'border-white' : 'border-gray-600'}`}
-                          style={{ backgroundColor: color }}
+                          onClick={() => setFormData({ ...formData, color: colorObj.tailwind })}
+                          className={`w-8 h-8 rounded-full border-2 ${formData.color === colorObj.tailwind ? 'border-white' : 'border-gray-600'}`}
+                          style={{ backgroundColor: colorObj.hex }}
+                          title={colorObj.nombre}
                         />
                       ))}
                     </div>
@@ -277,7 +348,7 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
                   <textarea
                     value={formData.descripcion}
                     onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                    className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                    className="w-full px-4 py-2 bg-primary/80 backdrop-blur-sm border border-accent/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                     rows={3}
                     required
                   />
@@ -304,8 +375,8 @@ const TemasConfigPanel: React.FC<TemasConfigPanelProps> = ({ temas: temasProp, o
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ backgroundColor: tema.color + '33', color: tema.color }}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${tema.color.split(' ')[0]} border`}
+                    style={{ color: obtenerHexPorTailwind(tema.color) }}
                   >
                     <FaLayerGroup />
                   </div>

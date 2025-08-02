@@ -1640,6 +1640,58 @@ router.delete('/api/config/temas/:id', requireAuth, async (req, res) => {
   }
 });
 
+// COLORES DISPONIBLES
+router.get('/api/config/colores', async (req, res) => {
+  try {
+    const colores = [
+      { 
+        nombre: "Azul", 
+        hex: "#3B82F6", 
+        tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" 
+      },
+      { 
+        nombre: "Morado", 
+        hex: "#8B5CF6", 
+        tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" 
+      },
+      { 
+        nombre: "Amarillo", 
+        hex: "#EAB308", 
+        tailwind: "bg-yellow-500/20 text-yellow-400 border-yellow-400/30" 
+      },
+      { 
+        nombre: "Verde", 
+        hex: "#10B981", 
+        tailwind: "bg-green-500/20 text-green-400 border-green-400/30" 
+      },
+      { 
+        nombre: "Rojo", 
+        hex: "#EF4444", 
+        tailwind: "bg-red-500/20 text-red-400 border-red-400/30" 
+      },
+      { 
+        nombre: "Cian", 
+        hex: "#06B6D4", 
+        tailwind: "bg-cyan-500/20 text-cyan-400 border-cyan-400/30" 
+      },
+      { 
+        nombre: "Rosa", 
+        hex: "#EC4899", 
+        tailwind: "bg-pink-500/20 text-pink-400 border-pink-400/30" 
+      },
+      { 
+        nombre: "Naranja", 
+        hex: "#F97316", 
+        tailwind: "bg-orange-500/20 text-orange-400 border-orange-400/30" 
+      }
+    ];
+    res.json(colores);
+  } catch (error) {
+    console.error('Error obteniendo colores:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 // TIPOS DE EVENTOS - CRUD
 router.get('/api/config/tipos-eventos', async (req, res) => {
   try {
