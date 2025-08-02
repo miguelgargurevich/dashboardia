@@ -21,7 +21,6 @@ interface Evento {
   codigoDana?: string;
   diaEnvio?: string;
   relatedResources?: string[];
-  isRecurring?: boolean;
   recurrencePattern?: string;
   eventType?: string;
 }
@@ -64,9 +63,21 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     modo: '',
     validador: '',
     codigoDana: '',
-    isRecurring: false,
     recurrencePattern: '',
     eventType: '',
+  });
+
+  const [currentEvento, setCurrentEvento] = useState<EventoFormValues>({
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    modo: '',
+    validador: '',
+    codigoDana: '',
+    recurrencePattern: '',
+    eventType: ''
   });
 
   React.useEffect(() => {
@@ -106,7 +117,6 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       modo: evento.modo || '',
       validador: evento.validador || '',
       codigoDana: evento.codigoDana || '',
-      isRecurring: evento.isRecurring || false,
       recurrencePattern: evento.recurrencePattern || '',
       eventType: evento.eventType || '',
       diaEnvio: evento.diaEnvio || '',
@@ -148,7 +158,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     setmostrarFormularioEvento(false);
     setEventoEditando(null);
     setFormData({
-      title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', isRecurring: false, recurrencePattern: '', eventType: ''
+      title: '', description: '', startDate: '', endDate: '', location: '', modo: '', validador: '', codigoDana: '', recurrencePattern: '', eventType: ''
     });
     cargarEventos(token);
   };

@@ -44,17 +44,25 @@ const KnowledgePage: React.FC = () => {
   const { items: recursosConfig } = useConfig('recursos');
   const { items: notasConfig } = useConfig('notas');
 
-  // Tipos de nota desde JSON centralizado
+  // Tipos de nota desde API de configuración
   const [tiposNotas, setTiposNotas] = useState<TipoNota[]>([]);
   // Estado para crear nuevo evento
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
-  useEffect(() => {
-    fetch('/tiposNotas.json')
-      .then(res => res.json())
-      .then((data) => setTiposNotas(data));
-  }, []);
 
   const [token, setToken] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (token) {
+      fetch('/api/config/tipos-notas', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then((data) => setTiposNotas(data))
+        .catch(err => console.error('Error cargando tipos de notas:', err));
+    }
+  }, [token]);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);

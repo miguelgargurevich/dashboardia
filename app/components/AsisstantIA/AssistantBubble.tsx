@@ -73,20 +73,26 @@ export default function AssistantBubble() {
   }, [isLoginPage]);
 
   useEffect(() => {
-    fetch('/temas.json')
+    fetch('/api/config/temas')
       .then(res => res.json())
       .then((data: any[]) => {
         setTemasFull(data);
         setTemasActuales(data.map(t => t.nombre));
       })
-      .catch(() => {
-        setTemasFull([]);
-        setTemasActuales([]);
+      .catch(err => {
+        console.error('Error cargando temas:', err);
+        // Temas por defecto
+        const temasDefault = [
+          { nombre: 'General', descripcion: 'Tema general', color: 'bg-blue-500' },
+          { nombre: 'Desarrollo', descripcion: 'Desarrollo', color: 'bg-green-500' }
+        ];
+        setTemasFull(temasDefault);
+        setTemasActuales(temasDefault.map(t => t.nombre));
       });
   }, []);
 
   useEffect(() => {
-    fetch('/tiposRecursos.json')
+    fetch('/api/config/tipos-recursos')
       .then(res => res.json())
       .then((data) => {
         const iconMap: Record<string, React.ReactNode> = {
@@ -98,6 +104,19 @@ export default function AssistantBubble() {
           'plantillas-formularios': <FaClipboardList className="text-accent" />
         };
         setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
+      })
+      .catch(err => {
+        console.error('Error cargando tipos de recursos:', err);
+        // Tipos por defecto
+        const tiposDefault = [
+          { id: 'url', nombre: 'URL', descripcion: 'Enlace web', color: 'text-blue-500' },
+          { id: 'archivo', nombre: 'Archivo', descripcion: 'Documento', color: 'text-green-500' }
+        ];
+        const iconMap: Record<string, React.ReactNode> = {
+          'url': <FaLink className="text-accent" />,
+          'archivo': <FaFileAlt className="text-accent" />
+        };
+        setTiposRecursos(tiposDefault.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
       });
   }, []);
 

@@ -30,9 +30,10 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
   const [loading, setLoading] = useState(true);
   const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
 
-  // Cargar tipos de recursos desde JSON centralizado y asignar iconos
+  // Cargar tipos de recursos desde API o usar tipos por defecto
   useEffect(() => {
-    fetch('/tiposRecursos.json')
+    // Intentar cargar desde API, si falla usar tipos por defecto
+    fetch('/api/config/tipos-recursos')
       .then(res => res.json())
       .then((data) => {
         const iconMap: Record<string, React.ReactNode> = {
@@ -44,6 +45,21 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
           'plantillas-formularios': <FaClipboardList className="text-accent" />
         };
         setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
+      })
+      .catch(err => {
+        console.error('Error cargando tipos de recursos, usando tipos por defecto:', err);
+        // Tipos por defecto si falla la API
+        const tiposDefault = [
+          { id: 'url', nombre: 'URL', descripcion: 'Enlace web', color: 'text-blue-500' },
+          { id: 'archivo', nombre: 'Archivo', descripcion: 'Documento', color: 'text-green-500' },
+          { id: 'video', nombre: 'Video', descripcion: 'Archivo de video', color: 'text-red-500' }
+        ];
+        const iconMap: Record<string, React.ReactNode> = {
+          'url': <FaLink className="text-accent" />,
+          'archivo': <FaFileAlt className="text-accent" />,
+          'video': <FaVideo className="text-accent" />
+        };
+        setTiposRecursos(tiposDefault.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
       });
   }, []);
 

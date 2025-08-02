@@ -119,11 +119,19 @@ const Calendar: React.FC = () => {
   const [tiposNotas, setTiposNotas] = useState<any[]>([]);
   const [etiquetasDisponibles, setEtiquetasDisponibles] = useState<string[]>([]);
 
-  // Cargar tipos de nota
+  // Cargar tipos de nota desde la API de configuración
   useEffect(() => {
-    fetch('/tiposNotas.json')
-      .then(res => res.json())
-      .then(data => setTiposNotas(data));
+    const token = getToken();
+    if (token) {
+      fetch('/api/config/tipos-notas', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => setTiposNotas(data))
+        .catch(err => console.error('Error cargando tipos de notas:', err));
+    }
   }, []);
   const searchParams = useSearchParams();
   
@@ -178,9 +186,17 @@ interface Note {
   // Estado global para temas
   const [temas, setTemas] = useState<any[]>([]);
   useEffect(() => {
-    fetch('/temas.json')
-      .then(res => res.json())
-      .then((data) => setTemas(data));
+    const token = getToken();
+    if (token) {
+      fetch('/api/config/temas', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then((data) => setTemas(data))
+        .catch(err => console.error('Error cargando temas:', err));
+    }
   }, []);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);

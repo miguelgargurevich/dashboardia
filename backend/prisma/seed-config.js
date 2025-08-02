@@ -7,13 +7,35 @@ const prisma = new PrismaClient();
 async function seedConfigTables() {
   console.log('🌱 Iniciando seed de tablas de configuración...');
 
-  // Cargar datos de JSON
-  const publicPath = path.join(__dirname, '../../public');
-  
-  const temas = JSON.parse(fs.readFileSync(path.join(publicPath, 'temas.json'), 'utf8'));
-  const tiposEventos = JSON.parse(fs.readFileSync(path.join(publicPath, 'tiposEventos.json'), 'utf8'));
-  const tiposNotas = JSON.parse(fs.readFileSync(path.join(publicPath, 'tiposNotas.json'), 'utf8'));
-  const tiposRecursos = JSON.parse(fs.readFileSync(path.join(publicPath, 'tiposRecursos.json'), 'utf8'));
+  // Datos por defecto directamente en el código (ya no dependen de JSON)
+  const temas = [
+    { nombre: "General", descripcion: "Tema general", color: "bg-blue-500 text-white", activo: true },
+    { nombre: "Desarrollo", descripcion: "Temas de desarrollo", color: "bg-green-500 text-white", activo: true },
+    { nombre: "Reuniones", descripcion: "Reuniones y juntas", color: "bg-purple-500 text-white", activo: true },
+    { nombre: "Capacitación", descripcion: "Entrenamientos y cursos", color: "bg-orange-500 text-white", activo: true }
+  ];
+
+  const tiposEventos = [
+    { nombre: "Reunión", descripcion: "Reunión de trabajo", color: "bg-blue-500 text-blue-100", icono: "FaCalendarAlt", activo: true },
+    { nombre: "Capacitación", descripcion: "Sesión de capacitación", color: "bg-green-500 text-green-100", icono: "FaGraduationCap", activo: true },
+    { nombre: "Mantenimiento", descripcion: "Mantenimiento programado", color: "bg-yellow-500 text-yellow-100", icono: "FaTools", activo: true },
+    { nombre: "Entrega", descripcion: "Entrega de proyecto", color: "bg-purple-500 text-purple-100", icono: "FaCheckCircle", activo: true }
+  ];
+
+  const tiposNotas = [
+    { nombre: "Nota General", descripcion: "Nota general", color: "bg-gray-500 text-white", icono: "FaStickyNote", activo: true },
+    { nombre: "Procedimiento", descripcion: "Procedimiento o instrucción", color: "bg-blue-500 text-white", icono: "FaListOl", activo: true },
+    { nombre: "Conocimiento", descripcion: "Base de conocimiento", color: "bg-green-500 text-white", icono: "FaLightbulb", activo: true },
+    { nombre: "Recordatorio", descripcion: "Recordatorio importante", color: "bg-yellow-500 text-white", icono: "FaBell", activo: true }
+  ];
+
+  const tiposRecursos = [
+    { nombre: "Documento", descripcion: "Documento general", color: "bg-blue-500 text-white", icono: "FaFileAlt", activo: true },
+    { nombre: "Manual", descripcion: "Manual de procedimientos", color: "bg-green-500 text-white", icono: "FaBook", activo: true },
+    { nombre: "Imagen", descripcion: "Archivo de imagen", color: "bg-purple-500 text-white", icono: "FaImage", activo: true },
+    { nombre: "Video", descripcion: "Archivo de video", color: "bg-red-500 text-white", icono: "FaVideo", activo: true },
+    { nombre: "Audio", descripcion: "Archivo de audio", color: "bg-orange-500 text-white", icono: "FaVolumeUp", activo: true }
+  ];
 
   try {
     // Seed Temas
