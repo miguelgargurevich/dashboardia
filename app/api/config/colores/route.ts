@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * API de Colores para Configuración
+ * 
+ * Propósito: Proporciona una paleta estándar de colores para que los administradores
+ * elijan al configurar temas, tipos de eventos, notas y recursos.
+ * 
+ * NOTA IMPORTANTE: 
+ * - Esta API NO es la fuente de verdad para los colores de cada tipo
+ * - Los colores reales se almacenan en las propiedades 'color' de cada tipo individual
+ * - Esta API sirve como "catálogo" de opciones disponibles en la interfaz de administración
+ */
 export async function GET(request: NextRequest) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/colores`, {

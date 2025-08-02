@@ -1978,10 +1978,12 @@ router.delete('/api/config/temas/:id', requireAuth, async (req, res) => {
   }
 });
 
-// COLORES DISPONIBLES
+// COLORES DISPONIBLES PARA CONFIGURACIÓN
+// Propósito: Paleta estándar para que los administradores elijan al configurar tipos
+// NOTA: NO es la fuente de verdad - los colores reales están en cada tipo individual
 router.get('/api/config/colores', async (req, res) => {
   try {
-    // Colores estáticos disponibles para el sistema
+    // Colores estáticos disponibles como opciones en la interfaz de administración
     const colores = [
       { 
         nombre: "Azul", 
