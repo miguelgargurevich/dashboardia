@@ -12,6 +12,8 @@ import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import { useConfig, getIconComponent } from '../lib/useConfig';
 
 import EventosKnowledgePanel from "./EventosKnowledgePanel";
+import NotasKnowledgePanel from "./NotasKnowledgePanel";
+import RecursosKnowledgePanel from "./RecursosKnowledgePanel";
 import EventoForm from '../components/eventos/EventoForm';
 
 
@@ -59,7 +61,7 @@ const KnowledgePage: React.FC = () => {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
-  const [seccionActiva, setSeccionActiva] = useState('todos');
+  const [seccionActiva, setSeccionActiva] = useState('notas');
   const [temaSeleccionado, setTemaSeleccionado] = useState<string | null>(null);
   const [notasMD, setNotasMD] = useState<NotasMD[]>([]);
   const [notaSeleccionada, setNotaSeleccionada] = useState<NotasMD | null>(null);
@@ -561,9 +563,9 @@ const KnowledgePage: React.FC = () => {
 
         <div className="flex flex-wrap gap-4 mb-8">
           <button
-            onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
+            onClick={() => { setSeccionActiva('notas'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              seccionActiva === 'temas' || seccionActiva === 'todos'
+              seccionActiva === 'notas'
                 ? 'bg-accent text-secondary' 
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
@@ -577,7 +579,7 @@ const KnowledgePage: React.FC = () => {
           <button
             onClick={() => { setSeccionActiva('recursos'); setTemaSeleccionado(null); setTipoRecursoSeleccionado(null); }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              seccionActiva === 'tipos' || seccionActiva === 'recursos'
+              seccionActiva === 'recursos'
                 ? 'bg-accent text-secondary' 
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
@@ -605,348 +607,24 @@ const KnowledgePage: React.FC = () => {
         </div>
 
         {/* Contenido de las secciones */}
-        {!tiposNotas.length ? (
-          <div className="p-8 text-center text-gray-500">Cargando tipos de nota...</div>
-        ) : null}
-
-
-
-
-        {/* Subnavegación para Notas y Documentos - Siempre visible cuando estemos en este contexto */}
-        {(seccionActiva === 'temas' || seccionActiva === 'todos') && (
-          <>
-            {/* Header para Notas y Documentos */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Gestión de Notas</h2>
-              <button
-                onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
-                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-              >
-                <FaPlus />
-                Nota
-              </button>
-            </div>
-            
-            {/* Navegación entre tabs */}
-            <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
-              <button
-                onClick={() => { setSeccionActiva('todos'); setTemaSeleccionado(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  seccionActiva === 'todos'
-                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
-                }`}
-              >
-                {(() => {
-                  const IconComponent = getIconComponent('fa-file-alt') as React.ComponentType<{ className?: string }>;
-                  return <IconComponent className="text-sm" />;
-                })()}
-                Todas las Notas
-              </button>
-              <button
-                onClick={() => { setSeccionActiva('temas'); setTemaSeleccionado(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  seccionActiva === 'temas'
-                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
-                }`}
-              >
-                {(() => {
-                  const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
-                  return <IconComponent className="text-sm" />;
-                })()}
-                Por Temas
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Subnavegación para Recursos y Archivos - Siempre visible cuando estemos en este contexto */}
-        {(seccionActiva === 'tipos' || seccionActiva === 'recursos') && (
-          <>
-            {/* Header para Recursos y Archivos */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-accent">Gestión de Recursos</h2>
-              <button
-                onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
-                className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-              >
-                <FaPlus />
-                Recurso
-              </button>
-            </div>
-            
-            {/* Navegación entre tabs */}
-            <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
-              <button
-                onClick={() => { setSeccionActiva('recursos'); setTipoRecursoSeleccionado(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  seccionActiva === 'recursos'
-                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
-                }`}
-              >
-                {(() => {
-                  const IconComponent = getIconComponent('fa-video') as React.ComponentType<{ className?: string }>;
-                  return <IconComponent className="text-sm" />;
-                })()}
-                Todos los Recursos
-              </button>
-              <button
-                onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
-                className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                  seccionActiva === 'tipos'
-                    ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-                    : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
-                }`}
-              >
-                {(() => {
-                  const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
-                  return <IconComponent className="text-sm" />;
-                })()}
-                Por Tipos
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Vista por temas */}
-        {seccionActiva === 'temas' && !temaSeleccionado && (
+        {/* Panel de notas de conocimiento */}
+        {seccionActiva === 'notas' && (
           <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {temas.map((tema) => {
-                const cantidadDocs = notasMD.filter(nota => nota.tema === tema.id).length;
-                // Obtener el icono directamente desde la configuración
-                const temaConfig = temasConfig.find(t => t.id === tema.id);
-                const IconComponent = getIconComponent(temaConfig?.icono || 'fa-layer-group') as React.ComponentType<{ className?: string }>;
-                
-                return (
-                  <button
-                    key={tema.id}
-                    onClick={() => setTemaSeleccionado(tema.id)}
-                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tema.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
-                  >
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="p-3 rounded-lg bg-yellow-900/20">
-                        <IconComponent className="text-xl text-yellow-300" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg text-white">{tema.nombre}</h3>
-                        <div className="text-xs opacity-60">
-                          {cantidadDocs} documento{cantidadDocs !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                    </div>
-                    {tema.descripcion && (
-                      <p className="text-sm opacity-80 leading-relaxed">{tema.descripcion}</p>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <NotasKnowledgePanel token={token} />
           </div>
         )}
 
-        {/* Vista por tipos de recursos */}
-        {seccionActiva === 'tipos' && !tipoRecursoSeleccionado && (
+        {/* Panel de recursos de conocimiento */}
+        {seccionActiva === 'recursos' && (
           <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tiposRecursos.map((tipo) => {
-                const cantidadRecursos = recursos.filter(recurso => recurso.tipo === tipo.id).length;
-                // Obtener el icono directamente desde la configuración
-                const tipoConfig = recursosConfig.find(r => r.id === tipo.id);
-                const IconComponent = getIconComponent(tipoConfig?.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
-                
-                return (
-                  <button
-                    key={tipo.id}
-                    onClick={() => setTipoRecursoSeleccionado(tipo.id)}
-                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
-                  >
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="p-3 rounded-lg bg-yellow-900/20">
-                        <IconComponent className="text-xl text-yellow-300" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
-                        <div className="text-xs opacity-60">
-                          {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
-                        </div>
-                      </div>
-                    </div>
-                    {tipo.descripcion && (
-                      <p className="text-sm opacity-80 leading-relaxed">{tipo.descripcion}</p>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <RecursosKnowledgePanel token={token} />
           </div>
         )}
 
-        {/* Panel de eventos de conocimiento, como sección independiente */}
+        {/* Panel de eventos de conocimiento */}
         {seccionActiva === 'eventos' && (
           <div>
             <EventosKnowledgePanel token={token} />
-          </div>
-        )}
-        
-        {/* Vista de todas las Notas */}
-        {seccionActiva === 'todos' && (
-          <div>
-            <NotasPanel
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              etiquetasDisponiblesNotas={etiquetasDisponiblesNotas}
-              filtroEtiquetaNota={filtroEtiquetaNota}
-              setFiltroEtiquetaNota={setFiltroEtiquetaNota}
-              cargando={cargando}
-              notasFiltradas={notasFiltradas}
-              temas={temas}
-              notaSeleccionada={notaSeleccionada}
-              setNotaSeleccionada={setNotaSeleccionada}
-              descargarNota={descargarNota}
-              eliminarNota={eliminarNota}
-              renderizarContenidoMarkdown={renderizarContenidoMarkdown}
-              tiposNotas={tiposNotas}
-            />
-          </div>
-        )}
-
-        {/* Vista de documentos por tema */}
-        {seccionActiva === 'temas' && temaSeleccionado && (
-          <div>
-            {/* Header del tema con colores */}
-            <div className={`rounded-lg p-4 mb-6 border ${temas.find(t => t.id === temaSeleccionado)?.color}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setTemaSeleccionado(null)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors"
-                  >
-                    ← Volver a temas
-                  </button>
-                  <div className="flex items-center gap-3">
-                    {temas.find(t => t.id === temaSeleccionado)?.icono}
-                    <h2 className="text-xl font-bold">
-                      {temas.find(t => t.id === temaSeleccionado)?.nombre}
-                    </h2>
-                  </div>
-                </div>
-                <button
-                  onClick={() => { setNotaSeleccionada(null); setMostrarFormularioNota(true); }}
-                  className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                  Crear Nota Manual
-                </button>
-              </div>
-            </div>
-            <NotasPanel
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              etiquetasDisponiblesNotas={
-                etiquetasDisponiblesNotas.filter(et =>
-                  notasMD.some(nota => nota.tema === temaSeleccionado && nota.etiquetas?.includes(et))
-                )
-              }
-              filtroEtiquetaNota={filtroEtiquetaNota}
-              setFiltroEtiquetaNota={setFiltroEtiquetaNota}
-              cargando={cargando}
-              notasFiltradas={notasMD.filter(nota => (
-                nota.tema === temaSeleccionado &&
-                (
-                  nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                  nota.contenido.toLowerCase().includes(busqueda.toLowerCase())
-                ) &&
-                (!filtroEtiquetaNota || (nota.etiquetas && nota.etiquetas.includes(filtroEtiquetaNota)))
-              ))}
-              temas={temas}
-              notaSeleccionada={notaSeleccionada}
-              setNotaSeleccionada={setNotaSeleccionada}
-              descargarNota={descargarNota}
-              eliminarNota={eliminarNota}
-              renderizarContenidoMarkdown={renderizarContenidoMarkdown}
-              tiposNotas={tiposNotas}
-            />
-          </div>
-        )}
-
-        {/* Vista de recursos por tipo seleccionado */}
-        {seccionActiva === 'tipos' && tipoRecursoSeleccionado && (
-          <div>
-            {/* Header del tipo con colores */}
-            <div className={`rounded-lg p-4 mb-6 border ${tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.color}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setTipoRecursoSeleccionado(null)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors"
-                  >
-                    ← Volver a tipos
-                  </button>
-                  <div className="flex items-center gap-3">
-                    {tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.icono}
-                    <h2 className="text-xl font-bold">
-                      {tiposRecursos.find(t => t.id === tipoRecursoSeleccionado)?.nombre}
-                    </h2>
-                  </div>
-                </div>
-                <button
-                  onClick={() => { setRecursoSeleccionado(null); setMostrarFormularioRecurso(true); }}
-                  className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-                >
-                  <FaPlus />
-                   Recurso
-                </button>
-              </div>
-            </div>
-            <RecursosArchivosPanel
-              recursos={recursos.filter(r => r.tipo === tipoRecursoSeleccionado)}
-              temas={temas}
-              recursoSeleccionado={recursoSeleccionado}
-              setRecursoSeleccionado={setRecursoSeleccionado}
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              etiquetasDisponibles={etiquetasDisponiblesRecursos}
-              filtroEtiqueta={filtroEtiquetaRecurso}
-              setFiltroEtiqueta={setFiltroEtiquetaRecurso}
-              filtroTipo={filtroTipoRecurso}
-              setFiltroTipo={setFiltroTipoRecurso}
-              cargando={cargandoRecursos}
-              getIconoTipoRecurso={getIconoTipoRecurso}
-              getTipoRecursoLabel={getTipoRecursoLabel}
-              formatFileSize={formatFileSize}
-              temaSeleccionado={temaSeleccionado}
-              setMostrarFormularioRecurso={setMostrarFormularioRecurso}
-              eliminarRecurso={eliminarRecurso}
-            />
-          </div>
-        )}
-
-        {/* Vista de recursos */}
-        {seccionActiva === 'recursos' && (
-          <div>
-            <RecursosArchivosPanel
-              recursos={recursos}
-              temas={temas}
-              recursoSeleccionado={recursoSeleccionado}
-              setRecursoSeleccionado={setRecursoSeleccionado}
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              etiquetasDisponibles={etiquetasDisponiblesRecursos}
-              filtroEtiqueta={filtroEtiquetaRecurso}
-              setFiltroEtiqueta={setFiltroEtiquetaRecurso}
-              filtroTipo={filtroTipoRecurso}
-              setFiltroTipo={setFiltroTipoRecurso}
-              cargando={cargandoRecursos}
-              getIconoTipoRecurso={getIconoTipoRecurso}
-              getTipoRecursoLabel={getTipoRecursoLabel}
-              formatFileSize={formatFileSize}
-              temaSeleccionado={temaSeleccionado}
-              setMostrarFormularioRecurso={setMostrarFormularioRecurso}
-              eliminarRecurso={eliminarRecurso}
-            />
           </div>
         )}
         
