@@ -68,15 +68,13 @@ async function main() {
     if (exists.length === 0) await prisma.resource.create({ data: r });
   }
 
-  // Eventos de negocio
+  // Eventos de negocio (limpiados sin campos inexistentes)
   const businessEvents = [
     {
       validador: "Jose Arce",
       modo: "Manual",
       codigoDana: "17",
-      nombreNotificacion: "INCLUSION ACUMULADA (CLIENTE)",
       diaEnvio: "7 DE CADA MES",
-      query: "BBB Envio Liquidacion Inclusion Acumulada VG - Cliente - 9006 programacion",
       relatedResources: ["/files/manual.pdf", "https://youtube.com/azure"],
       title: "Validar si se cae - Jose Arce",
       description: "Validar si se cae - Jose Arce - INCLUSION ACUMULADA (CLIENTE)",
@@ -89,9 +87,7 @@ async function main() {
       validador: "Jose Arce",
       modo: "Manual",
       codigoDana: "18",
-      nombreNotificacion: "INCLUSION ACUMULADA (BROKER)",
       diaEnvio: "6 DE CADA MES",
-      query: "AAA Envío Liquidacion Inclusion Acumulada VG - Broker - 9007 programacion",
       relatedResources: ["https://intranet/vpn"],
       title: "Validar si se cae - Jose Arce",
       description: "Validar si se cae - Jose Arce - INCLUSION ACUMULADA (BROKER)",
@@ -104,9 +100,7 @@ async function main() {
       validador: "Jose Arce",
       modo: "Manual",
       codigoDana: "26",
-      nombreNotificacion: "VG Cobranzas Borker  - 20.06 5pm",
       diaEnvio: "20 DE CADA MES",
-      query: "VIDA GRUPO Cobranza Broker - 107 programacion",
       relatedResources: ["/uploads/backup.pdf"],
       title: "Jose Arce",
       description: "VG Cobranzas Borker  - 20.06 5pm",
@@ -119,9 +113,7 @@ async function main() {
       validador: "Jose Arce",
       modo: "Manual",
       codigoDana: "27",
-      nombreNotificacion: "VG Cobranzas Cliente - 19.06 5pm",
       diaEnvio: "19 DE CADA MES",
-      query: "VIDA GRUPO Cobranza Cliente - 108 programacion",
       relatedResources: ["https://soporte.empresa.com"],
       title: "Jose Arce",
       description: "VG Cobranzas Cliente - 19.06 5pm",
@@ -134,9 +126,7 @@ async function main() {
       validador: "Automático",
       modo: "Automatico",
       codigoDana: "13",
-      nombreNotificacion: "Notificación Poliza Suspendiad 1º Envio",
       diaEnvio: "2 DE CADA MES",
-      query: "CCC Notificación Aviso Suspensión programacion",
       relatedResources: ["https://wiki.empresa.com"],
       title: "Notificación Poliza Suspendiad 1º Envio",
       description: "Notificación Poliza Suspendiad 1º Envio",
@@ -149,9 +139,7 @@ async function main() {
       validador: "Automático",
       modo: "Automatico",
       codigoDana: "13",
-      nombreNotificacion: "Notificación Poliza Suspendiad 2º Envio",
       diaEnvio: "21 DE CADA MES",
-      query: "CCC Notificación Aviso Suspensión programacion",
       relatedResources: ["https://panel.empresa.com"],
       title: "Notificación Poliza Suspendiad 2º Envio",
       description: "Notificación Poliza Suspendiad 2º Envio",
@@ -164,9 +152,7 @@ async function main() {
       validador: "Automático",
       modo: "Automatico",
       codigoDana: "1",
-      nombreNotificacion: "Posible suspension de Cobertura",
       diaEnvio: "22 DE CADA MES",
-      query: "Sin query",
       relatedResources: [],
       title: "Posible suspension de Cobertura",
       description: "Posible suspension de Cobertura",
@@ -179,9 +165,7 @@ async function main() {
       validador: "Mailling Bot",
       modo: "Manual",
       codigoDana: "19",
-      nombreNotificacion: "Mailling",
       diaEnvio: "Las 1ras SEMANA DE CADA MES",
-      query: "",
       relatedResources: [],
       title: "Mailling",
       description: "Mailling",
@@ -194,9 +178,7 @@ async function main() {
       validador: "TASKAGENT",
       modo: "Manual",
       codigoDana: "19",
-      nombreNotificacion: "WSM Mailing Liquidaciones Pendiendtes de pago",
       diaEnvio: "22 DE CADA MES / CUANDO LO SOLICITE BENNY X CORREO",
-      query: "envio liquidaciones WSM programacion",
       relatedResources: ["/files/manual.pdf"],
       title: "WSM Mailing Liquidaciones Pendiendtes de pago",
       description: "WSM Mailing Liquidaciones Pendiendtes de pago",
@@ -209,9 +191,7 @@ async function main() {
       validador: "Anthony Mederos",
       modo: "Manual",
       codigoDana: "25",
-      nombreNotificacion: "LIQUIDACIONES WSM",
       diaEnvio: "1er VIERNES  DE CADA MES",
-      query: "envio liquidaciones WSM programacion",
       relatedResources: ["https://youtube.com/teams"],
       title: "LIQUIDACIONES WSM",
       description: "LIQUIDACIONES WSM",
@@ -224,9 +204,7 @@ async function main() {
       validador: "Si se cae- Fernando debe avisar",
       modo: "Manual",
       codigoDana: "23",
-      nombreNotificacion: "Vida Ley ex empleados",
       diaEnvio: "9 de cada mes",
-      query: "XXX Envío de Renovaciones VL Ex-Empleados",
       relatedResources: ["/uploads/manual-usuario.pdf"],
       title: "Vida Ley ex empleados",
       description: "Vida Ley ex empleados",
@@ -239,9 +217,7 @@ async function main() {
       validador: "ReportBot",
       modo: "Manual",
       codigoDana: "99",
-      nombreNotificacion: "Reportes integrales de agencia",
       diaEnvio: "A DEMANDA (1 vez al mes)",
-      query: "C:\\Users\\D3896536\\Desktop\\CSHICA\\SSCC - Gestion Documental\\Listo - 13 - Reportes Sucave - Trimestral\\Listo - 11 - Reportes Integrales\\04 AGENCIAS",
       relatedResources: ["/uploads/solicitud-acceso.docx"],
       title: "Reportes integrales de agencia",
       description: "Reportes integrales de agencia",
@@ -251,6 +227,7 @@ async function main() {
       recurrentDay: 1
     }
   ];
+  
   for (const e of businessEvents) {
     // Crear el evento para cada mes del año actual
     for (let mes = 0; mes < 12; mes++) {
