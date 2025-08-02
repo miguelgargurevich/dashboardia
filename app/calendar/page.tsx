@@ -663,17 +663,26 @@ interface Note {
                           
                           {/* Contenido del día - Solo eventos */}
                           <div className="flex flex-col gap-1 w-full overflow-hidden">
-                            {dayContent.events.slice(0, 4).map((event, index) => (
-                              <div key={`event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}`} className="w-full">
-                                <div className={`text-xs px-1 py-0.5 rounded truncate ${
-                                  event.recurrencePattern !== 'ninguno' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-600/40 font-semibold' 
-                                    : 'bg-yellow-500/80 text-black'
-                                }`}>
-                                  {event.title}
+                            {dayContent.events.slice(0, 4).map((event, index) => {
+                              // Obtener configuración de color basada en el tipo de evento
+                              const eventoConfig = getEventoConfig(event.eventType || 'reunion');
+                              const baseColor = eventoConfig.color;
+                              const IconComponent = eventoConfig.IconComponent as React.ComponentType<{ className?: string }>;
+                              
+                              // Aplicar estilos suaves para eventos recurrentes vs normales con borde del mismo color
+                              const eventStyles = event.recurrencePattern !== 'ninguno' 
+                                ? `${baseColor.replace('/20', '/25')} ${baseColor.replace('bg-', 'border-').replace('/20', '/40')} border font-bold shadow-sm hover:shadow-md transition-all duration-200 hover:scale-102` 
+                                : `${baseColor.replace('/20', '/20')} ${baseColor.replace('bg-', 'border-').replace('/20', '/30')} border font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:scale-101`;
+                              
+                              return (
+                                <div key={`event-${event.id}-${index}-${event.recurrencePattern !== 'ninguno' ? 'recurring' : 'regular'}`} className="w-full">
+                                  <div className={`text-xs px-1.5 py-1 rounded-md truncate cursor-pointer ${eventStyles} flex items-center gap-1`}>
+                                    <IconComponent className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">{event.title}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                             {/* Contador si hay más de 4 eventos */}
                             {dayContent.eventsCount > 4 && (
                               <div className="text-xs text-accent font-bold">
@@ -683,7 +692,7 @@ interface Note {
                             {/* Contador compacto solo de eventos */}
                             {dayContent.hasContent && (
                               <div className="flex justify-end text-xs mt-1">
-                                <span className="text-yellow-400 font-bold">{dayContent.eventsCount}E</span>
+                                <span className="text-accent font-bold">{dayContent.eventsCount}E</span>
                               </div>
                             )}
                             {/* Marcar si hay notas */}
@@ -994,11 +1003,6 @@ interface Note {
        
       </div>
       
-
-
-
-
-
       {/* Modal para editar nota */}
       {showNoteForm && editingNote && (
         <Modal open={showNoteForm} onClose={handleCloseNoteForm} title="Editar nota" maxWidth="max-w-2xl">
