@@ -13,6 +13,7 @@ interface TipoEvento {
   id: string;
   nombre: string;
   icono: string;
+  color: string;
   activo?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -163,7 +164,7 @@ const ConfiguracionPage: React.FC = () => {
                 <RecursosConfigPanel tiposRecursos={tiposRecursos} onChange={setTiposRecursos} />
               )}
               {panel === 'tiposNotas' && (
-                <TiposNotasConfigPanel />
+                <TiposNotasConfigPanel tiposNotas={tiposNotas} onChange={setTiposNotas} />
               )}
               {panel === 'tiposEventos' && (
                 <TiposEventosConfigPanel tiposEventos={tiposEventos} onChange={setTiposEventos} />

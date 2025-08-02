@@ -7,44 +7,113 @@ interface TipoRecurso {
   nombre: string;
   descripcion: string;
   color: string;
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface RecursosConfigPanelProps {
-  tiposRecursos: TipoRecurso[];
-  onChange: (tiposRecursos: TipoRecurso[]) => void;
+  tiposRecursos?: TipoRecurso[];
+  onChange?: (tiposRecursos: TipoRecurso[]) => void;
 }
 
-// Cargar tipos de recursos desde el JSON centralizado en public/tiposRecursos.json
-const fetchTiposRecursosJson = async (): Promise<TipoRecurso[]> => {
-  const res = await fetch("/tiposRecursos.json");
-  if (!res.ok) return [];
-  return await res.json();
-};
+interface ColorOption {
+  nombre: string;
+  hex: string;
+  tailwind: string;
+}
 
-const colores = [
-  "bg-blue-500/20 text-blue-400 border-blue-400/30",
-  "bg-purple-500/20 text-purple-400 border-purple-400/30",
-  "bg-yellow-500/20 text-yellow-400 border-yellow-400/30",
-  "bg-green-500/20 text-green-400 border-green-400/30",
-  "bg-red-500/20 text-red-400 border-red-400/30",
-  "bg-cyan-500/20 text-cyan-400 border-cyan-400/30",
-  "bg-pink-500/20 text-pink-400 border-pink-400/30",
-  "bg-orange-500/20 text-orange-400 border-orange-400/30"
-];
-
-const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tiposRecursos, onChange }) => {
-  const [tiposState, setTiposState] = useState<TipoRecurso[]>(tiposRecursos && tiposRecursos.length > 0 ? tiposRecursos : []);
+const RecursosConfigPanel: React.FC<RecursosConfigPanelProps> = ({ tiposRecursos: tiposRecursosProp, onChange }) => {
+  const [tiposState, setTiposState] = useState<TipoRecurso[]>(tiposRecursosProp || []);
+  const [colores, setColores] = useState<ColorOption[]>([]);
   const [editando, setEditando] = useState<TipoRecurso | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [form, setForm] = useState({ nombre: "", descripcion: "", color: colores[0] });
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ nombre: "", descripcion: "", color: "" });
+
+  // Función para obtener el color por su valor tailwind
+  const obtenerColorPorTailwind = (tailwindColor: string) => {
+    if (colores.length === 0) return null;
+    return colores.find(c => c.tailwind === tailwindColor) || colores[0];
+  };
+
+  // Función para obtener el hex de un color tailwind
+  const obtenerHexPorTailwind = (tailwindColor: string) => {
+    if (colores.length === 0) return '#3B82F6'; // Color azul por defecto
+    const colorObj = colores.find(c => c.tailwind === tailwindColor);
+    return colorObj ? colorObj.hex : colores[0].hex;
+  };
+
+  // Cargar datos si no se pasan como props
+  useEffect(() => {
+    const cargarDatos = async () => {
+      await Promise.all([
+        cargarColores(),
+        !tiposRecursosProp ? cargarTiposRecursos() : Promise.resolve()
+      ]);
+    };
+    cargarDatos();
+  }, [tiposRecursosProp]);
+
+  const cargarColores = async () => {
+    try {
+      const response = await fetch('/api/config/colores');
+      if (response.ok) {
+        const data = await response.json();
+        setColores(data);
+        // Solo establecer el primer color como default si no hay form.color y NO estamos editando
+        if (!form.color && data.length > 0 && !editando) {
+          setForm(prev => ({ ...prev, color: data[0].tailwind }));
+        }
+      } else {
+        console.error('Error en respuesta de colores:', response.status);
+        // Usar colores por defecto si falla la API
+        const coloresDefault = [
+          { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+          { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+          { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+          { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+        ];
+        setColores(coloresDefault);
+        if (!form.color && !editando) {
+          setForm(prev => ({ ...prev, color: coloresDefault[0].tailwind }));
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando colores:', error);
+      // Usar colores por defecto en caso de error
+      const coloresDefault = [
+        { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+        { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+        { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+        { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+      ];
+      setColores(coloresDefault);
+      if (!form.color && !editando) {
+        setForm(prev => ({ ...prev, color: coloresDefault[0].tailwind }));
+      }
+    }
+  };
+
+  const cargarTiposRecursos = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/config/tipos-recursos');
+      if (response.ok) {
+        const data = await response.json();
+        setTiposState(data);
+      }
+    } catch (error) {
+      console.error('Error cargando tipos de recursos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Cargar tipos de recursos desde el JSON centralizado al montar
   useEffect(() => {
-    if (!tiposRecursos || tiposRecursos.length === 0) {
-      fetchTiposRecursosJson().then(json => {
-        setTiposState(json);
-        onChange && onChange(json);
-      });
+    if (!tiposRecursosProp || tiposRecursosProp.length === 0) {
+      cargarTiposRecursos();
     }
   }, []);
 
@@ -77,7 +146,7 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
     }
     setTiposState(nuevos);
     onChange && onChange(nuevos);
-    setForm({ nombre: "", descripcion: "", color: colores[0] });
+    setForm({ nombre: "", descripcion: "", color: colores.length > 0 ? colores[0].tailwind : "" });
     setMostrarFormulario(false);
   };
 
@@ -92,7 +161,7 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
           onClick={() => {
             setMostrarFormulario(true);
             setEditando(null);
-            setForm({ nombre: "", descripcion: "", color: colores[0] });
+            setForm({ nombre: "", descripcion: "", color: colores.length > 0 ? colores[0].tailwind : "" });
           }}
           className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
         >
@@ -101,10 +170,13 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
       </div>
       <ul className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
         {tiposState.map(tipo => (
-          <li key={tipo.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 ${tipo.color.replace('/20','/10')} transition-all`}>
+          <li key={tipo.id} className={`flex items-center gap-3 p-4 rounded-2xl border border-accent/20 shadow-lg bg-primary/80 ${tipo.color} transition-all`}>
             <div className="flex-1">
               <div className="font-bold text-base flex items-center gap-2">
-                <span className="inline-block w-3 h-3 rounded-full border border-white/30 mr-1" style={{background: tipo.color.split(' ')[0].replace('bg-','').replace('-500/20','')}}></span>
+                <span 
+                  className="inline-block w-3 h-3 rounded-full border border-white/30 mr-1" 
+                  style={{backgroundColor: obtenerHexPorTailwind(tipo.color)}}
+                ></span>
                 {tipo.nombre}
               </div>
               <div className="text-xs opacity-70 mt-1">{tipo.descripcion}</div>
@@ -127,15 +199,30 @@ const RecursosConfigPanel: React.FC<Partial<RecursosConfigPanelProps>> = ({ tipo
                 className="flex-1 input-std"
                 required
               />
-              <select
-                value={form.color}
-                onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
-                className="w-40 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
-              >
-                {colores.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={form.color}
+                  onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                  className="w-40 bg-primary/80 border border-accent/30 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent"
+                >
+                  {colores.map(c => (
+                    <option key={c.tailwind} value={c.tailwind}>
+                      {c.nombre} {c.hex}
+                    </option>
+                  ))}
+                </select>
+                {form.color && (
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="w-4 h-4 rounded-full border border-white/30" 
+                      style={{backgroundColor: obtenerHexPorTailwind(form.color)}}
+                    ></span>
+                    <span className="text-xs text-gray-400">
+                      {obtenerColorPorTailwind(form.color)?.hex}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             <input
               type="text"

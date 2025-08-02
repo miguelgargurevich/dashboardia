@@ -6,6 +6,7 @@ interface TipoEvento {
   id: string;
   nombre: string;
   icono: string;
+  color: string;
   activo?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -16,22 +17,86 @@ interface TiposEventosConfigPanelProps {
   onChange?: (tipos: TipoEvento[]) => void;
 }
 
+interface ColorOption {
+  nombre: string;
+  hex: string;
+  tailwind: string;
+}
+
 const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({ 
   tiposEventos: tiposEventosProp, 
   onChange 
 }) => {
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>(tiposEventosProp || []);
+  const [colores, setColores] = useState<ColorOption[]>([]);
   const [editando, setEditando] = useState<string | null>(null);
   const [agregando, setAgregando] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ nombre: '', icono: '' });
+  const [formData, setFormData] = useState({ nombre: '', icono: '', color: '' });
+
+  // Función para obtener el color por su valor tailwind
+  const obtenerColorPorTailwind = (tailwindColor: string) => {
+    if (colores.length === 0) return null;
+    return colores.find(c => c.tailwind === tailwindColor) || colores[0];
+  };
+
+  // Función para obtener el hex de un color tailwind
+  const obtenerHexPorTailwind = (tailwindColor: string) => {
+    if (colores.length === 0) return '#3B82F6'; // Color azul por defecto
+    const colorObj = colores.find(c => c.tailwind === tailwindColor);
+    return colorObj ? colorObj.hex : colores[0].hex;
+  };
 
   // Cargar tipos de eventos si no se pasan como props
   useEffect(() => {
-    if (!tiposEventosProp) {
-      cargarTiposEventos();
-    }
+    const cargarDatos = async () => {
+      await Promise.all([
+        cargarColores(),
+        !tiposEventosProp ? cargarTiposEventos() : Promise.resolve()
+      ]);
+    };
+    cargarDatos();
   }, [tiposEventosProp]);
+
+  const cargarColores = async () => {
+    try {
+      const response = await fetch('/api/config/colores');
+      if (response.ok) {
+        const data = await response.json();
+        setColores(data);
+        // Solo establecer el primer color como default si no hay formData.color y NO estamos editando
+        if (!formData.color && data.length > 0 && !editando) {
+          setFormData(prev => ({ ...prev, color: data[0].tailwind }));
+        }
+      } else {
+        console.error('Error en respuesta de colores:', response.status);
+        // Usar colores por defecto si falla la API
+        const coloresDefault = [
+          { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+          { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+          { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+          { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+        ];
+        setColores(coloresDefault);
+        if (!formData.color && !editando) {
+          setFormData(prev => ({ ...prev, color: coloresDefault[0].tailwind }));
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando colores:', error);
+      // Usar colores por defecto en caso de error
+      const coloresDefault = [
+        { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+        { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+        { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+        { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+      ];
+      setColores(coloresDefault);
+      if (!formData.color && !editando) {
+        setFormData(prev => ({ ...prev, color: coloresDefault[0].tailwind }));
+      }
+    }
+  };
 
   const cargarTiposEventos = async () => {
     try {
@@ -50,7 +115,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
 
   const manejarSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nombre.trim() || !formData.icono.trim()) return;
+    if (!formData.nombre.trim() || !formData.icono.trim() || !formData.color.trim()) return;
 
     try {
       setLoading(true);
@@ -96,7 +161,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
         }
       }
 
-      setFormData({ nombre: '', icono: '' });
+      setFormData({ nombre: '', icono: '', color: colores.length > 0 ? colores[0].tailwind : '' });
     } catch (error) {
       console.error('Error guardando tipo de evento:', error);
     } finally {
@@ -105,7 +170,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
   };
 
   const manejarEditar = (tipo: TipoEvento) => {
-    setFormData({ nombre: tipo.nombre, icono: tipo.icono });
+    setFormData({ nombre: tipo.nombre, icono: tipo.icono, color: tipo.color });
     setEditando(tipo.id);
     setAgregando(false);
   };
@@ -139,7 +204,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
   const cancelarEdicion = () => {
     setEditando(null);
     setAgregando(false);
-    setFormData({ nombre: '', icono: '' });
+    setFormData({ nombre: '', icono: '', color: colores.length > 0 ? colores[0].tailwind : '' });
   };
 
   // Lista de iconos comunes para eventos
@@ -168,7 +233,14 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
           <h2 className="text-2xl font-bold text-accent">Tipos de Eventos</h2>
         </div>
         <button
-          onClick={() => setAgregando(true)}
+          onClick={() => {
+            setAgregando(true);
+            setFormData({ 
+              nombre: '', 
+              icono: '', 
+              color: colores.length > 0 ? colores[0].tailwind : '' 
+            });
+          }}
           disabled={loading || agregando || editando !== null}
           className="bg-accent hover:bg-accent/80 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors"
         >
@@ -181,7 +253,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
         {agregando && (
           <form onSubmit={manejarSubmit} className="bg-primary/50 p-4 rounded-lg border border-accent/20">
             <h3 className="text-lg font-semibold text-accent mb-4">Nuevo Tipo de Evento</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Nombre</label>
                 <input
@@ -203,6 +275,29 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
                   placeholder="Ej: fa-wrench"
                   required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    className="flex-1 px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                    required
+                  >
+                    {colores.map(c => (
+                      <option key={c.tailwind} value={c.tailwind}>
+                        {c.nombre} {c.hex}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.color && (
+                    <span 
+                      className="w-6 h-6 rounded-full border border-white/30 flex-shrink-0" 
+                      style={{backgroundColor: obtenerHexPorTailwind(formData.color)}}
+                    ></span>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -245,10 +340,10 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
 
         {/* Lista de tipos existentes */}
         {tiposEventos.map((tipo) => (
-          <div key={tipo.id} className="bg-primary/30 rounded-lg p-4 border border-gray-700">
+          <div key={tipo.id} className={`rounded-lg p-4 border shadow-lg ${tipo.color} transition-all`}>
             {editando === tipo.id ? (
               <form onSubmit={manejarSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Nombre</label>
                     <input
@@ -268,6 +363,29 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
                       className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
                       required
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={formData.color}
+                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                        required
+                      >
+                        {colores.map(c => (
+                          <option key={c.tailwind} value={c.tailwind}>
+                            {c.nombre} {c.hex}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.color && (
+                        <span 
+                          className="w-6 h-6 rounded-full border border-white/30 flex-shrink-0" 
+                          style={{backgroundColor: obtenerHexPorTailwind(formData.color)}}
+                        ></span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4">
@@ -291,12 +409,17 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
             ) : (
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
-                    <i className={`${tipo.icono} text-accent`}></i>
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center border border-white/30"
+                    style={{backgroundColor: obtenerHexPorTailwind(tipo.color)}}
+                  >
+                    <i className={`${tipo.icono} text-white`}></i>
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">{tipo.nombre}</h3>
-                    <p className="text-sm text-gray-400">Icono: {tipo.icono}</p>
+                    <p className="text-sm text-gray-400">
+                      Icono: {tipo.icono} • Color: {obtenerHexPorTailwind(tipo.color)}
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
