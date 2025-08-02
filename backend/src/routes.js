@@ -1549,4 +1549,351 @@ router.get('/api/notes/search', requireAuth, async (req, res) => {
   }
 });
 
+// =============================================================================
+// RUTAS DE CONFIGURACIÓN
+// =============================================================================
+
+// TEMAS - CRUD
+router.get('/api/config/temas', async (req, res) => {
+  try {
+    const temas = await prisma.tema.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(temas);
+  } catch (error) {
+    console.error('Error obteniendo temas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+router.post('/api/config/temas', requireAuth, async (req, res) => {
+  try {
+    const { nombre, descripcion, color } = req.body;
+    
+    const tema = await prisma.tema.create({
+      data: {
+        nombre,
+        descripcion,
+        color,
+        activo: true
+      }
+    });
+    
+    res.status(201).json(tema);
+  } catch (error) {
+    console.error('Error creando tema:', error);
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tema con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.put('/api/config/temas/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion, color, activo } = req.body;
+    
+    const tema = await prisma.tema.update({
+      where: { id },
+      data: {
+        nombre,
+        descripcion,
+        color,
+        activo
+      }
+    });
+    
+    res.json(tema);
+  } catch (error) {
+    console.error('Error actualizando tema:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tema no encontrado' });
+    } else if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tema con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.delete('/api/config/temas/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Soft delete - marcamos como inactivo
+    const tema = await prisma.tema.update({
+      where: { id },
+      data: { activo: false }
+    });
+    
+    res.json({ message: 'Tema desactivado correctamente' });
+  } catch (error) {
+    console.error('Error desactivando tema:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tema no encontrado' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+// TIPOS DE EVENTOS - CRUD
+router.get('/api/config/tipos-eventos', async (req, res) => {
+  try {
+    const tipos = await prisma.tipoEvento.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(tipos);
+  } catch (error) {
+    console.error('Error obteniendo tipos de eventos:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+router.post('/api/config/tipos-eventos', requireAuth, async (req, res) => {
+  try {
+    const { nombre, icono } = req.body;
+    
+    const tipo = await prisma.tipoEvento.create({
+      data: {
+        nombre,
+        icono,
+        activo: true
+      }
+    });
+    
+    res.status(201).json(tipo);
+  } catch (error) {
+    console.error('Error creando tipo de evento:', error);
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tipo de evento con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.put('/api/config/tipos-eventos/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, icono, activo } = req.body;
+    
+    const tipo = await prisma.tipoEvento.update({
+      where: { id },
+      data: {
+        nombre,
+        icono,
+        activo
+      }
+    });
+    
+    res.json(tipo);
+  } catch (error) {
+    console.error('Error actualizando tipo de evento:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tipo de evento no encontrado' });
+    } else if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tipo de evento con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.delete('/api/config/tipos-eventos/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const tipo = await prisma.tipoEvento.update({
+      where: { id },
+      data: { activo: false }
+    });
+    
+    res.json({ message: 'Tipo de evento desactivado correctamente' });
+  } catch (error) {
+    console.error('Error desactivando tipo de evento:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tipo de evento no encontrado' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+// TIPOS DE NOTAS - CRUD
+router.get('/api/config/tipos-notas', async (req, res) => {
+  try {
+    const tipos = await prisma.tipoNota.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(tipos);
+  } catch (error) {
+    console.error('Error obteniendo tipos de notas:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+router.post('/api/config/tipos-notas', requireAuth, async (req, res) => {
+  try {
+    const { nombre, descripcion, color } = req.body;
+    
+    const tipo = await prisma.tipoNota.create({
+      data: {
+        nombre,
+        descripcion,
+        color,
+        activo: true
+      }
+    });
+    
+    res.status(201).json(tipo);
+  } catch (error) {
+    console.error('Error creando tipo de nota:', error);
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tipo de nota con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.put('/api/config/tipos-notas/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion, color, activo } = req.body;
+    
+    const tipo = await prisma.tipoNota.update({
+      where: { id },
+      data: {
+        nombre,
+        descripcion,
+        color,
+        activo
+      }
+    });
+    
+    res.json(tipo);
+  } catch (error) {
+    console.error('Error actualizando tipo de nota:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tipo de nota no encontrado' });
+    } else if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tipo de nota con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.delete('/api/config/tipos-notas/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const tipo = await prisma.tipoNota.update({
+      where: { id },
+      data: { activo: false }
+    });
+    
+    res.json({ message: 'Tipo de nota desactivado correctamente' });
+  } catch (error) {
+    console.error('Error desactivando tipo de nota:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tipo de nota no encontrado' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+// TIPOS DE RECURSOS - CRUD
+router.get('/api/config/tipos-recursos', async (req, res) => {
+  try {
+    const tipos = await prisma.tipoRecurso.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(tipos);
+  } catch (error) {
+    console.error('Error obteniendo tipos de recursos:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+router.post('/api/config/tipos-recursos', requireAuth, async (req, res) => {
+  try {
+    const { nombre, descripcion, color } = req.body;
+    
+    const tipo = await prisma.tipoRecurso.create({
+      data: {
+        nombre,
+        descripcion,
+        color,
+        activo: true
+      }
+    });
+    
+    res.status(201).json(tipo);
+  } catch (error) {
+    console.error('Error creando tipo de recurso:', error);
+    if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tipo de recurso con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.put('/api/config/tipos-recursos/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion, color, activo } = req.body;
+    
+    const tipo = await prisma.tipoRecurso.update({
+      where: { id },
+      data: {
+        nombre,
+        descripcion,
+        color,
+        activo
+      }
+    });
+    
+    res.json(tipo);
+  } catch (error) {
+    console.error('Error actualizando tipo de recurso:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tipo de recurso no encontrado' });
+    } else if (error.code === 'P2002') {
+      res.status(400).json({ error: 'Ya existe un tipo de recurso con ese nombre' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
+router.delete('/api/config/tipos-recursos/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const tipo = await prisma.tipoRecurso.update({
+      where: { id },
+      data: { activo: false }
+    });
+    
+    res.json({ message: 'Tipo de recurso desactivado correctamente' });
+  } catch (error) {
+    console.error('Error desactivando tipo de recurso:', error);
+    if (error.code === 'P2025') {
+      res.status(404).json({ error: 'Tipo de recurso no encontrado' });
+    } else {
+      res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+});
+
 module.exports = router;

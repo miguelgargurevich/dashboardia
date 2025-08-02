@@ -81,3 +81,43 @@ model Note {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// Modelos de configuración
+model Tema {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String
+  color       String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TipoEvento {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  icono       String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TipoNota {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String
+  color       String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TipoRecurso {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String
+  color       String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
