@@ -17,13 +17,14 @@ export default function S3TestPage() {
     try {
       addTestResult('🧪 Probando conexión con S3...', 'info');
       
-      const response = await fetch('http://localhost:4000/api/s3/test');
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+      const response = await fetch(`${backendUrl}/api/s3/test`);
       const data = await response.json();
       
       if (data.status === 'ok') {
         addTestResult('✅ Configuración S3 correcta', 'success');
         
-        const connResponse = await fetch('http://localhost:4000/api/s3/test-connection');
+        const connResponse = await fetch(`${backendUrl}/api/s3/test-connection`);
         const connData = await connResponse.json();
         
         if (connData.status === 'success') {
@@ -125,10 +126,10 @@ export default function S3TestPage() {
           <h2 className="text-xl font-semibold mb-4">ℹ️ Información del Sistema</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <strong>Frontend:</strong> http://localhost:3000
+              <strong>Frontend:</strong> {window.location.origin}
             </div>
             <div>
-              <strong>Backend:</strong> http://localhost:4000
+              <strong>Backend:</strong> {process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}
             </div>
             <div>
               <strong>S3 Bucket:</strong> dashborad
