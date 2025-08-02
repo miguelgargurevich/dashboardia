@@ -336,6 +336,30 @@ app.get('/', (req, res) => {
   res.send('Backend Dashboard IA Soporte funcionando');
 });
 
+// Health check endpoint para Render
+app.get('/healthz', async (req, res) => {
+  try {
+    // Verificar conexión a la base de datos con una consulta simple
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      environment: envConfig.env,
+      database: 'connected'
+    });
+  } catch (error) {
+    envConfig.logger.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      environment: envConfig.env,
+      database: 'disconnected',
+      error: error.message
+    });
+  }
+});
+
 // Base de conocimientos (Knowledge Base)
 app.get('/api/kb', async (req, res) => {
   try {
