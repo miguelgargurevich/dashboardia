@@ -107,29 +107,28 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                 const matchEtiqueta = !filtroEtiqueta || recurso.tags.includes(filtroEtiqueta);
                 const matchTema = !temaSeleccionado || recurso.tema === temaSeleccionado;
                 return matchBusqueda && matchTipo && matchEtiqueta && matchTema;
-              }).map((recurso) => (
-                <div
-                  key={recurso.id}
-                  onClick={() => setRecursoSeleccionado(recurso)}
-                  className={`p-4 rounded-lg cursor-pointer transition-all duration-200 transform hover:scale-[1.02] ${
-                    recursoSeleccionado?.id === recurso.id
-                      ? 'bg-gradient-to-r from-accent/20 to-accent/10 border border-accent shadow-lg shadow-accent/20'
-                      : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
-                  }`}
-                >
+              }).map((recurso) => {
+                const isSelected = recursoSeleccionado?.id === recurso.id;
+                return (
+                  <button
+                    key={recurso.id}
+                    onClick={() => setRecursoSeleccionado(recurso)}
+                    className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
+                      isSelected
+                        ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
+                        : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                    }`}
+                  >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      recursoSeleccionado?.id === recurso.id
-                        ? 'bg-accent/30'
-                        : 'bg-accent/20'
-                    }`}>
+                    <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
                       {getIconoTipoRecurso(recurso.tipo, recurso.tipoArchivo)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-white text-sm truncate mb-1">{recurso.titulo}</h3>
-                      <p className="text-xs text-accent mb-2 font-medium">
+                      <h3 className="font-semibold text-white text-base truncate flex-1">{recurso.titulo}</h3>
+                      <div className="text-xs text-yellow-300 mb-1">
                         {temas.find(t => t.id === recurso.tema)?.nombre} • {getTipoRecursoLabel(recurso.tipo, recurso.tipoArchivo)}
-                      </p>
+                      </div>
+                      {recurso.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{recurso.descripcion}</p>}
                       <div className="flex items-center gap-2 flex-wrap">
                         {recurso.tamaño && (
                           <span className="text-xs text-gray-400">
@@ -139,8 +138,9 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                </button>
+                );
+              })}
             </div>
           )}
         </div>

@@ -98,23 +98,27 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                 <button
                   key={index}
                   onClick={() => setNotaSeleccionada(nota)}
-                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 border ${
+                  className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                     isSelected
-                      ? `${bgColor.replace('/20','/30')} ${textColor} shadow-lg shadow-current/20`
-                      : `bg-gradient-to-r from-primary to-secondary/50 hover:${bgColor.replace('/20','/10')} hover:to-accent/5 border border-gray-700/50 hover:border-current/30 shadow-md hover:shadow-lg`
+                      ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
+                      : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${isSelected ? bgColor.replace('/20','/30') : bgColor}`}></div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-white text-sm mb-1 leading-tight">{nota.nombre}</h3>
-                      <p className={`text-xs mb-1 font-medium ${textColor}`}>{tipoNota.nombre}</p>
+                    <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
+                      <div className={`w-4 h-4 rounded-full ${bgColor}`}></div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-white text-base truncate flex-1">{nota.nombre}</h3>
+                      <div className="text-xs text-yellow-300 mb-1">
+                        {tipoNota.nombre}
+                      </div>
                       {nota.etiquetas && nota.etiquetas.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-1">
                           {nota.etiquetas.slice(0, 3).map((etiqueta: string, etIndex: number) => (
                             <span
                               key={etIndex}
-                              className={`px-1.5 py-0.5 rounded text-xs ${bgColor} ${textColor}`}
+                              className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/20 text-yellow-300"
                             >
                               {etiqueta}
                             </span>
@@ -124,9 +128,7 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                           )}
                         </div>
                       )}
-                      <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">
-                        {nota.contenido.slice(0, 100)}...
-                      </p>
+                      {nota.contenido && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{nota.contenido.slice(0, 100)}...</p>}
                     </div>
                   </div>
                 </button>

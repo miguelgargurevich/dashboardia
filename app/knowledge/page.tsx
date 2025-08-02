@@ -3,12 +3,13 @@ import Modal from '../components/Modal';
 import React, { useState, useEffect } from 'react';
 import NotaForm from '../components/knowledge/NotaForm';
 import RecursoForm from '../components/resources/RecursoForm';
-import { FaFileAlt, FaBook, FaVideo, FaBell, FaPrint, FaClock, FaExclamationTriangle, FaLink, FaBrain, FaLayerGroup, FaAddressBook, FaClipboardList, FaPlus, FaCalendarAlt, FaEye } from 'react-icons/fa';
+import { FaSearch, FaPlus } from 'react-icons/fa';
 import NotasPanel from '../components/knowledge/NotasPanel';
 import type { Recurso, Tema, TipoRecurso } from '../lib/types';
 import RecursosArchivosPanel from '../components/resources/RecursosArchivosPanel';
 import { useRouter } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
+import { useConfig, getIconComponent } from '../lib/useConfig';
 
 import DetalleNotaPanel from '../components/knowledge/DetalleNotaPanel';
 import DetalleRecursoPanel from '../components/resources/DetalleRecursoPanel';
@@ -38,6 +39,11 @@ interface NotasMD {
 }
 
 const KnowledgePage: React.FC = () => {
+  // Hooks para configuración dinámica
+  const { items: temasConfig } = useConfig('temas');
+  const { items: recursosConfig } = useConfig('recursos');
+  const { items: notasConfig } = useConfig('notas');
+
   // Tipos de nota desde JSON centralizado
   const [tiposNotas, setTiposNotas] = useState<TipoNota[]>([]);
   // Estado para crear nuevo evento
@@ -76,42 +82,39 @@ const KnowledgePage: React.FC = () => {
   const [etiquetasDisponiblesRecursos, setEtiquetasDisponiblesRecursos] = useState<string[]>([]);
   const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);
 
-  // Definición de tipos de recursos desde JSON centralizado
+  // Definición de tipos de recursos desde configuración dinámica
   const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
   useEffect(() => {
-    fetch('/tiposRecursos.json')
-      .then(res => res.json())
-      .then((data) => {
-        // Asignar iconos según el id
-        const iconMap: Record<string, React.ReactNode> = {
-          'url': <FaLink className="text-xl" />,
-          'archivo': <FaFileAlt className="text-xl" />,
-          'video': <FaVideo className="text-xl" />,
-          'ia-automatizacion': <FaBrain className="text-xl" />,
-          'contactos-externos': <FaAddressBook className="text-xl" />,
-          'plantillas-formularios': <FaClipboardList className="text-xl" />
-        };
-        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-xl" /> })));
-      });
-  }, []);
+    if (recursosConfig.length > 0) {
+      setTiposRecursos(recursosConfig.map((item: any) => ({
+        id: item.id,
+        nombre: item.nombre,
+        descripcion: item.descripcion || '',
+        color: item.color || 'bg-accent/20 text-accent',
+        icono: (() => {
+          const IconComponent = getIconComponent(item.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
+          return <IconComponent className="text-xl" />;
+        })()
+      })));
+    }
+  }, [recursosConfig]);
 
-  // Cargar temas desde el JSON centralizado y asignar iconos
+  // Cargar temas desde configuración dinámica
   const [temas, setTemas] = useState<Tema[]>([]);
   useEffect(() => {
-    fetch('/temas.json')
-      .then(res => res.json())
-      .then((data) => {
-        // Asignar iconos según el id
-        const iconMap: Record<string, React.ReactNode> = {
-          'notificaciones': <FaBell className="text-xl" />,
-          'polizas': <FaPrint className="text-xl" />,
-          'actividades-diarias': <FaClock className="text-xl" />,
-          'emergencias': <FaExclamationTriangle className="text-xl" />,
-          'kb-conocidos': <FaBrain className="text-xl" />
-        };
-        setTemas(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-xl" /> })));
-      });
-  }, []);
+    if (temasConfig.length > 0) {
+      setTemas(temasConfig.map((item: any) => ({
+        id: item.id,
+        nombre: item.nombre,
+        descripcion: item.descripcion || '',
+        color: item.color || 'bg-accent/20 text-accent',
+        icono: (() => {
+          const IconComponent = getIconComponent(item.icono || 'fa-layer-group') as React.ComponentType<{ className?: string }>;
+          return <IconComponent className="text-xl" />;
+        })()
+      })));
+    }
+  }, [temasConfig]);
   // Helper para obtener el id del primer tema
 
   // Efecto para inicializar autenticación
@@ -241,34 +244,39 @@ const KnowledgePage: React.FC = () => {
     document.body.removeChild(element);
   };
 
-  // Funciones auxiliares para recursos
+  // Funciones auxiliares para recursos con configuración dinámica
   const getIconoTipoRecurso = (tipo: string, tipoArchivo?: string) => {
-    if (tipo === 'url') return <FaLink className="text-accent text-sm" />;
-    if (tipo === 'video') return <FaVideo className="text-accent text-sm" />;
-    if (tipo === 'ia-automatizacion') return <FaBrain className="text-accent text-sm" />;
-    if (tipo === 'contactos-externos') return <FaAddressBook className="text-accent text-sm" />;
-    if (tipo === 'plantillas-formularios') return <FaClipboardList className="text-accent text-sm" />;
+    // Buscar configuración del tipo de recurso
+    const config = recursosConfig.find((item: any) => 
+      item.nombre.toLowerCase() === tipo.toLowerCase()
+    );
     
+    if (config && config.icono) {
+      const IconComponent = getIconComponent(config.icono) as React.ComponentType<{ className?: string }>;
+      return <IconComponent className="text-accent text-sm" />;
+    }
+    
+    // Fallback para tipos específicos de archivos usando configuración dinámica
     if (tipo === 'archivo') {
-      switch (tipoArchivo) {
-        case 'pdf':
-          return <FaFileAlt className="text-red-400 text-sm" />;
-        case 'word':
-          return <FaFileAlt className="text-blue-400 text-sm" />;
-        case 'excel':
-          return <FaFileAlt className="text-green-400 text-sm" />;
-        case 'powerpoint':
-          return <FaFileAlt className="text-orange-400 text-sm" />;
-        case 'video':
-          return <FaVideo className="text-purple-400 text-sm" />;
-        case 'imagen':
-          return <FaFileAlt className="text-pink-400 text-sm" />;
-        default:
-          return <FaFileAlt className="text-accent text-sm" />;
+      const videoConfig = recursosConfig.find((item: any) => 
+        item.nombre.toLowerCase().includes('video')
+      );
+      if (tipoArchivo === 'video' && videoConfig?.icono) {
+        const IconComponent = getIconComponent(videoConfig.icono) as React.ComponentType<{ className?: string }>;
+        return <IconComponent className="text-accent text-sm" />;
       }
     }
     
-    return <FaFileAlt className="text-accent text-sm" />;
+    // Icono por defecto usando configuración
+    const defaultConfig = recursosConfig[0]; // Usar el primer tipo como fallback
+    if (defaultConfig?.icono) {
+      const IconComponent = getIconComponent(defaultConfig.icono) as React.ComponentType<{ className?: string }>;
+      return <IconComponent className="text-accent text-sm" />;
+    }
+    
+    // Fallback absoluto
+    const IconComponent = getIconComponent('fa-file-alt') as React.ComponentType<{ className?: string }>;
+    return <IconComponent className="text-accent text-sm" />;
   };
 
   const getTipoRecursoLabel = (tipo: string, tipoArchivo?: string) => {
@@ -559,7 +567,10 @@ const KnowledgePage: React.FC = () => {
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
           >
-            <FaBook />
+            {(() => {
+              const IconComponent = getIconComponent('fa-book') as React.ComponentType<{ className?: string }>;
+              return <IconComponent />;
+            })()}
             Notas y Documentos
           </button>
           <button
@@ -570,7 +581,10 @@ const KnowledgePage: React.FC = () => {
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
           >
-            <FaLayerGroup />
+            {(() => {
+              const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
+              return <IconComponent />;
+            })()}
             Recursos y Archivos
           </button>
           <button
@@ -581,7 +595,10 @@ const KnowledgePage: React.FC = () => {
                 : 'bg-secondary text-accent hover:bg-accent/10'
             }`}
           >
-            <FaClock />
+            {(() => {
+              const IconComponent = getIconComponent('fa-clock') as React.ComponentType<{ className?: string }>;
+              return <IconComponent />;
+            })()}
             Eventos del Equipo
           </button>
         </div>
@@ -605,7 +622,10 @@ const KnowledgePage: React.FC = () => {
                   : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
               }`}
             >
-              <FaFileAlt className="text-sm" />
+              {(() => {
+                const IconComponent = getIconComponent('fa-file-alt') as React.ComponentType<{ className?: string }>;
+                return <IconComponent className="text-sm" />;
+              })()}
               Todas las Notas
             </button>
             <button
@@ -616,7 +636,10 @@ const KnowledgePage: React.FC = () => {
                   : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
               }`}
             >
-              <FaLayerGroup className="text-sm" />
+              {(() => {
+                const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
+                return <IconComponent className="text-sm" />;
+              })()}
               Por Temas
             </button>
           </div>
@@ -634,7 +657,10 @@ const KnowledgePage: React.FC = () => {
                   : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
               }`}
             >
-              <FaVideo className="text-sm" />
+              {(() => {
+                const IconComponent = getIconComponent('fa-video') as React.ComponentType<{ className?: string }>;
+                return <IconComponent className="text-sm" />;
+              })()}
               Todos los Recursos
             </button>
             <button
@@ -645,7 +671,10 @@ const KnowledgePage: React.FC = () => {
                   : 'bg-secondary text-gray-300 hover:bg-accent/10 hover:text-accent'
               }`}
             >
-              <FaLayerGroup className="text-sm" />
+              {(() => {
+                const IconComponent = getIconComponent('fa-layer-group') as React.ComponentType<{ className?: string }>;
+                return <IconComponent className="text-sm" />;
+              })()}
               Por Tipos
             </button>
           </div>
@@ -661,7 +690,7 @@ const KnowledgePage: React.FC = () => {
                   <button
                     key={tema.id}
                     onClick={() => setTemaSeleccionado(tema.id)}
-                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tema.color} hover:bg-white/10 hover:border-accent/60`}
+                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tema.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
                   >
                     <div className="flex items-center gap-4 mb-3">
                       {tema.icono}
@@ -688,7 +717,7 @@ const KnowledgePage: React.FC = () => {
                   <button
                     key={tipo.id}
                     onClick={() => setTipoRecursoSeleccionado(tipo.id)}
-                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-white/10 hover:border-accent/60`}
+                    className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
                   >
                     <div className="flex items-center gap-4 mb-3">
                       {tipo.icono}
@@ -755,7 +784,7 @@ const KnowledgePage: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setTemaSeleccionado(null)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors"
                   >
                     ← Volver a temas
                   </button>
@@ -814,7 +843,7 @@ const KnowledgePage: React.FC = () => {
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => setTipoRecursoSeleccionado(null)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors"
                   >
                     ← Volver a tipos
                   </button>
