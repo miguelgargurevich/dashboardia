@@ -1,12 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FileUploadS3 from '../components/FileUploadS3';
 import useRecursosS3 from '../hooks/useRecursosS3';
 
 export default function S3TestPage() {
   const [testResults, setTestResults] = useState<any[]>([]);
+  const [currentOrigin, setCurrentOrigin] = useState<string>('');
   const { uploadRecurso, getDownloadUrl, deleteFileFromS3 } = useRecursosS3();
+
+  useEffect(() => {
+    // Solo ejecutar en el cliente para evitar error de SSR
+    if (typeof window !== 'undefined') {
+      setCurrentOrigin(window.location.origin);
+    }
+  }, []);
 
   const addTestResult = (message: string, type: 'success' | 'error' | 'info') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -126,7 +134,7 @@ export default function S3TestPage() {
           <h2 className="text-xl font-semibold mb-4">ℹ️ Información del Sistema</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <strong>Frontend:</strong> {window.location.origin}
+              <strong>Frontend:</strong> {currentOrigin || 'Cargando...'}
             </div>
             <div>
               <strong>Backend:</strong> {process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'}
