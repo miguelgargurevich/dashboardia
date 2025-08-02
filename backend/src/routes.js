@@ -1670,6 +1670,7 @@ router.delete('/api/config/temas/:id', requireAuth, async (req, res) => {
 // COLORES DISPONIBLES
 router.get('/api/config/colores', async (req, res) => {
   try {
+    // Colores estáticos disponibles para el sistema
     const colores = [
       { 
         nombre: "Azul", 
@@ -1710,6 +1711,11 @@ router.get('/api/config/colores', async (req, res) => {
         nombre: "Naranja", 
         hex: "#F97316", 
         tailwind: "bg-orange-500/20 text-orange-400 border-orange-400/30" 
+      },
+      { 
+        nombre: "Índigo", 
+        hex: "#6366F1", 
+        tailwind: "bg-indigo-500/20 text-indigo-400 border-indigo-400/30" 
       }
     ];
     res.json(colores);

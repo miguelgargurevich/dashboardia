@@ -97,6 +97,7 @@ model TipoEvento {
   id          String   @id @default(cuid())
   nombre      String   @unique
   icono       String
+  color       String
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

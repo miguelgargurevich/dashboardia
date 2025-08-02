@@ -43,6 +43,119 @@ async function main() {
     }
   }
 
+  // Tipos de Eventos
+  const tiposEventos = [
+    { nombre: 'mantenimiento', icono: 'fa-wrench', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' },
+    { nombre: 'capacitacion', icono: 'fa-graduation-cap', color: 'bg-green-500/20 text-green-400 border-green-400/30' },
+    { nombre: 'demo', icono: 'fa-laptop', color: 'bg-purple-500/20 text-purple-400 border-purple-400/30' },
+    { nombre: 'reunion', icono: 'fa-users', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' },
+    { nombre: 'incidente', icono: 'fa-exclamation-triangle', color: 'bg-red-500/20 text-red-400 border-red-400/30' },
+    { nombre: 'notificaciones', icono: 'fa-bell', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-400/30' },
+    { nombre: 'otro', icono: 'fa-calendar-alt', color: 'bg-gray-500/20 text-gray-400 border-gray-400/30' }
+  ];
+
+  for (const t of tiposEventos) {
+    const exists = await prisma.tipoEvento.findUnique({ where: { nombre: t.nombre } });
+    if (!exists) {
+      await prisma.tipoEvento.create({ data: t });
+    } else {
+      // Actualizar con color si no lo tiene
+      await prisma.tipoEvento.update({
+        where: { nombre: t.nombre },
+        data: { 
+          icono: t.icono,
+          color: t.color 
+        }
+      });
+    }
+  }
+
+  // Tipos de Notas
+  const tiposNotas = [
+    { nombre: 'Procedimiento', descripcion: 'Documentos de procesos paso a paso', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' },
+    { nombre: 'Manual', descripcion: 'Manuales de usuario y técnicos', color: 'bg-green-500/20 text-green-400 border-green-400/30' },
+    { nombre: 'Guía', descripcion: 'Guías de referencia rápida', color: 'bg-purple-500/20 text-purple-400 border-purple-400/30' },
+    { nombre: 'Nota', descripcion: 'Notas generales y recordatorios', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' },
+    { nombre: 'Checklist', descripcion: 'Listas de verificación', color: 'bg-orange-500/20 text-orange-400 border-orange-400/30' },
+    { nombre: 'Incidente', descripcion: 'Documentación de incidentes', color: 'bg-red-500/20 text-red-400 border-red-400/30' },
+    { nombre: 'Capacitación', descripcion: 'Material de formación', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-400/30' },
+    { nombre: 'Urgente', descripcion: 'Notas de alta prioridad', color: 'bg-red-600/20 text-red-300 border-red-300/30' }
+  ];
+
+  for (const tn of tiposNotas) {
+    const exists = await prisma.tipoNota.findUnique({ where: { nombre: tn.nombre } });
+    if (!exists) {
+      await prisma.tipoNota.create({ data: tn });
+    } else {
+      // Actualizar con descripción y color si no los tiene
+      await prisma.tipoNota.update({
+        where: { nombre: tn.nombre },
+        data: { 
+          descripcion: tn.descripcion,
+          color: tn.color 
+        }
+      });
+    }
+  }
+
+  // Tipos de Recursos
+  const tiposRecursos = [
+    { nombre: 'Documentos PDF', descripcion: 'Archivos PDF y documentación', color: 'bg-red-500/20 text-red-400 border-red-400/30' },
+    { nombre: 'Enlaces Web', descripcion: 'URLs y recursos en línea', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' },
+    { nombre: 'Videos', descripcion: 'Contenido multimedia y tutoriales', color: 'bg-purple-500/20 text-purple-400 border-purple-400/30' },
+    { nombre: 'Archivos', descripcion: 'Documentos y archivos varios', color: 'bg-green-500/20 text-green-400 border-green-400/30' },
+    { nombre: 'Notas', descripcion: 'Notas y apuntes rápidos', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' },
+    { nombre: 'Plantillas', descripcion: 'Formularios y plantillas', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-400/30' },
+    { nombre: 'Contactos', descripcion: 'Información de contactos externos', color: 'bg-pink-500/20 text-pink-400 border-pink-400/30' },
+    { nombre: 'Automatización IA', descripcion: 'Recursos de automatización e IA', color: 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30' }
+  ];
+
+  for (const tr of tiposRecursos) {
+    const exists = await prisma.tipoRecurso.findUnique({ where: { nombre: tr.nombre } });
+    if (!exists) {
+      await prisma.tipoRecurso.create({ data: tr });
+    } else {
+      // Actualizar con descripción y color si no los tiene
+      await prisma.tipoRecurso.update({
+        where: { nombre: tr.nombre },
+        data: { 
+          descripcion: tr.descripcion,
+          color: tr.color 
+        }
+      });
+    }
+  }
+
+  // Temas de configuración
+  const temas = [
+    { nombre: 'Soporte Técnico', descripcion: 'Temas relacionados con soporte técnico y resolución de problemas', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' },
+    { nombre: 'Infraestructura', descripcion: 'Servidores, redes y infraestructura IT', color: 'bg-green-500/20 text-green-400 border-green-400/30' },
+    { nombre: 'Seguridad', descripcion: 'Seguridad informática y ciberseguridad', color: 'bg-red-500/20 text-red-400 border-red-400/30' },
+    { nombre: 'Capacitación', descripcion: 'Formación y desarrollo profesional', color: 'bg-purple-500/20 text-purple-400 border-purple-400/30' },
+    { nombre: 'Procesos', descripcion: 'Procedimientos y metodologías de trabajo', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' },
+    { nombre: 'Emergencias', descripcion: 'Procedimientos de emergencia y contingencia', color: 'bg-orange-500/20 text-orange-400 border-orange-400/30' },
+    { nombre: 'Comunicaciones', descripcion: 'Sistemas de comunicación y colaboración', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-400/30' },
+    { nombre: 'Backup y Recuperación', descripcion: 'Respaldos y recuperación de datos', color: 'bg-cyan-500/20 text-cyan-400 border-cyan-400/30' },
+    { nombre: 'Monitoreo', descripcion: 'Monitoreo de sistemas y alertas', color: 'bg-pink-500/20 text-pink-400 border-pink-400/30' },
+    { nombre: 'General', descripcion: 'Temas generales y varios', color: 'bg-gray-500/20 text-gray-400 border-gray-400/30' }
+  ];
+
+  for (const tema of temas) {
+    const exists = await prisma.tema.findUnique({ where: { nombre: tema.nombre } });
+    if (!exists) {
+      await prisma.tema.create({ data: tema });
+    } else {
+      // Actualizar con descripción y color si no los tiene
+      await prisma.tema.update({
+        where: { nombre: tema.nombre },
+        data: { 
+          descripcion: tema.descripcion,
+          color: tema.color 
+        }
+      });
+    }
+  }
+
   // Recursos
   const resources = [
     { tipo: 'enlace', titulo: 'Video Azure', url: 'https://youtube.com/azure', tags: ['azure', 'video'], categoria: 'Cloud' },
