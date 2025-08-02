@@ -2,12 +2,14 @@ import type { Tema } from '../../lib/types';
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
 import DetalleNotaPanel from './DetalleNotaPanel';
+import { getIconComponent } from '../../lib/useConfig';
 
 interface TipoNota {
   id: string;
   nombre: string;
   descripcion: string;
   color: string;
+  icono?: string;
 }
 
 interface NotasPanelProps {
@@ -91,8 +93,9 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {notasFiltradas.map((nota, index) => {
-              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t: any) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo };
+              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t: any) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo, icono: 'fa-sticky-note' };
               const [bgColor, textColor] = tipoNota.color.split(' ');
+              const IconComponent = getIconComponent(tipoNota.icono || 'fa-sticky-note') as React.ComponentType<{ className?: string }>;
               const isSelected = notaSeleccionada?.nombre === nota.nombre;
               return (
                 <button
@@ -105,8 +108,8 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
-                      <div className={`w-4 h-4 rounded-full ${bgColor}`}></div>
+                    <div className={`p-2 rounded-lg ${bgColor}`}>
+                      <IconComponent className={textColor || 'text-accent'} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-white text-base truncate flex-1">{nota.nombre}</h3>

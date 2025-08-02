@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { FaSearch, FaFileAlt, FaBook, FaVideo, FaEye, FaEdit } from "react-icons/fa";
 import NotaForm from "../components/knowledge/NotaForm";
+import { useConfig, getIconComponent } from '../lib/useConfig';
 
 interface Nota {
   id?: string;
@@ -23,17 +24,9 @@ interface Tema {
   color: string;
 }
 
-interface TipoNota {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  color: string;
-}
-
 interface NotasDocumentosPanelProps {
   notas: Nota[];
   temas: Tema[];
-  tiposNotas: TipoNota[];
   notaSeleccionada: Nota | null;
   setNotaSeleccionada: (nota: Nota | null) => void;
   busqueda: string;
@@ -50,7 +43,6 @@ interface NotasDocumentosPanelProps {
 const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   notas,
   temas,
-  tiposNotas,
   notaSeleccionada,
   setNotaSeleccionada,
   busqueda,
@@ -63,6 +55,36 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
   // eliminarNota,
   onEditarNota
 }) => {
+
+  // Hook de configuración para notas
+  const notasConfig = useConfig('notas');
+
+  // Función para obtener configuración de tipo de nota
+  const getNotaConfig = (tipoId: string) => {
+    if (notasConfig.loading) {
+      return {
+        IconComponent: FaFileAlt,
+        color: 'bg-accent/20 text-accent',
+        nombre: 'Nota'
+      };
+    }
+    
+    const config = notasConfig.items.find(item => item.id === tipoId || item.nombre === tipoId);
+    if (!config) {
+      return {
+        IconComponent: FaFileAlt,
+        color: 'bg-accent/20 text-accent',
+        nombre: 'Nota'
+      };
+    }
+    
+    const IconComponent = getIconComponent(config.icono || 'FaFileAlt');
+    return {
+      IconComponent,
+      color: config.color,
+      nombre: config.nombre
+    };
+  };
 
   // Estado para mostrar el formulario de edición/creación
   // Función para refrescar notas (debe estar en el componente)
@@ -188,23 +210,24 @@ const NotasDocumentosPanel: React.FC<NotasDocumentosPanelProps> = ({
           ) : (
             <div className="flex flex-col gap-3 overflow-y-auto">
               {notasState.map((nota, index) => {
-                const tipoNota = tiposNotas.find((t: TipoNota) => t.id === nota.tipo) || tiposNotas[0];
-                const color = tipoNota.color;
-                const nombreTipo = tipoNota.nombre;
+                const config = getNotaConfig(nota.tipo);
+                const IconComponent = config.IconComponent as any;
+                const [bgColor, textColor] = config.color.split(' ');
+                const nombreTipo = config.nombre;
                 const isSelected = notaSeleccionada?.id === nota.id;
                 return (
                   <button
                     key={nota.id ? `nota-${nota.id}` : `nota-index-${index}`}
                     onClick={() => setNotaSeleccionada(nota)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 cursor-pointer
-                      ${isSelected
-                        ? `${color} shadow-lg shadow-current/20 border-accent bg-accent/20`
-                        : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'}
-                    `}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 cursor-pointer ${
+                      isSelected
+                        ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
+                        : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                    }`}
                   >
-                    <div className={`flex-shrink-0 p-3 rounded-lg flex items-center justify-center ${isSelected ? color.split(' ')[0]?.replace('/20', '/30') || 'bg-accent/30' : color.split(' ')[0] || 'bg-accent/20'}`}>
-                      {/* Icono de nota siempre */}
-                      <FaFileAlt className={`text-2xl ${color.split(' ')[1] || 'text-accent'}`} />
+                    <div className={`flex-shrink-0 p-3 rounded-lg flex items-center justify-center ${bgColor}`}>
+                      {/* Icono dinámico desde configuración */}
+                      <IconComponent className={`text-xl ${textColor || 'text-accent'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">

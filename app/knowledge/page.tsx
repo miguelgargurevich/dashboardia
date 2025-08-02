@@ -23,6 +23,7 @@ interface TipoNota {
   nombre: string;
   descripcion: string;
   color: string;
+  icono?: string;
 }
 
 interface NotasMD {
@@ -44,25 +45,20 @@ const KnowledgePage: React.FC = () => {
   const { items: recursosConfig } = useConfig('recursos');
   const { items: notasConfig } = useConfig('notas');
 
-  // Tipos de nota desde API de configuración
-  const [tiposNotas, setTiposNotas] = useState<TipoNota[]>([]);
+  // Tipos de nota desde el hook de configuración (ya no necesitamos estado separado)
+  const tiposNotas: TipoNota[] = notasConfig.map((item: any) => ({
+    id: item.id,
+    nombre: item.nombre,
+    descripcion: item.descripcion || '',
+    color: item.color || 'bg-accent/20 text-accent',
+    icono: item.icono || 'fa-sticky-note'
+  }));
+
   // Estado para crear nuevo evento
   const [mostrarFormularioEvento, setMostrarFormularioEvento] = useState(false);
 
   const [token, setToken] = useState<string | null>(null);
   
-  useEffect(() => {
-    if (token) {
-      fetch('/api/config/tipos-notas', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-        .then(res => res.json())
-        .then((data) => setTiposNotas(data))
-        .catch(err => console.error('Error cargando tipos de notas:', err));
-    }
-  }, [token]);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);

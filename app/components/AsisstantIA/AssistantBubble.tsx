@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { FaFileAlt, FaLink, FaVideo, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from "react-icons/fa";
+import { useConfig, getIconComponent } from '../../lib/useConfig';
 // Simple Markdown a HTML (bold, listas, saltos de línea, tablas)
 function markdownToHtml(text: string): string {
   if (!text) return '';
@@ -47,6 +48,11 @@ type Message = { role: string; content: string };
 
 export default function AssistantBubble() {
   const pathname = usePathname();
+  
+  // Hooks para configuración dinámica
+  const { items: temasConfig } = useConfig('temas');
+  const { items: recursosConfig } = useConfig('recursos');
+  
   const [temasActuales, setTemasActuales] = useState<string[]>([]);
   const [temasFull, setTemasFull] = useState<any[]>([]);
   const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
@@ -72,53 +78,26 @@ export default function AssistantBubble() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoginPage]);
 
+  // Configurar temas desde el hook de configuración
   useEffect(() => {
-    fetch('/api/config/temas')
-      .then(res => res.json())
-      .then((data: any[]) => {
-        setTemasFull(data);
-        setTemasActuales(data.map(t => t.nombre));
-      })
-      .catch(err => {
-        console.error('Error cargando temas:', err);
-        // Temas por defecto
-        const temasDefault = [
-          { nombre: 'General', descripcion: 'Tema general', color: 'bg-blue-500' },
-          { nombre: 'Desarrollo', descripcion: 'Desarrollo', color: 'bg-green-500' }
-        ];
-        setTemasFull(temasDefault);
-        setTemasActuales(temasDefault.map(t => t.nombre));
-      });
-  }, []);
+    if (temasConfig.length > 0) {
+      setTemasFull(temasConfig);
+      setTemasActuales(temasConfig.map(t => t.nombre));
+    }
+  }, [temasConfig]);
 
+  // Configurar tipos de recursos desde el hook de configuración
   useEffect(() => {
-    fetch('/api/config/tipos-recursos')
-      .then(res => res.json())
-      .then((data) => {
-        const iconMap: Record<string, React.ReactNode> = {
-          'url': <FaLink className="text-accent" />,
-          'archivo': <FaFileAlt className="text-accent" />,
-          'video': <FaVideo className="text-accent" />,
-          'ia-automatizacion': <FaBrain className="text-accent" />,
-          'contactos-externos': <FaAddressBook className="text-accent" />,
-          'plantillas-formularios': <FaClipboardList className="text-accent" />
-        };
-        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
-      })
-      .catch(err => {
-        console.error('Error cargando tipos de recursos:', err);
-        // Tipos por defecto
-        const tiposDefault = [
-          { id: 'url', nombre: 'URL', descripcion: 'Enlace web', color: 'text-blue-500' },
-          { id: 'archivo', nombre: 'Archivo', descripcion: 'Documento', color: 'text-green-500' }
-        ];
-        const iconMap: Record<string, React.ReactNode> = {
-          'url': <FaLink className="text-accent" />,
-          'archivo': <FaFileAlt className="text-accent" />
-        };
-        setTiposRecursos(tiposDefault.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
-      });
-  }, []);
+    if (recursosConfig.length > 0) {
+      setTiposRecursos(recursosConfig.map((t: any) => ({
+        ...t,
+        icono: (() => {
+          const IconComponent = getIconComponent(t.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
+          return <IconComponent className="text-accent" />;
+        })()
+      })));
+    }
+  }, [recursosConfig]);
 
   useEffect(() => {
     const handler = () => setOpen(false);

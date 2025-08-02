@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { FaPlus, FaSearch, FaCalendarAlt, FaListUl, FaLayerGroup } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 import { useEventosConfig } from '../lib/useConfig';
+import { getIconComponent } from '../lib/useConfig';
 import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import Modal from '../components/Modal';
 import EventoForm from '../components/eventos/EventoForm';
@@ -202,7 +203,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
               : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
           }`}
         >
-          <FaLayerGroup />
+          {React.createElement(getIconComponent('FaLayerGroup'))}
           Por Tipo
         </button>
       </div> 
