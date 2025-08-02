@@ -214,12 +214,12 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
     'fa-cog', 'fa-bug', 'fa-shield-alt', 'fa-handshake', 'fa-lightbulb'
   ];
 
-  if (loading && tiposEventos.length === 0) {
+  if (colores.length === 0) {
     return (
       <div className="bg-secondary rounded-xl shadow-lg p-6">
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mx-auto"></div>
-          <p className="mt-2 text-gray-400">Cargando tipos de eventos...</p>
+          <p className="mt-2 text-gray-400">Cargando configuración...</p>
         </div>
       </div>
     );
@@ -233,14 +233,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
           <h2 className="text-2xl font-bold text-accent">Tipos de Eventos</h2>
         </div>
         <button
-          onClick={() => {
-            setAgregando(true);
-            setFormData({ 
-              nombre: '', 
-              icono: '', 
-              color: colores.length > 0 ? colores[0].tailwind : '' 
-            });
-          }}
+          onClick={() => setAgregando(true)}
           disabled={loading || agregando || editando !== null}
           className="bg-accent hover:bg-accent/80 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors"
         >
@@ -249,7 +242,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
       </div>
 
       <div className="space-y-4">
-        {/* Formulario para agregar nuevo tipo */}
+        {/* Formulario para agregar nuevo tipo de evento */}
         {agregando && (
           <form onSubmit={manejarSubmit} className="bg-primary/50 p-4 rounded-lg border border-accent/20">
             <h3 className="text-lg font-semibold text-accent mb-4">Nuevo Tipo de Evento</h3>
@@ -260,7 +253,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                  className="input-std w-full"
                   placeholder="Ej: Mantenimiento"
                   required
                 />
@@ -271,32 +264,24 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
                   type="text"
                   value={formData.icono}
                   onChange={(e) => setFormData({ ...formData, icono: e.target.value })}
-                  className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                  className="input-std w-full"
                   placeholder="Ej: fa-wrench"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
-                <div className="flex items-center gap-2">
-                  <select
-                    value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                    className="flex-1 px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
-                    required
-                  >
-                    {colores.map(c => (
-                      <option key={c.tailwind} value={c.tailwind}>
-                        {c.nombre} {c.hex}
-                      </option>
-                    ))}
-                  </select>
-                  {formData.color && (
-                    <span 
-                      className="w-6 h-6 rounded-full border border-white/30 flex-shrink-0" 
-                      style={{backgroundColor: obtenerHexPorTailwind(formData.color)}}
-                    ></span>
-                  )}
+                <div className="flex gap-2">
+                  {colores.length > 0 && colores.map(colorObj => (
+                    <button
+                      key={colorObj.tailwind}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, color: colorObj.tailwind })}
+                      className={`w-8 h-8 rounded-full border-2 ${formData.color === colorObj.tailwind ? 'border-white' : 'border-gray-600'}`}
+                      style={{ backgroundColor: colorObj.hex }}
+                      title={colorObj.nombre}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -338,9 +323,9 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
           </form>
         )}
 
-        {/* Lista de tipos existentes */}
+        {/* Lista de tipos de eventos existentes */}
         {tiposEventos.map((tipo) => (
-          <div key={tipo.id} className={`rounded-lg p-4 border shadow-lg ${tipo.color} transition-all`}>
+          <div key={tipo.id} className="bg-primary/30 rounded-lg p-4 border border-gray-700">
             {editando === tipo.id ? (
               <form onSubmit={manejarSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -350,7 +335,7 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
                       type="text"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                      className="input-std w-full"
                       required
                     />
                   </div>
@@ -360,31 +345,23 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
                       type="text"
                       value={formData.icono}
                       onChange={(e) => setFormData({ ...formData, icono: e.target.value })}
-                      className="w-full px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
+                      className="input-std w-full"
                       required
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Color</label>
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={formData.color}
-                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-secondary border border-gray-600 rounded-lg text-white focus:border-accent focus:outline-none"
-                        required
-                      >
-                        {colores.map(c => (
-                          <option key={c.tailwind} value={c.tailwind}>
-                            {c.nombre} {c.hex}
-                          </option>
-                        ))}
-                      </select>
-                      {formData.color && (
-                        <span 
-                          className="w-6 h-6 rounded-full border border-white/30 flex-shrink-0" 
-                          style={{backgroundColor: obtenerHexPorTailwind(formData.color)}}
-                        ></span>
-                      )}
+                    <div className="flex gap-2">
+                      {colores.length > 0 && colores.map(colorObj => (
+                        <button
+                          key={colorObj.tailwind}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, color: colorObj.tailwind })}
+                          className={`w-8 h-8 rounded-full border-2 ${formData.color === colorObj.tailwind ? 'border-white' : 'border-gray-600'}`}
+                          style={{ backgroundColor: colorObj.hex }}
+                          title={colorObj.nombre}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -410,8 +387,8 @@ const TiposEventosConfigPanel: React.FC<TiposEventosConfigPanelProps> = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center border border-white/30"
-                    style={{backgroundColor: obtenerHexPorTailwind(tipo.color)}}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${tipo.color.split(' ')[0]} border`}
+                    style={{ color: obtenerHexPorTailwind(tipo.color) }}
                   >
                     <i className={`${tipo.icono} text-white`}></i>
                   </div>
