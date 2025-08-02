@@ -2,7 +2,20 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('./auth');
+const S3Service = require('./services/S3Service');
+const multer = require('multer');
 const prisma = new PrismaClient();
+
+// Configurar multer para manejar archivos en memoria
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { 
+    fileSize: 100 * 1024 * 1024 // 100MB límite
+  }
+});
+
+// Instancia del servicio S3
+const s3Service = new S3Service();
 
 // Proteger solo rutas privadas, NO /api/assistant
 // router.use(requireAuth); // Comentado para proteger solo rutas privadas
@@ -234,6 +247,28 @@ router.delete('/api/resources/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
+    // Obtener el recurso para ver si tiene archivo en S3
+    const resource = await prisma.resource.findUnique({
+      where: { id }
+    });
+    
+    if (!resource) {
+      return res.status(404).json({ error: 'Recurso no encontrado' });
+    }
+    
+    // Si tiene archivo en S3, eliminarlo
+    if (resource.filePath && resource.filePath.includes('amazonaws.com')) {
+      try {
+        // Extraer key de la URL
+        const url = new URL(resource.filePath);
+        const key = url.pathname.substring(1); // Remover el primer "/"
+        await s3Service.deleteFile(key);
+      } catch (s3Error) {
+        console.error('Error eliminando archivo de S3:', s3Error);
+        // Continuar con la eliminación del registro aunque falle S3
+      }
+    }
+    
     await prisma.resource.delete({
       where: { id }
     });
@@ -244,6 +279,282 @@ router.delete('/api/resources/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Recurso no encontrado' });
     }
     res.status(500).json({ error: 'Error eliminando recurso', details: err.message });
+  }
+});
+
+// ============================================
+// RUTAS DE ALMACENAMIENTO S3 PARA RECURSOS
+// ============================================
+
+/**
+ * @swagger
+ * /api/resources/upload:
+ *   post:
+ *     summary: Subir archivo a S3 y crear recurso
+ *     description: Sube un archivo a S3 y crea el registro correspondiente en la base de datos
+ *     tags: [Resources, S3]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *               - titulo
+ *               - categoria
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               titulo:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               categoria:
+ *                 type: string
+ *                 description: Categoría del recurso (recursos, notas, eventos)
+ *               subcategoria:
+ *                 type: string
+ *                 description: Subcategoría opcional
+ *               tags:
+ *                 type: string
+ *                 description: Tags separados por comas
+ *     responses:
+ *       201:
+ *         description: Archivo subido y recurso creado exitosamente
+ *       400:
+ *         description: Error de validación
+ *       500:
+ *         description: Error del servidor
+ */
+router.post('/api/resources/upload', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    const file = req.file;
+    const { titulo, descripcion, categoria, subcategoria, tags } = req.body;
+
+    // Validaciones
+    if (!file) {
+      return res.status(400).json({ error: 'No se proporcionó ningún archivo' });
+    }
+    
+    if (!titulo || !categoria) {
+      return res.status(400).json({ error: 'Título y categoría son requeridos' });
+    }
+
+    // Validar tipo y tamaño de archivo
+    if (!s3Service.isAllowedFileType(file.originalname)) {
+      return res.status(400).json({ error: 'Tipo de archivo no permitido' });
+    }
+
+    if (!s3Service.isAllowedFileSize(file.size)) {
+      return res.status(400).json({ error: 'El archivo es demasiado grande (máximo 100MB)' });
+    }
+
+    // Generar clave para S3
+    const s3Key = s3Service.generateS3Key(file.originalname, categoria, subcategoria);
+
+    // Subir archivo a S3
+    const uploadResult = await s3Service.uploadFile(
+      file.buffer,
+      s3Key,
+      file.mimetype,
+      {
+        titulo,
+        categoria,
+        originalName: file.originalname
+      }
+    );
+
+    // Crear registro en la base de datos
+    const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+    
+    const nuevoRecurso = await prisma.resource.create({
+      data: {
+        tipo: 'archivo',
+        titulo,
+        descripcion: descripcion || '',
+        filePath: uploadResult.url,
+        tags: tagsArray,
+        categoria: categoria || 'general',
+        fechaCarga: new Date()
+      }
+    });
+
+    res.status(201).json({
+      success: true,
+      recurso: nuevoRecurso,
+      s3: {
+        key: uploadResult.key,
+        url: uploadResult.url,
+        size: uploadResult.size
+      }
+    });
+
+  } catch (error) {
+    console.error('Error en upload de recurso:', error);
+    res.status(500).json({ error: 'Error subiendo archivo', details: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/resources/download/{key}:
+ *   get:
+ *     summary: Obtener URL de descarga firmada
+ *     description: Genera una URL firmada para descargar un archivo de S3
+ *     tags: [Resources, S3]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: key
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Clave del archivo en S3
+ *       - in: query
+ *         name: expires
+ *         schema:
+ *           type: integer
+ *           default: 3600
+ *         description: Tiempo de expiración en segundos
+ *     responses:
+ *       200:
+ *         description: URL de descarga generada
+ *       404:
+ *         description: Archivo no encontrado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get('/api/resources/download/:key(*)', requireAuth, async (req, res) => {
+  try {
+    const key = req.params.key;
+    const expires = parseInt(req.query.expires) || 3600;
+
+    // Verificar que el archivo existe y obtener info
+    const fileInfo = await s3Service.getFileInfo(key);
+    
+    // Generar URL firmada
+    const downloadUrl = await s3Service.getSignedDownloadUrl(key, expires);
+
+    res.json({
+      success: true,
+      downloadUrl,
+      fileInfo,
+      expiresIn: expires
+    });
+
+  } catch (error) {
+    console.error('Error generando URL de descarga:', error);
+    if (error.message.includes('NoSuchKey')) {
+      return res.status(404).json({ error: 'Archivo no encontrado' });
+    }
+    res.status(500).json({ error: 'Error generando URL de descarga', details: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/resources/files:
+ *   get:
+ *     summary: Listar archivos por categoría
+ *     description: Obtiene una lista de archivos almacenados en S3 por categoría
+ *     tags: [Resources, S3]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: categoria
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Categoría de archivos a listar
+ *       - in: query
+ *         name: subcategoria
+ *         schema:
+ *           type: string
+ *         description: Subcategoría opcional
+ *     responses:
+ *       200:
+ *         description: Lista de archivos
+ *       400:
+ *         description: Parámetros inválidos
+ *       500:
+ *         description: Error del servidor
+ */
+router.get('/api/resources/files', requireAuth, async (req, res) => {
+  try {
+    const { categoria, subcategoria } = req.query;
+
+    if (!categoria) {
+      return res.status(400).json({ error: 'Categoría es requerida' });
+    }
+
+    const files = await s3Service.listFiles(categoria, subcategoria);
+
+    res.json({
+      success: true,
+      files,
+      count: files.length
+    });
+
+  } catch (error) {
+    console.error('Error listando archivos:', error);
+    res.status(500).json({ error: 'Error listando archivos', details: error.message });
+  }
+});
+
+/**
+ * @swagger
+ * /api/resources/s3/delete:
+ *   delete:
+ *     summary: Eliminar archivo de S3
+ *     description: Elimina un archivo específico de S3 usando su clave
+ *     tags: [Resources, S3]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - key
+ *             properties:
+ *               key:
+ *                 type: string
+ *                 description: Clave del archivo en S3
+ *     responses:
+ *       200:
+ *         description: Archivo eliminado exitosamente
+ *       400:
+ *         description: Clave no proporcionada
+ *       500:
+ *         description: Error del servidor
+ */
+router.delete('/api/resources/s3/delete', requireAuth, async (req, res) => {
+  try {
+    const { key } = req.body;
+
+    if (!key) {
+      return res.status(400).json({ error: 'Clave del archivo es requerida' });
+    }
+
+    await s3Service.deleteFile(key);
+
+    res.json({
+      success: true,
+      message: 'Archivo eliminado exitosamente de S3',
+      key
+    });
+
+  } catch (error) {
+    console.error('Error eliminando archivo de S3:', error);
+    res.status(500).json({ error: 'Error eliminando archivo', details: error.message });
   }
 });
 
@@ -1978,6 +2289,56 @@ router.delete('/api/config/tipos-recursos/:id', requireAuth, async (req, res) =>
     } else {
       res.status(500).json({ error: 'Error interno del servidor' });
     }
+  }
+});
+
+// 🧪 Endpoint de prueba para S3
+router.get('/api/s3/test', (req, res) => {
+  try {
+    const s3Config = {
+      endpoint: process.env.SUPABASE_S3_ENDPOINT,
+      region: process.env.SUPABASE_S3_REGION,
+      bucket: process.env.SUPABASE_S3_BUCKET,
+      accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID ? '***CONFIGURED***' : 'NOT SET',
+      secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY ? '***CONFIGURED***' : 'NOT SET',
+    };
+
+    res.json({
+      status: 'ok',
+      message: 'S3 configuration loaded successfully',
+      config: s3Config,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Error checking S3 configuration',
+      error: error.message
+    });
+  }
+});
+
+// 🧪 Endpoint de prueba para conectividad S3
+router.get('/api/s3/test-connection', async (req, res) => {
+  try {
+    console.log('Testing S3 connection...');
+    const files = await s3Service.listFiles('test', '');
+    
+    res.json({
+      status: 'success',
+      message: 'S3 connection successful',
+      filesFound: files.length,
+      files: files.slice(0, 5), // Solo mostrar primeros 5 archivos
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('S3 Connection Error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'S3 connection failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 

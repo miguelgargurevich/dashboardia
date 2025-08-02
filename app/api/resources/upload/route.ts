@@ -1,172 +1,138 @@
 import { NextRequest, NextResponse } from 'next/server';
-import path from 'path';
-import { S3Client, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import crypto from 'crypto';
-import { hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const ALLOWED_EXTENSIONS = [
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-  '.txt', '.md', '.csv', '.zip', '.rar', '.7z',
-  '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp',
-  '.mp4', '.avi', '.mov', '.wmv', '.mp3', '.wav', '.aac'
-];
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
-// POST /api/recursos/upload - Subir archivo
 export async function POST(request: NextRequest) {
   try {
-    if (!hasValidAuth(request)) {
-      return createUnauthorizedResponse();
+    // Obtener el token de autorización
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Token de autorización requerido' }, { status: 401 });
     }
 
+    // Obtener el FormData del request
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const titulo = formData.get('titulo') as string;
-    const descripcion = formData.get('descripcion') as string;
-    const tema = formData.get('tema') as string;
-    const tags = formData.get('tags') as string;
 
-    if (!file) {
-      return NextResponse.json({ success: false, error: 'No se proporcionó ningún archivo' }, { status: 400 });
-    }
-    if (!titulo || !tema) {
-      return NextResponse.json({ success: false, error: 'Título y tema son requeridos' }, { status: 400 });
-    }
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ success: false, error: `El archivo es demasiado grande. Máximo permitido: ${MAX_FILE_SIZE / (1024 * 1024)}MB` }, { status: 400 });
-    }
-    const fileExtension = path.extname(file.name).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
-      return NextResponse.json({ success: false, error: `Tipo de archivo no permitido. Extensiones permitidas: ${ALLOWED_EXTENSIONS.join(', ')}` }, { status: 400 });
+    // Crear nuevo FormData para enviar al backend
+    const backendFormData = new FormData();
+    
+    // Copiar todos los campos del FormData original
+    for (const [key, value] of formData.entries()) {
+      backendFormData.append(key, value);
     }
 
-    // Subir archivo a Supabase S3
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const uniqueName = `${crypto.randomUUID()}${fileExtension}`;
-    const s3Key = `${tema}/${uniqueName}`;
-    const s3 = new S3Client({
-      region: process.env.SUPABASE_S3_REGION,
-      endpoint: process.env.SUPABASE_S3_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY!,
+    // Hacer la petición al backend
+    const response = await fetch(`${BACKEND_URL}/api/resources/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
       },
-      forcePathStyle: true,
+      body: backendFormData,
     });
-    const BUCKET = process.env.SUPABASE_S3_BUCKET!;
 
-    try {
-      await s3.send(new PutObjectCommand({
-        Bucket: BUCKET,
-        Key: s3Key,
-        Body: buffer,
-        ContentType: file.type,
-        ACL: 'public-read',
-      }));
-    } catch (err) {
-      console.error('Error subiendo a S3:', err);
-      return NextResponse.json({ success: false, error: 'Error subiendo archivo a S3' }, { status: 500 });
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.error || 'Error en el backend' },
+        { status: response.status }
+      );
     }
 
-    // URL pública del archivo
-    const publicUrl = `${process.env.SUPABASE_S3_ENDPOINT}/${BUCKET}/${s3Key}`;
-
-    return NextResponse.json({
-      success: true,
-      url: publicUrl,
-      s3Key,
-      titulo,
-      descripcion,
-      tema,
-      tags: tags ? JSON.parse(tags) : [],
-      tipo: 'archivo',
-      tipoArchivo: fileExtension.replace('.', ''),
-      tamano: file.size
-    });
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error subiendo archivo:', error);
-    return NextResponse.json({ success: false, error: 'Error al subir archivo' }, { status: 500 });
+    console.error('Error en proxy de upload:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }
 
-
-// GET /api/recursos/upload - Listar archivos de S3 por tema (query param: tema)
 export async function GET(request: NextRequest) {
   try {
-    if (!hasValidAuth(request)) {
-      return createUnauthorizedResponse();
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Token de autorización requerido' }, { status: 401 });
     }
+
+    // Obtener parámetros de query
     const { searchParams } = new URL(request.url);
-    const tema = searchParams.get('tema');
-    if (!tema) {
-      return NextResponse.json({ success: false, error: 'Tema es requerido' }, { status: 400 });
+    const categoria = searchParams.get('categoria');
+    const subcategoria = searchParams.get('subcategoria');
+
+    let url = `${BACKEND_URL}/api/resources/files`;
+    const params = new URLSearchParams();
+    
+    if (categoria) params.append('categoria', categoria);
+    if (subcategoria) params.append('subcategoria', subcategoria);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
     }
-    const s3 = new S3Client({
-      region: process.env.SUPABASE_S3_REGION,
-      endpoint: process.env.SUPABASE_S3_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY!,
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': authHeader,
       },
-      forcePathStyle: true,
     });
-    const BUCKET = process.env.SUPABASE_S3_BUCKET!;
-    let files = [];
-    try {
-      const data = await s3.send(new ListObjectsV2Command({
-        Bucket: BUCKET,
-        Prefix: `${tema}/`,
-      }));
-      files = (data.Contents || []).map(obj => ({
-        key: obj.Key,
-        url: `${process.env.SUPABASE_S3_ENDPOINT}/${BUCKET}/${obj.Key}`,
-        size: obj.Size,
-        lastModified: obj.LastModified
-      }));
-    } catch (err) {
-      console.error('Error listando archivos de S3:', err);
-      return NextResponse.json({ success: false, error: 'Error listando archivos de S3' }, { status: 500 });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.error || 'Error en el backend' },
+        { status: response.status }
+      );
     }
-    return NextResponse.json({ success: true, files });
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error en GET archivos:', error);
-    return NextResponse.json({ success: false, error: 'Error al obtener archivos' }, { status: 500 });
+    console.error('Error en proxy de list files:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE /api/recursos/upload - Eliminar archivo de S3 (query param: key)
 export async function DELETE(request: NextRequest) {
   try {
-    if (!hasValidAuth(request)) {
-      return createUnauthorizedResponse();
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Token de autorización requerido' }, { status: 401 });
     }
-    const { searchParams } = new URL(request.url);
-    const key = searchParams.get('key');
-    if (!key) {
-      return NextResponse.json({ success: false, error: 'Key es requerido' }, { status: 400 });
+
+    const { s3Key } = await request.json();
+
+    if (!s3Key) {
+      return NextResponse.json({ error: 'S3 key requerida' }, { status: 400 });
     }
-    const s3 = new S3Client({
-      region: process.env.SUPABASE_S3_REGION,
-      endpoint: process.env.SUPABASE_S3_ENDPOINT,
-      credentials: {
-        accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY!,
+
+    const response = await fetch(`${BACKEND_URL}/api/resources/s3/delete`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
       },
-      forcePathStyle: true,
+      body: JSON.stringify({ s3Key }),
     });
-    const BUCKET = process.env.SUPABASE_S3_BUCKET!;
-    try {
-      await s3.send(new DeleteObjectCommand({
-        Bucket: BUCKET,
-        Key: key,
-      }));
-    } catch (err) {
-      console.error('Error eliminando archivo de S3:', err);
-      return NextResponse.json({ success: false, error: 'Error eliminando archivo de S3' }, { status: 500 });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: data.error || 'Error en el backend' },
+        { status: response.status }
+      );
     }
-    return NextResponse.json({ success: true, deleted: key });
+
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error en DELETE archivo:', error);
-    return NextResponse.json({ success: false, error: 'Error al eliminar archivo' }, { status: 500 });
+    console.error('Error en proxy de delete:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    );
   }
 }
