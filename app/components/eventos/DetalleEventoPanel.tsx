@@ -12,7 +12,7 @@ export interface DetalleEventoPanelProps {
 
 const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccionado, onEdit, onDelete, emptyMessage }) => {
   // Hooks para obtener configuración
-  const { getEventoConfig } = useEventosConfig();
+  const { getEventoConfig, loading: eventosLoading } = useEventosConfig();
   const { items: temasConfig } = useConfig('temas');
 
   // Función para obtener el color de un tema
@@ -25,22 +25,30 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
 
   // Obtener configuración del evento actual
   const eventoConfig = eventoSeleccionado ? getEventoConfig(eventoSeleccionado.eventType || 'evento') : null;
+  
+  // Verificar que tanto los datos del evento como la configuración estén listos
+  const isEventDataReady = eventoSeleccionado && 
+                           eventoSeleccionado.eventType && 
+                           !eventosLoading && 
+                           eventoConfig?.item; // Verificar que existe la configuración real del evento
 
   return (
     <div className="bg-secondary rounded-lg p-6 h-full">
       {eventoSeleccionado ? (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          <div className={`bg-primary/40 rounded-lg p-3 border-2 ${eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('border-')) || 'border-yellow-400' : 'border-yellow-400'}`}>
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className={eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('text-')) || 'text-yellow-400' : 'text-yellow-400'}>
-                  {(() => {
-                    const IconComponent = eventoConfig?.IconComponent as React.ComponentType<{ className?: string }>;
-                    return <IconComponent className="w-4 h-4" />;
-                  })()}
-                </span>
-                <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {eventoSeleccionado.title}</h5>
-              </div>
+        // Solo mostrar el contenido cuando los datos estén completamente listos
+        isEventDataReady ? (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className={`bg-primary/40 rounded-lg p-3 border-2 ${eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('border-')) || 'border-yellow-400' : 'border-yellow-400'}`}>
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className={eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('text-')) || 'text-yellow-400' : 'text-yellow-400'}>
+                    {(() => {
+                      const IconComponent = eventoConfig.IconComponent as React.ComponentType<{ className?: string }>;
+                      return <IconComponent className="w-4 h-4" />;
+                    })()}
+                  </span>
+                  <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {eventoSeleccionado.title}</h5>
+                </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => onEdit(eventoSeleccionado)}
@@ -62,7 +70,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
               </div>
             </div>
             {eventoSeleccionado.description && (
-              <p className="text-gray-300 text-xs mb-2 line-clamp-2"><span className="font-bold text-gray-400 mr-1">Descripción:</span> {eventoSeleccionado.description}</p>
+              <p className="text-gray-300 text-xs mb-1 line-clamp-2"><span className="font-bold text-gray-400 mr-1">Descripción:</span> {eventoSeleccionado.description}</p>
             )}
             
             <div className="flex items-center justify-between text-xs">
@@ -80,7 +88,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 text-xs mb-2 mt-3">
+            <div className="flex flex-wrap gap-2 text-xs mb-1 mt-2">
               {/* Primera línea */}
               {eventoSeleccionado.diaEnvio && (
                 <span className={`px-2 py-1 rounded ${getColorTema('fecha')}`}>
@@ -94,7 +102,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
               )}
             </div>
             
-            <div className="flex flex-wrap gap-2 text-xs mb-2">
+            <div className="flex flex-wrap gap-2 text-xs mb-1">
               {/* Segunda línea*/}
               <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-300">
                 <span className="font-bold text-blue-300 mr-1">👤 Validador:</span>  {eventoSeleccionado.validador}
@@ -116,7 +124,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
               )}
             </div>
             {(eventoSeleccionado.validador || eventoSeleccionado.codigoDana || eventoSeleccionado.modo) && (
-              <div className="mt-2 pt-2 border-t border-yellow-400/20">
+              <div className="mt-3 pt-2 border-t border-yellow-400/20">
                 <div className="flex items-center justify-between w-full text-xs">
                   <div className="flex items-center gap-2">
                     {/* Recursos relacionados (nombres) */}
@@ -155,6 +163,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
             )}
           </div>
         </div>
+        ) : null
       ) : (
         <div className="flex items-center justify-center h-full text-gray-400">
           <div className="text-center">
