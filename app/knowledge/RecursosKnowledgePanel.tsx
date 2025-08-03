@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaFileAlt, FaListUl, FaLayerGroup } from 'react-icons/fa';
-import { useConfig, useRecursosConfig, getIconComponent } from '../lib/useConfig';
+import { FaPlus, FaSearch, FaFileAlt, FaListUl } from 'react-icons/fa';
+import { useConfig, useRecursosConfig } from '../lib/useConfig';
 import type { Recurso } from '../lib/types';
 import DetalleRecursoPanel from '../components/resources/DetalleRecursoPanel';
 import Modal from '../components/Modal';
@@ -18,8 +18,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
   const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
   const [recursoSeleccionado, setRecursoSeleccionado] = useState<Recurso | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [seccionActiva, setSeccionActiva] = useState<'lista' | 'tipos'>('lista');
-  const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);
+  // Eliminamos los estados de sección y tipo seleccionado ya que solo tendremos vista de lista
   
   // Hook de configuración para recursos
   const { getRecursoConfig, loading: configLoading, items: tiposRecursos } = useRecursosConfig();
@@ -181,31 +180,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
         </button>
       </div>
 
-      {/* Navegación de secciones */}
-      <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
-        <button
-          onClick={() => { setSeccionActiva('lista'); setTipoRecursoSeleccionado(null); }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-            seccionActiva === 'lista'
-              ? 'bg-accent/30 text-accent shadow-lg'
-              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
-          }`}
-        >
-          <FaListUl className="text-sm" />
-          Lista de Recursos
-        </button>
-        <button
-          onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-            seccionActiva === 'tipos'
-              ? 'bg-accent/30 text-accent shadow-lg'
-              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
-          }`}
-        >
-          <FaLayerGroup className="text-sm" />
-          Por Tipo
-        </button>
-      </div>
+      {/* Navegación de secciones eliminada - solo vista de lista */}
 
       {/* Buscador */}
       <div className="bg-secondary rounded-lg p-4">
@@ -224,219 +199,74 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
       </div>
 
       {/* Vista Lista - Todos los recursos */}
-      {seccionActiva === 'lista' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Lista de recursos */}
-          <div className="lg:col-span-1">
-            <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4 text-accent">
-                Recursos ({recursosFiltrados.length})
-              </h3>
-              {cargando ? (
-                <div className="text-center text-gray-400">Cargando...</div>
-              ) : (
-                <div className="space-y-3">
-                  {recursosFiltrados.map((recurso) => {
-                    const config = getRecursoConfig(recurso.tipo);
-                    const isSelected = recursoSeleccionado?.id === recurso.id;
-                    return (
-                      <button
-                        key={recurso.id}
-                        onClick={() => setRecursoSeleccionado(recurso)}
-                        className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
-                          isSelected
-                            ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
-                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-lg bg-accent/20 text-accent">
-                            {React.createElement(config.IconComponent as any, { className: "text-sm" })}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-white truncate">
-                              {recurso.titulo}
-                            </h4>
-                            <p className="text-xs text-accent mt-1">
-                              {config.nombre}
-                            </p>
-                            {recurso.tamaño && (
-                              <p className="text-xs text-gray-400">
-                                {formatFileSize(recurso.tamaño)}
-                              </p>
-                            )}
-                          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Lista de recursos */}
+        <div className="lg:col-span-1">
+          <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4 text-accent">
+              Recursos ({recursosFiltrados.length})
+            </h3>
+            {cargando ? (
+              <div className="text-center text-gray-400">Cargando...</div>
+            ) : (
+              <div className="space-y-3">
+                {recursosFiltrados.map((recurso) => {
+                  const config = getRecursoConfig(recurso.tipo);
+                  const isSelected = recursoSeleccionado?.id === recurso.id;
+                  return (
+                    <button
+                      key={recurso.id}
+                      onClick={() => setRecursoSeleccionado(recurso)}
+                      className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
+                        isSelected
+                          ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
+                          : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-accent/20 text-accent">
+                          {React.createElement(config.IconComponent as any, { className: "text-sm" })}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-          {/* Panel de detalle */}
-          <div className="lg:col-span-2">
-            <DetalleRecursoPanel
-              recurso={recursoSeleccionado}
-              temas={temasConfig.items.map(item => ({
-                id: item.id,
-                nombre: item.nombre,
-                descripcion: item.descripcion || '',
-                icono: <></>,
-                color: item.color || ''
-              }))}
-              getTipoRecursoLabel={(tipo: string) => getRecursoConfig(tipo).nombre}
-              getRecursoConfig={getRecursoConfig}
-              formatFileSize={formatFileSize}
-              onEdit={handleEdit}
-              onDelete={handleDeleteById}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Vista Por Tipo - Cards de tipos */}
-      {seccionActiva === 'tipos' && !tipoRecursoSeleccionado && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tiposRecursos.map((tipo: any) => {
-            const cantidadRecursos = recursos.filter(recurso => 
-              recurso.tipo === tipo.id || 
-              recurso.tipo.toLowerCase() === tipo.nombre.toLowerCase()
-            ).length;
-            
-            const config = getRecursoConfig(tipo.id);
-            const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
-            
-            return (
-              <button
-                key={tipo.id}
-                onClick={() => setTipoRecursoSeleccionado(tipo.id)}
-                className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color}`}
-              >
-                <div className="flex items-center gap-4 mb-3">
-                  <div className={`p-3 rounded-lg ${config.color.includes('bg-') ? config.color.split(' ').find(c => c.includes('bg-')) + '/20' : 'bg-accent/20'}`}>
-                    <IconComponent className={`text-xl ${config.color.split(' ').find(c => c.includes('text-')) || 'text-accent'}`} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
-                    <div className="text-xs opacity-60">
-                      {cantidadRecursos} recurso{cantidadRecursos !== 1 ? 's' : ''}
-                    </div>
-                  </div>
-                </div>
-                {tipo.descripcion && (
-                  <p className="text-sm opacity-80 leading-relaxed">{tipo.descripcion}</p>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Vista Por Tipo - Recursos filtrados por tipo */}
-      {seccionActiva === 'tipos' && tipoRecursoSeleccionado && (
-        <div className="space-y-6">
-          {/* Header del tipo seleccionado */}
-          <div className="flex items-center justify-between p-4 bg-secondary rounded-lg border border-accent/30">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setTipoRecursoSeleccionado(null)}
-                className="px-3 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 transition-colors text-accent"
-              >
-                ← Volver a tipos
-              </button>
-              <div className="flex items-center gap-3">
-                {(() => {
-                  const tipoConfig = tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado);
-                  const config = getRecursoConfig(tipoRecursoSeleccionado);
-                  const IconComponent = config.IconComponent as any;
-                  const textColor = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
-                  return <IconComponent className={`text-xl ${textColor}`} />;
-                })()}
-                <h2 className="text-xl font-bold text-white">
-                  {tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre}
-                </h2>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-white truncate">
+                            {recurso.titulo}
+                          </h4>
+                          <p className="text-xs text-accent mt-1">
+                            {config.nombre}
+                          </p>
+                          {recurso.tamaño && (
+                            <p className="text-xs text-gray-400">
+                              {formatFileSize(recurso.tamaño)}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          </div>
-
-          {/* Grid de recursos del tipo seleccionado */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Lista de recursos filtrados */}
-            <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
-                <h3 className="text-lg font-semibold mb-4 text-accent">
-                  Recursos ({recursos.filter(r => 
-                    r.tipo === tipoRecursoSeleccionado ||
-                    r.tipo.toLowerCase() === tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre.toLowerCase()
-                  ).length})
-                </h3>
-                <div className="space-y-3">
-                  {recursos
-                    .filter(recurso => 
-                      (recurso.tipo === tipoRecursoSeleccionado ||
-                       recurso.tipo.toLowerCase() === tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre.toLowerCase()) &&
-                      (recurso.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
-                       recurso.descripcion?.toLowerCase().includes(busqueda.toLowerCase()))
-                    )
-                    .map((recurso) => {
-                      const config = getRecursoConfig(recurso.tipo);
-                      const isSelected = recursoSeleccionado?.id === recurso.id;
-                      return (
-                        <button
-                          key={recurso.id}
-                          onClick={() => setRecursoSeleccionado(recurso)}
-                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
-                            isSelected
-                              ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
-                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-accent/20 text-accent">
-                              {React.createElement(config.IconComponent as any, { className: "text-sm" })}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate">
-                                {recurso.titulo}
-                              </h4>
-                              <p className="text-xs text-accent mt-1">
-                                {config.nombre}
-                              </p>
-                              {recurso.tamaño && (
-                                <p className="text-xs text-gray-400">
-                                  {formatFileSize(recurso.tamaño)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-            {/* Panel de detalle */}
-            <div className="lg:col-span-2">
-              <DetalleRecursoPanel
-                recurso={recursoSeleccionado}
-                temas={temasConfig.items.map(item => ({
-                  id: item.id,
-                  nombre: item.nombre,
-                  descripcion: item.descripcion || '',
-                  icono: <></>,
-                  color: item.color || ''
-                }))}
-                getTipoRecursoLabel={(tipo: string) => getRecursoConfig(tipo).nombre}
-                getRecursoConfig={getRecursoConfig}
-                onEdit={handleEdit}
-                onDelete={handleDeleteById}
-                formatFileSize={formatFileSize}
-              />
-            </div>
+            )}
           </div>
         </div>
-      )}
+        {/* Panel de detalle */}
+        <div className="lg:col-span-2">
+          <DetalleRecursoPanel
+            recurso={recursoSeleccionado}
+            temas={temasConfig.items.map(item => ({
+              id: item.id,
+              nombre: item.nombre,
+              descripcion: item.descripcion || '',
+              icono: <></>,
+              color: item.color || ''
+            }))}
+            getTipoRecursoLabel={(tipo: string) => getRecursoConfig(tipo).nombre}
+            getRecursoConfig={getRecursoConfig}
+            formatFileSize={formatFileSize}
+            onEdit={handleEdit}
+            onDelete={handleDeleteById}
+          />
+        </div>
+      </div>
 
       {/* Modal para formulario de recurso */}
       {mostrarFormularioRecurso && (

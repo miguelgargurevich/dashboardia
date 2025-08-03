@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaCalendarAlt, FaListUl, FaLayerGroup } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaCalendarAlt, FaListUl } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 import { useEventosConfig } from '../lib/useConfig';
 import { getIconComponent } from '../lib/useConfig';
@@ -37,8 +37,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [seccionActiva, setSeccionActiva] = useState<'lista' | 'tipos'>('lista');
-  const [tipoEventoSeleccionado, setTipoEventoSeleccionado] = useState<string | null>(null);
+  // Eliminamos los estados de sección y tipo seleccionado ya que solo tendremos vista de lista
   const { getEventoConfig, loading: configLoading, items: tiposEventos } = useEventosConfig();
 
   // Función para obtener icono basado en configuración
@@ -170,14 +169,6 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     (evento.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
   );
 
-  // Filtrar eventos por tipo cuando está seleccionado un tipo específico
-  const eventosFiltradosPorTipo = eventos.filter(evento => {
-    const matchTipo = evento.eventType === tipoEventoSeleccionado;
-    const matchBusqueda = evento.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (evento.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
-    return matchTipo && matchBusqueda;
-  });
-
   return (
     <div className="bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px] flex flex-col">
       <div className="flex items-center justify-between mb-6">
@@ -191,31 +182,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
         </button>
       </div> 
 
-      {/* Navegación entre Lista y Por Tipo */}
-      <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
-        <button
-          onClick={() => { setSeccionActiva('lista'); setTipoEventoSeleccionado(null); }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-            seccionActiva === 'lista'
-              ? 'bg-accent/30 text-accent shadow-lg'
-              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
-          }`}
-        >
-          <FaListUl />
-          Todos los Eventos
-        </button>
-        <button
-          onClick={() => { setSeccionActiva('tipos'); setTipoEventoSeleccionado(null); }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-            seccionActiva === 'tipos'
-              ? 'bg-accent/30 text-accent shadow-lg'
-              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
-          }`}
-        >
-          {React.createElement(getIconComponent('FaLayerGroup'))}
-          Por Tipo
-        </button>
-      </div> 
+      {/* Navegación eliminada - solo vista de lista */} 
       
       {/* Buscador */}
       <div className="bg-secondary rounded-lg p-4">
@@ -232,214 +199,61 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
           </div>
         </div>
       </div>
-      
-      {/* Vista de Lista (actual) */}
-      {seccionActiva === 'lista' && (
-        <div className="flex-1 flex flex-col bg-primary/80">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Panel lateral: lista */}
-            <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
-                <h3 className="text-lg font-semibold mb-4 text-accent">
-                  Eventos ({eventosFiltrados.length})
-                </h3>
-                <div className="space-y-3">
-                  {eventosFiltrados.length === 0 ? (
-                    <div className="p-4 text-gray-400">No hay eventos este mes.</div>
-                  ) : (
-                    eventosFiltrados.map((event) => {
-                      const isSelected = eventoSeleccionado?.id === event.id;
-                      return (
-                        <button
-                          key={event.id}
-                          onClick={() => setEventoSeleccionado(event)}
-                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
-                            isSelected
-                              ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
-                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-accent/20 text-accent">
-                              {getEventIcon(event.title, event.eventType)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
-                              <div className="text-xs text-accent mb-1">
-                                {formatFechaDDMMYYYY(event.startDate)}
-                              </div>
-                              {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}
-                            </div>
+      {/* Vista de Lista - Todos los eventos */}
+      <div className="flex-1 flex flex-col bg-primary/80">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Panel lateral: lista */}
+          <div className="lg:col-span-1">
+            <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
+              <h3 className="text-lg font-semibold mb-4 text-accent">
+                Eventos ({eventosFiltrados.length})
+              </h3>
+              <div className="space-y-3">
+                {eventosFiltrados.length === 0 ? (
+                  <div className="p-4 text-gray-400">No hay eventos este mes.</div>
+                ) : (
+                  eventosFiltrados.map((event) => {
+                    const isSelected = eventoSeleccionado?.id === event.id;
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => setEventoSeleccionado(event)}
+                        className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
+                          isSelected
+                            ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
+                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="p-2 rounded-lg bg-accent/20 text-accent">
+                            {getEventIcon(event.title, event.eventType)}
                           </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-            {/* Panel de detalle reutilizable */}
-            <div className="lg:col-span-2">
-              <DetalleEventoPanel
-                eventoSeleccionado={eventoSeleccionado}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Vista Por Tipo - Cards de tipos */}
-      {seccionActiva === 'tipos' && !tipoEventoSeleccionado && (
-        <div className="flex-1 flex flex-col bg-primary/80">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tiposEventos.map((tipo) => {
-              const cantidadEventos = eventos.filter(evento => evento.eventType === tipo.id).length;
-              const config = getEventoConfig(tipo.id);
-              const IconComponent = config.IconComponent as any;
-              
-              return (
-                <button
-                  key={tipo.id}
-                  onClick={() => setTipoEventoSeleccionado(tipo.id)}
-                  className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color}`}
-                >
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className={`p-3 rounded-lg ${config.color.includes('bg-') ? config.color.split(' ').find(c => c.includes('bg-')) + '/20' : 'bg-accent/20'}`}>
-                      <IconComponent className={`text-xl ${config.color.split(' ').find(c => c.includes('text-')) || 'text-accent'}`} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
-                      <div className="text-xs opacity-60">
-                        {cantidadEventos} evento{cantidadEventos !== 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  </div>
-                  {tipo.descripcion && (
-                    <p className="text-sm opacity-80 leading-relaxed">{tipo.descripcion}</p>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Vista Por Tipo - Lista filtrada por tipo */}
-      {seccionActiva === 'tipos' && tipoEventoSeleccionado && (
-        <div className="flex-1 flex flex-col bg-primary/80">
-          {/* Header del tipo con colores */}
-          <div className={`rounded-lg p-4 mb-6 border ${getEventoConfig(tipoEventoSeleccionado).color}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setTipoEventoSeleccionado(null)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg ${getEventoConfig(tipoEventoSeleccionado).color.includes('bg-') ? getEventoConfig(tipoEventoSeleccionado).color.split(' ').find(c => c.includes('bg-')) + '/10' : 'bg-accent/10'} hover:bg-accent/20 transition-colors`}
-                >
-                  ← Volver a tipos
-                </button>
-                <div className="flex items-center gap-3">
-                  {(() => {
-                    const config = getEventoConfig(tipoEventoSeleccionado);
-                    const IconComponent = config.IconComponent as any;
-                    const textColor = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
-                    return <IconComponent className={`text-xl ${textColor}`} />;
-                  })()}
-                  <h2 className="text-xl font-bold">
-                    {tiposEventos.find(t => t.id === tipoEventoSeleccionado)?.nombre}
-                  </h2>
-                </div>
-              </div>
-              <button
-                onClick={() => { setEventoSeleccionado(null); setmostrarFormularioEvento(true); }}
-                className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
-              >
-                <FaPlus />
-                Evento
-              </button>
-            </div>
-          </div>
-
-          {/* Buscador para vista por tipo */}
-          <div className="bg-secondary rounded-lg p-4 mb-6">
-            <div className="space-y-4 mb-4">
-              <div className="flex items-center gap-2">
-                <FaSearch className="text-accent" />
-                <input
-                  type="text"
-                  placeholder="Buscar eventos..."
-                  value={busqueda}
-                  onChange={e => setBusqueda(e.target.value)}
-                  className="flex-1 input-std"
-                />
-              </div>
-              {busqueda && (
-                <button
-                  onClick={() => setBusqueda('')}
-                  className="w-full px-3 py-2 bg-gray-600/50 text-gray-300 rounded-lg hover:bg-gray-600/70 transition-colors text-sm"
-                >
-                  Limpiar búsqueda
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Panel lateral: lista filtrada */}
-            <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
-                <h3 className="text-lg font-semibold mb-4 text-accent">
-                  Eventos ({eventosFiltradosPorTipo.length})
-                </h3>
-                <div className="space-y-3">
-                  {eventosFiltradosPorTipo.length === 0 ? (
-                    <div className="p-4 text-gray-400">
-                      {busqueda ? 'No se encontraron eventos.' : 'No hay eventos de este tipo.'}
-                    </div>
-                  ) : (
-                    eventosFiltradosPorTipo.map((event) => {
-                      const isSelected = eventoSeleccionado?.id === event.id;
-                      return (
-                        <button
-                          key={event.id}
-                          onClick={() => setEventoSeleccionado(event)}
-                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
-                            isSelected
-                              ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
-                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-accent/20 text-accent">
-                              {getEventIcon(event.title, event.eventType)}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
+                            <div className="text-xs text-accent mb-1">
+                              {formatFechaDDMMYYYY(event.startDate)}
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
-                              <div className="text-xs text-accent mb-1">
-                                {formatFechaDDMMYYYY(event.startDate)}
-                              </div>
-                              {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}
-                            </div>
+                            {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}
                           </div>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
               </div>
             </div>
-            {/* Panel de detalle reutilizable */}
-            <div className="lg:col-span-2">
-              <DetalleEventoPanel
-                eventoSeleccionado={eventoSeleccionado}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            </div>
+          </div>
+          {/* Panel de detalle reutilizable */}
+          <div className="lg:col-span-2">
+            <DetalleEventoPanel
+              eventoSeleccionado={eventoSeleccionado}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         </div>
-      )}
+      </div>
+
       {/* Modal para crear/editar evento */}
       {mostrarFormularioEvento && (
         <Modal open={mostrarFormularioEvento} onClose={() => { setmostrarFormularioEvento(false); setEventoEditando(null); }} title={eventoEditando ? 'Editar Evento' : 'Nuevo Evento'} maxWidth="max-w-2xl">

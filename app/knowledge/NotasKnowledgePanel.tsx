@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaFileAlt, FaListUl, FaLayerGroup } from 'react-icons/fa';
-import { useConfig, useNotasConfig, getIconComponent } from '../lib/useConfig';
+import { FaPlus, FaSearch, FaFileAlt, FaListUl } from 'react-icons/fa';
+import { useConfig, useNotasConfig } from '../lib/useConfig';
 import DetalleNotaPanel from '../components/knowledge/DetalleNotaPanel';
 import Modal from '../components/Modal';
 import NotaForm from '../components/knowledge/NotaForm';
@@ -31,8 +31,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   const [notaEditando, setNotaEditando] = useState<Nota | null>(null);
   const [notaSeleccionada, setNotaSeleccionada] = useState<Nota | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  const [seccionActiva, setSeccionActiva] = useState<'lista' | 'tipos'>('lista');
-  const [tipoNotaSeleccionado, setTipoNotaSeleccionado] = useState<string | null>(null);
+  // Eliminamos los estados de sección y tipo seleccionado ya que solo tendremos vista de lista
   const [filtroEtiqueta, setFiltroEtiqueta] = useState<string>('');
   
   // Hook de configuración para notas
@@ -235,31 +234,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         </button>
       </div>
 
-      {/* Navegación de secciones */}
-      <div className="flex space-x-1 mb-6 bg-secondary/50 p-1 rounded-lg">
-        <button
-          onClick={() => { setSeccionActiva('lista'); setTipoNotaSeleccionado(null); }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-            seccionActiva === 'lista'
-              ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-              : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
-          }`}
-        >
-          <FaListUl className="text-sm" />
-          Lista de Notas
-        </button>
-        <button
-          onClick={() => { setSeccionActiva('tipos'); setTipoNotaSeleccionado(null); }}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-            seccionActiva === 'tipos'
-              ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-              : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
-          }`}
-        >
-          <FaLayerGroup className="text-sm" />
-          Por Tipo
-        </button>
-      </div>
+      {/* Navegación de secciones eliminada - solo vista de lista */}
 
       {/* Buscador */}
       <div className="bg-secondary rounded-lg p-4">
@@ -278,203 +253,65 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
       </div>
 
       {/* Vista Lista - Todas las notas */}
-      {seccionActiva === 'lista' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Lista de notas */}
-          <div className="lg:col-span-1">
-            <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
-              <h3 className="text-lg font-semibold mb-4 text-accent">
-                Notas ({notasFiltradas.length})
-              </h3>
-              <div className="space-y-3">
-                {notasFiltradas.map((nota) => {
-                  const config = getNotaConfig(nota.tipo || 'nota');
-                  return (
-                    <button
-                      key={nota.id}
-                      onClick={() => setNotaSeleccionada(nota)}
-                      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:bg-accent/10 ${
-                        notaSeleccionada?.id === nota.id
-                          ? 'border-accent bg-accent/10'
-                          : 'border-primary hover:border-accent/50'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded ${config.color}`}>
-                          {React.createElement(config.IconComponent as any, { className: "text-sm" })}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-white truncate">
-                            {nota.nombre}
-                          </h4>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {config.nombre}
-                          </p>
-                          {nota.date && (
-                            <p className="text-xs text-gray-500">
-                              {new Date(nota.date).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Lista de notas */}
+        <div className="lg:col-span-1">
+          <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4 text-accent">
+              Notas ({notasFiltradas.length})
+            </h3>
+            <div className="space-y-3">
+              {notasFiltradas.map((nota) => {
+                const config = getNotaConfig(nota.tipo || 'nota');
+                return (
+                  <button
+                    key={nota.id}
+                    onClick={() => setNotaSeleccionada(nota)}
+                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:bg-accent/10 ${
+                      notaSeleccionada?.id === nota.id
+                        ? 'border-accent bg-accent/10'
+                        : 'border-primary hover:border-accent/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded ${config.color}`}>
+                        {React.createElement(config.IconComponent as any, { className: "text-sm" })}
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          {/* Panel de detalle */}
-          <div className="lg:col-span-2">
-            <DetalleNotaPanel
-              notaSeleccionada={notaSeleccionada}
-              temas={temasConfig.items.map(item => ({
-                id: item.id,
-                nombre: item.nombre
-              }))}
-              descargarNota={descargarNota}
-              eliminarNota={handleDelete}
-              renderizarContenidoMarkdown={renderizarContenidoMarkdown}
-              onEdit={handleEdit}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Vista Por Tipo - Cards de tipos */}
-      {seccionActiva === 'tipos' && !tipoNotaSeleccionado && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tiposNotas.map((tipo: any) => {
-            const cantidadNotas = notas.filter(nota => 
-              nota.tipo === tipo.id || 
-              nota.tipo?.toLowerCase() === tipo.nombre.toLowerCase()
-            ).length;
-            
-            const config = getNotaConfig(tipo.id);
-            const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
-            
-            return (
-              <button
-                key={tipo.id}
-                onClick={() => setTipoNotaSeleccionado(tipo.id)}
-                className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
-              >
-                <div className="flex items-center gap-4 mb-3">
-                  <div className="p-3 rounded-lg bg-yellow-900/20">
-                    <IconComponent className="text-xl text-yellow-300" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
-                    <div className="text-xs opacity-60">
-                      {cantidadNotas} nota{cantidadNotas !== 1 ? 's' : ''}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-white truncate">
+                          {nota.nombre}
+                        </h4>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {config.nombre}
+                        </p>
+                        {nota.date && (
+                          <p className="text-xs text-gray-500">
+                            {new Date(nota.date).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-                {tipo.descripcion && (
-                  <p className="text-sm opacity-80 leading-relaxed">{tipo.descripcion}</p>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Vista Por Tipo - Notas filtradas por tipo */}
-      {seccionActiva === 'tipos' && tipoNotaSeleccionado && (
-        <div className="space-y-6">
-          {/* Header del tipo seleccionado */}
-          <div className="flex items-center justify-between p-4 bg-secondary rounded-lg border border-accent/30">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setTipoNotaSeleccionado(null)}
-                className="px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors text-yellow-300"
-              >
-                ← Volver a tipos
-              </button>
-              <div className="flex items-center gap-3">
-                {(() => {
-                  const tipoConfig = tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado);
-                  const IconComponent = getIconComponent(tipoConfig?.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
-                  return <IconComponent className="text-xl text-accent" />;
-                })()}
-                <h2 className="text-xl font-bold text-white">
-                  {tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre}
-                </h2>
-              </div>
-            </div>
-          </div>
-
-          {/* Grid de notas del tipo seleccionado */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Lista de notas filtradas */}
-            <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
-                <h3 className="text-lg font-semibold mb-4 text-accent">
-                  Notas ({notas.filter(n => 
-                    n.tipo === tipoNotaSeleccionado ||
-                    n.tipo?.toLowerCase() === tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre.toLowerCase()
-                  ).length})
-                </h3>
-                <div className="space-y-3">
-                  {notas
-                    .filter(nota => 
-                      (nota.tipo === tipoNotaSeleccionado ||
-                       nota.tipo?.toLowerCase() === tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre.toLowerCase()) &&
-                      (nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                       nota.contenido.toLowerCase().includes(busqueda.toLowerCase()))
-                    )
-                    .map((nota) => {
-                      const config = getNotaConfig(nota.tipo || 'nota');
-                      return (
-                        <button
-                          key={nota.id}
-                          onClick={() => setNotaSeleccionada(nota)}
-                          className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:bg-accent/10 ${
-                            notaSeleccionada?.id === nota.id
-                              ? 'border-accent bg-accent/10'
-                              : 'border-primary hover:border-accent/50'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded ${config.color}`}>
-                              {React.createElement(config.IconComponent as any, { className: "text-sm" })}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-white truncate">
-                                {nota.nombre}
-                              </h4>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {config.nombre}
-                              </p>
-                              {nota.date && (
-                                <p className="text-xs text-gray-500">
-                                  {new Date(nota.date).toLocaleDateString()}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-            {/* Panel de detalle */}
-            <div className="lg:col-span-2">
-              <DetalleNotaPanel
-                notaSeleccionada={notaSeleccionada}
-                temas={temasConfig.items.map(item => ({
-                  id: item.id,
-                  nombre: item.nombre
-                }))}
-                descargarNota={descargarNota}
-                eliminarNota={handleDelete}
-                renderizarContenidoMarkdown={renderizarContenidoMarkdown}
-                onEdit={handleEdit}
-              />
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
-      )}
+        {/* Panel de detalle */}
+        <div className="lg:col-span-2">
+          <DetalleNotaPanel
+            notaSeleccionada={notaSeleccionada}
+            temas={temasConfig.items.map(item => ({
+              id: item.id,
+              nombre: item.nombre
+            }))}
+            descargarNota={descargarNota}
+            eliminarNota={handleDelete}
+            renderizarContenidoMarkdown={renderizarContenidoMarkdown}
+            onEdit={handleEdit}
+          />
+        </div>
+      </div>
 
       {/* Modal para formulario de nota */}
       {mostrarFormularioNota && (
