@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { FaPlus, FaSearch, FaFileAlt, FaListUl, FaLayerGroup } from 'react-icons/fa';
-import { useConfig, getIconComponent } from '../lib/useConfig';
+import { useConfig, useRecursosConfig, getIconComponent } from '../lib/useConfig';
 import type { Recurso } from '../lib/types';
 import DetalleRecursoPanel from '../components/resources/DetalleRecursoPanel';
 import Modal from '../components/Modal';
@@ -22,38 +22,20 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
   const [tipoRecursoSeleccionado, setTipoRecursoSeleccionado] = useState<string | null>(null);
   
   // Hook de configuración para recursos
-  const recursosConfig = useConfig('recursos');
+  const { getRecursoConfig, loading: configLoading, items: tiposRecursos } = useRecursosConfig();
   const temasConfig = useConfig('temas');
 
-  // Función para obtener configuración de tipo de recurso
-  const getRecursoConfig = (tipoId: string) => {
-    if (recursosConfig.loading) {
-      return {
-        IconComponent: FaFileAlt,
-        color: 'bg-accent/20 text-accent',
-        nombre: 'Recurso'
-      };
+  // Función para obtener icono de recurso
+  const getRecursoIcon = (tipoRecurso?: string) => {
+    if (configLoading) {
+      return <FaFileAlt />;
     }
     
-    const config = recursosConfig.items.find((item: any) => 
-      item.id === tipoId || item.nombre.toLowerCase() === tipoId.toLowerCase()
-    );
+    const config = getRecursoConfig(tipoRecurso || '');
+    const IconComponent = config.IconComponent as any;
+    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
     
-    if (config) {
-      const IconComponent = getIconComponent(config.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
-      return {
-        IconComponent,
-        color: config.color || 'bg-accent/20 text-accent',
-        nombre: config.nombre
-      };
-    }
-    
-    // Fallback
-    return {
-      IconComponent: FaFileAlt,
-      color: 'bg-accent/20 text-accent', 
-      nombre: 'Recurso'
-    };
+    return <IconComponent className={colorClass} />;
   };
 
   // Función para formatear tamaño de archivo
@@ -174,7 +156,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
     recursos.flatMap(recurso => recurso.tags)
   )).sort();
 
-  if (recursosConfig.loading || temasConfig.loading) {
+  if (configLoading || temasConfig.loading) {
     return (
       <div className="p-8 text-center">
         <div className="text-lg text-gray-400">Cargando configuración...</div>
@@ -205,8 +187,8 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
           onClick={() => { setSeccionActiva('lista'); setTipoRecursoSeleccionado(null); }}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
             seccionActiva === 'lista'
-              ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-              : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+              ? 'bg-accent/30 text-accent shadow-lg'
+              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
           }`}
         >
           <FaListUl className="text-sm" />
@@ -216,8 +198,8 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
           onClick={() => { setSeccionActiva('tipos'); setTipoRecursoSeleccionado(null); }}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
             seccionActiva === 'tipos'
-              ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-              : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+              ? 'bg-accent/30 text-accent shadow-lg'
+              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
           }`}
         >
           <FaLayerGroup className="text-sm" />
@@ -263,19 +245,19 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                         onClick={() => setRecursoSeleccionado(recurso)}
                         className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                           isSelected
-                            ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
-                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                            ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
+                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
-                            <config.IconComponent className="text-sm" />
+                          <div className="p-2 rounded-lg bg-accent/20 text-accent">
+                            {React.createElement(config.IconComponent as any, { className: "text-sm" })}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-white truncate">
                               {recurso.titulo}
                             </h4>
-                            <p className="text-xs text-yellow-300 mt-1">
+                            <p className="text-xs text-accent mt-1">
                               {config.nombre}
                             </p>
                             {recurso.tamaño && (
@@ -316,7 +298,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
       {/* Vista Por Tipo - Cards de tipos */}
       {seccionActiva === 'tipos' && !tipoRecursoSeleccionado && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recursosConfig.items.map((tipo: any) => {
+          {tiposRecursos.map((tipo: any) => {
             const cantidadRecursos = recursos.filter(recurso => 
               recurso.tipo === tipo.id || 
               recurso.tipo.toLowerCase() === tipo.nombre.toLowerCase()
@@ -329,11 +311,11 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
               <button
                 key={tipo.id}
                 onClick={() => setTipoRecursoSeleccionado(tipo.id)}
-                className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
+                className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color}`}
               >
                 <div className="flex items-center gap-4 mb-3">
-                  <div className="p-3 rounded-lg bg-yellow-900/20">
-                    <IconComponent className="text-xl text-yellow-300" />
+                  <div className={`p-3 rounded-lg ${config.color.includes('bg-') ? config.color.split(' ').find(c => c.includes('bg-')) + '/20' : 'bg-accent/20'}`}>
+                    <IconComponent className={`text-xl ${config.color.split(' ').find(c => c.includes('text-')) || 'text-accent'}`} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
@@ -359,18 +341,20 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setTipoRecursoSeleccionado(null)}
-                className="px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors text-yellow-300"
+                className="px-3 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 transition-colors text-accent"
               >
                 ← Volver a tipos
               </button>
               <div className="flex items-center gap-3">
                 {(() => {
-                  const tipoConfig = recursosConfig.items.find((t: any) => t.id === tipoRecursoSeleccionado);
-                  const IconComponent = getIconComponent(tipoConfig?.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
-                  return <IconComponent className="text-xl text-accent" />;
+                  const tipoConfig = tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado);
+                  const config = getRecursoConfig(tipoRecursoSeleccionado);
+                  const IconComponent = config.IconComponent as any;
+                  const textColor = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
+                  return <IconComponent className={`text-xl ${textColor}`} />;
                 })()}
                 <h2 className="text-xl font-bold text-white">
-                  {recursosConfig.items.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre}
+                  {tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre}
                 </h2>
               </div>
             </div>
@@ -384,14 +368,14 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                 <h3 className="text-lg font-semibold mb-4 text-accent">
                   Recursos ({recursos.filter(r => 
                     r.tipo === tipoRecursoSeleccionado ||
-                    r.tipo.toLowerCase() === recursosConfig.items.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre.toLowerCase()
+                    r.tipo.toLowerCase() === tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre.toLowerCase()
                   ).length})
                 </h3>
                 <div className="space-y-3">
                   {recursos
                     .filter(recurso => 
                       (recurso.tipo === tipoRecursoSeleccionado ||
-                       recurso.tipo.toLowerCase() === recursosConfig.items.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre.toLowerCase()) &&
+                       recurso.tipo.toLowerCase() === tiposRecursos.find((t: any) => t.id === tipoRecursoSeleccionado)?.nombre.toLowerCase()) &&
                       (recurso.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
                        recurso.descripcion?.toLowerCase().includes(busqueda.toLowerCase()))
                     )
@@ -404,19 +388,19 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                           onClick={() => setRecursoSeleccionado(recurso)}
                           className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                             isSelected
-                              ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
-                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                              ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
+                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
-                              <config.IconComponent className="text-sm" />
+                            <div className="p-2 rounded-lg bg-accent/20 text-accent">
+                              {React.createElement(config.IconComponent as any, { className: "text-sm" })}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-white truncate">
                                 {recurso.titulo}
                               </h4>
-                              <p className="text-xs text-yellow-300 mt-1">
+                              <p className="text-xs text-accent mt-1">
                                 {config.nombre}
                               </p>
                               {recurso.tamaño && (
@@ -471,7 +455,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
               icono: <></>,
               color: item.color || ''
             }))}
-            tiposRecursos={recursosConfig.items.map(item => ({
+            tiposRecursos={tiposRecursos.map(item => ({
               id: item.id,
               nombre: item.nombre,
               descripcion: item.descripcion || '',
