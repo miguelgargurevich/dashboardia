@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { FaPlus, FaSearch, FaFileAlt, FaListUl, FaLayerGroup } from 'react-icons/fa';
-import { useConfig, getIconComponent } from '../lib/useConfig';
+import { useConfig, useNotasConfig, getIconComponent } from '../lib/useConfig';
 import DetalleNotaPanel from '../components/knowledge/DetalleNotaPanel';
 import Modal from '../components/Modal';
 import NotaForm from '../components/knowledge/NotaForm';
@@ -36,38 +36,20 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   const [filtroEtiqueta, setFiltroEtiqueta] = useState<string>('');
   
   // Hook de configuración para notas
-  const notasConfig = useConfig('notas');
+  const { getNotaConfig, loading: configLoading, items: tiposNotas } = useNotasConfig();
   const temasConfig = useConfig('temas');
 
-  // Función para obtener configuración de tipo de nota
-  const getNotaConfig = (tipoId: string) => {
-    if (notasConfig.loading) {
-      return {
-        IconComponent: FaFileAlt,
-        color: 'bg-accent/20 text-accent',
-        nombre: 'Nota'
-      };
+  // Función para obtener icono de nota
+  const getNotaIcon = (tipoNota?: string) => {
+    if (configLoading) {
+      return <FaFileAlt />;
     }
     
-    const config = notasConfig.items.find((item: any) => 
-      item.id === tipoId || item.nombre.toLowerCase() === tipoId.toLowerCase()
-    );
+    const config = getNotaConfig(tipoNota || '');
+    const IconComponent = config.IconComponent as any;
+    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
     
-    if (config) {
-      const IconComponent = getIconComponent(config.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
-      return {
-        IconComponent,
-        color: config.color || 'bg-accent/20 text-accent',
-        nombre: config.nombre
-      };
-    }
-    
-    // Fallback
-    return {
-      IconComponent: FaFileAlt,
-      color: 'bg-accent/20 text-accent', 
-      nombre: 'Nota'
-    };
+    return <IconComponent className={colorClass} />;
   };
 
   // Función para renderizar contenido markdown
@@ -228,7 +210,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
     notas.flatMap(nota => nota.etiquetas || [])
   )).sort();
 
-  if (notasConfig.loading || temasConfig.loading) {
+  if (configLoading || temasConfig.loading) {
     return (
       <div className="p-8 text-center">
         <div className="text-lg text-gray-400">Cargando configuración...</div>
@@ -319,7 +301,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
                     >
                       <div className="flex items-start gap-3">
                         <div className={`p-2 rounded ${config.color}`}>
-                          <config.IconComponent className="text-sm" />
+                          {React.createElement(config.IconComponent as any, { className: "text-sm" })}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-white truncate">
@@ -361,7 +343,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
       {/* Vista Por Tipo - Cards de tipos */}
       {seccionActiva === 'tipos' && !tipoNotaSeleccionado && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {notasConfig.items.map((tipo: any) => {
+          {tiposNotas.map((tipo: any) => {
             const cantidadNotas = notas.filter(nota => 
               nota.tipo === tipo.id || 
               nota.tipo?.toLowerCase() === tipo.nombre.toLowerCase()
@@ -410,12 +392,12 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
               </button>
               <div className="flex items-center gap-3">
                 {(() => {
-                  const tipoConfig = notasConfig.items.find((t: any) => t.id === tipoNotaSeleccionado);
+                  const tipoConfig = tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado);
                   const IconComponent = getIconComponent(tipoConfig?.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
                   return <IconComponent className="text-xl text-accent" />;
                 })()}
                 <h2 className="text-xl font-bold text-white">
-                  {notasConfig.items.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre}
+                  {tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre}
                 </h2>
               </div>
             </div>
@@ -429,14 +411,14 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
                 <h3 className="text-lg font-semibold mb-4 text-accent">
                   Notas ({notas.filter(n => 
                     n.tipo === tipoNotaSeleccionado ||
-                    n.tipo?.toLowerCase() === notasConfig.items.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre.toLowerCase()
+                    n.tipo?.toLowerCase() === tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre.toLowerCase()
                   ).length})
                 </h3>
                 <div className="space-y-3">
                   {notas
                     .filter(nota => 
                       (nota.tipo === tipoNotaSeleccionado ||
-                       nota.tipo?.toLowerCase() === notasConfig.items.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre.toLowerCase()) &&
+                       nota.tipo?.toLowerCase() === tiposNotas.find((t: any) => t.id === tipoNotaSeleccionado)?.nombre.toLowerCase()) &&
                       (nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
                        nota.contenido.toLowerCase().includes(busqueda.toLowerCase()))
                     )
@@ -454,7 +436,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
                         >
                           <div className="flex items-start gap-3">
                             <div className={`p-2 rounded ${config.color}`}>
-                              <config.IconComponent className="text-sm" />
+                              {React.createElement(config.IconComponent as any, { className: "text-sm" })}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-white truncate">
@@ -520,7 +502,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
               icono: <></>,
               color: item.color || ''
             }))}
-            tiposNotas={notasConfig.items.map(item => ({
+            tiposNotas={tiposNotas.map((item: any) => ({
               id: item.id,
               nombre: item.nombre,
               descripcion: item.descripcion || '',

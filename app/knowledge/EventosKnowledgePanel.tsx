@@ -50,7 +50,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     const tipo = tipoEvento || title;
     const config = getEventoConfig(tipo);
     const IconComponent = config.IconComponent as any;
-    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-yellow-300';
+    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
     
     return <IconComponent className={colorClass} />;
   };
@@ -197,8 +197,8 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
           onClick={() => { setSeccionActiva('lista'); setTipoEventoSeleccionado(null); }}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
             seccionActiva === 'lista'
-              ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-              : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+              ? 'bg-accent/30 text-accent shadow-lg'
+              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
           }`}
         >
           <FaListUl />
@@ -208,8 +208,8 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
           onClick={() => { setSeccionActiva('tipos'); setTipoEventoSeleccionado(null); }}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
             seccionActiva === 'tipos'
-              ? 'bg-yellow-900/30 text-yellow-300 shadow-lg'
-              : 'text-gray-400 hover:text-yellow-300 hover:bg-yellow-900/10'
+              ? 'bg-accent/30 text-accent shadow-lg'
+              : 'text-gray-400 hover:text-accent hover:bg-accent/10'
           }`}
         >
           {React.createElement(getIconComponent('FaLayerGroup'))}
@@ -255,17 +255,17 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                           onClick={() => setEventoSeleccionado(event)}
                           className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                             isSelected
-                              ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
-                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                              ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
+                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
+                            <div className="p-2 rounded-lg bg-accent/20 text-accent">
                               {getEventIcon(event.title, event.eventType)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
-                              <div className="text-xs text-yellow-300 mb-1">
+                              <div className="text-xs text-accent mb-1">
                                 {formatFechaDDMMYYYY(event.startDate)}
                               </div>
                               {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}
@@ -303,11 +303,11 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 <button
                   key={tipo.id}
                   onClick={() => setTipoEventoSeleccionado(tipo.id)}
-                  className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
+                  className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color}`}
                 >
                   <div className="flex items-center gap-4 mb-3">
-                    <div className="p-3 rounded-lg bg-yellow-900/20">
-                      <IconComponent className="text-xl text-yellow-300" />
+                    <div className={`p-3 rounded-lg ${config.color.includes('bg-') ? config.color.split(' ').find(c => c.includes('bg-')) + '/20' : 'bg-accent/20'}`}>
+                      <IconComponent className={`text-xl ${config.color.split(' ').find(c => c.includes('text-')) || 'text-accent'}`} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg text-white">{tipo.nombre}</h3>
@@ -330,12 +330,12 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       {seccionActiva === 'tipos' && tipoEventoSeleccionado && (
         <div className="flex-1 flex flex-col bg-primary/80">
           {/* Header del tipo con colores */}
-          <div className={`rounded-lg p-4 mb-6 border ${tiposEventos.find(t => t.id === tipoEventoSeleccionado)?.color}`}>
+          <div className={`rounded-lg p-4 mb-6 border ${getEventoConfig(tipoEventoSeleccionado).color}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => setTipoEventoSeleccionado(null)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-900/10 hover:bg-yellow-900/20 transition-colors"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg ${getEventoConfig(tipoEventoSeleccionado).color.includes('bg-') ? getEventoConfig(tipoEventoSeleccionado).color.split(' ').find(c => c.includes('bg-')) + '/10' : 'bg-accent/10'} hover:bg-accent/20 transition-colors`}
                 >
                   ← Volver a tipos
                 </button>
@@ -343,7 +343,8 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                   {(() => {
                     const config = getEventoConfig(tipoEventoSeleccionado);
                     const IconComponent = config.IconComponent as any;
-                    return <IconComponent className="text-xl text-yellow-300" />;
+                    const textColor = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
+                    return <IconComponent className={`text-xl ${textColor}`} />;
                   })()}
                   <h2 className="text-xl font-bold">
                     {tiposEventos.find(t => t.id === tipoEventoSeleccionado)?.nombre}
@@ -405,17 +406,17 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                           onClick={() => setEventoSeleccionado(event)}
                           className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
                             isSelected
-                              ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
-                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
+                              ? 'bg-accent/20 text-accent shadow-lg shadow-current/20 border-accent/40'
+                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-accent/10 hover:to-accent/5 border border-gray-700/50 hover:border-accent/30 shadow-md hover:shadow-lg'
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
+                            <div className="p-2 rounded-lg bg-accent/20 text-accent">
                               {getEventIcon(event.title, event.eventType)}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-semibold text-white text-base truncate flex-1">{event.title}</h3>
-                              <div className="text-xs text-yellow-300 mb-1">
+                              <div className="text-xs text-accent mb-1">
                                 {formatFechaDDMMYYYY(event.startDate)}
                               </div>
                               {event.description && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{event.description}</p>}

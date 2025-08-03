@@ -173,6 +173,7 @@ export function useEventosConfig() {
   
   const getEventoConfig = (tipoEvento: string) => {
     const item = items.find(item => 
+      item.id === tipoEvento ||
       item.nombre.toLowerCase() === tipoEvento.toLowerCase() ||
       tipoEvento.toLowerCase().includes(item.nombre.toLowerCase())
     );
@@ -182,7 +183,8 @@ export function useEventosConfig() {
       icono: item?.icono || 'fa-calendar-alt',
       color: item?.color || 'bg-blue-500/20 text-blue-400 border-blue-400/30',
       IconComponent: getIconComponent(item?.icono || 'fa-calendar-alt'),
-      hexColor: obtenerHexPorTailwind(item?.color || 'bg-blue-500')
+      hexColor: obtenerHexPorTailwind(item?.color || 'bg-blue-500'),
+      nombre: item?.nombre || 'Evento'
     };
   };
 
@@ -191,5 +193,63 @@ export function useEventosConfig() {
     loading,
     error,
     getEventoConfig
+  };
+}
+
+// Hook para obtener toda la configuración de notas y mapear por tipo de nota
+export function useNotasConfig() {
+  const { items, loading, error } = useConfig('notas');
+  
+  const getNotaConfig = (tipoNota: string) => {
+    const item = items.find(item => 
+      item.id === tipoNota ||
+      item.nombre.toLowerCase() === tipoNota.toLowerCase() ||
+      tipoNota.toLowerCase().includes(item.nombre.toLowerCase())
+    );
+
+    return {
+      item,
+      icono: item?.icono || 'fa-sticky-note',
+      color: item?.color || 'bg-green-500/20 text-green-400 border-green-400/30',
+      IconComponent: getIconComponent(item?.icono || 'fa-sticky-note'),
+      hexColor: obtenerHexPorTailwind(item?.color || 'bg-green-500'),
+      nombre: item?.nombre || 'Nota'
+    };
+  };
+
+  return {
+    items,
+    loading,
+    error,
+    getNotaConfig
+  };
+}
+
+// Hook para obtener toda la configuración de recursos y mapear por tipo de recurso
+export function useRecursosConfig() {
+  const { items, loading, error } = useConfig('recursos');
+  
+  const getRecursoConfig = (tipoRecurso: string) => {
+    const item = items.find(item => 
+      item.id === tipoRecurso ||
+      item.nombre.toLowerCase() === tipoRecurso.toLowerCase() ||
+      tipoRecurso.toLowerCase().includes(item.nombre.toLowerCase())
+    );
+
+    return {
+      item,
+      icono: item?.icono || 'fa-file',
+      color: item?.color || 'bg-purple-500/20 text-purple-400 border-purple-400/30',
+      IconComponent: getIconComponent(item?.icono || 'fa-file'),
+      hexColor: obtenerHexPorTailwind(item?.color || 'bg-purple-500'),
+      nombre: item?.nombre || 'Recurso'
+    };
+  };
+
+  return {
+    items,
+    loading,
+    error,
+    getRecursoConfig
   };
 }
