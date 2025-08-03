@@ -7,6 +7,7 @@ interface DetalleRecursoPanelProps {
   recurso: Recurso | null;
   temas: Tema[];
   getTipoRecursoLabel: (tipo: string, tipoArchivo?: string) => string;
+  getRecursoConfig?: (tipo: string) => { IconComponent: any; color: string; nombre: string };
   formatFileSize: (bytes: number) => string;
   onEdit?: (recurso: Recurso) => void;
   onDelete?: (id: string) => void;
@@ -15,6 +16,7 @@ interface DetalleRecursoPanelProps {
 const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
   recurso,
   getTipoRecursoLabel,
+  getRecursoConfig,
   formatFileSize,
   onEdit,
 }) => {
@@ -26,7 +28,11 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400">
-                  {/* Puedes agregar un icono de recurso aquí si lo tienes */}
+                  {getRecursoConfig && recurso.tipo && (() => {
+                    const config = getRecursoConfig(recurso.tipo);
+                    const IconComponent = config.IconComponent;
+                    return <IconComponent className="w-4 h-4" />;
+                  })()}
                 </span>
                 <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {recurso.titulo}</h5>
               </div>

@@ -280,15 +280,19 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
       </div>
 
       {/* Buscador */}
-      <div className="relative">
-        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Buscar notas..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-secondary border border-primary rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-accent"
-        />
+      <div className="bg-secondary rounded-lg p-4">
+        <div className="space-y-4 mb-4">
+          <div className="flex items-center gap-2">
+            <FaSearch className="text-accent" />
+            <input
+              type="text"
+              placeholder="Buscar notas..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="flex-1 input-std"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Vista Lista - Todas las notas */}

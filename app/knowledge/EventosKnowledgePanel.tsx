@@ -164,10 +164,19 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     cargarEventos(token);
   };
 
+  // Filtrar eventos
+  const eventosFiltrados = eventos.filter(evento => 
+    evento.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (evento.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
+  );
 
-
-
-
+  // Filtrar eventos por tipo cuando está seleccionado un tipo específico
+  const eventosFiltradosPorTipo = eventos.filter(evento => {
+    const matchTipo = evento.eventType === tipoEventoSeleccionado;
+    const matchBusqueda = evento.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (evento.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
+    return matchTipo && matchBusqueda;
+  });
 
   return (
     <div className="bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px] flex flex-col">
@@ -208,36 +217,37 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
         </button>
       </div> 
       
+      {/* Buscador */}
+      <div className="bg-secondary rounded-lg p-4">
+        <div className="space-y-4 mb-4">
+          <div className="flex items-center gap-2">
+            <FaSearch className="text-accent" />
+            <input
+              type="text"
+              placeholder="Buscar eventos..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="flex-1 input-std"
+            />
+          </div>
+        </div>
+      </div>
+      
       {/* Vista de Lista (actual) */}
       {seccionActiva === 'lista' && (
         <div className="flex-1 flex flex-col bg-primary/80">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Panel lateral: búsqueda y lista */}
+            {/* Panel lateral: lista */}
             <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-4">
-                <div className="space-y-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <FaSearch className="text-accent" />
-                    <input
-                      type="text"
-                      placeholder="Buscar eventos..."
-                      value={busqueda}
-                      onChange={e => setBusqueda(e.target.value)}
-                      className="flex-1 input-std"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {eventos.filter(ev =>
-                    ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-                    (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-                  ).length === 0 ? (
+              <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
+                <h3 className="text-lg font-semibold mb-4 text-accent">
+                  Eventos ({eventosFiltrados.length})
+                </h3>
+                <div className="space-y-3">
+                  {eventosFiltrados.length === 0 ? (
                     <div className="p-4 text-gray-400">No hay eventos este mes.</div>
                   ) : (
-                    eventos.filter(ev =>
-                      ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-                      (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false)
-                    ).map((event) => {
+                    eventosFiltrados.map((event) => {
                       const isSelected = eventoSeleccionado?.id === event.id;
                       return (
                         <button
@@ -350,47 +360,44 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
             </div>
           </div>
 
+          {/* Buscador para vista por tipo */}
+          <div className="bg-secondary rounded-lg p-4 mb-6">
+            <div className="space-y-4 mb-4">
+              <div className="flex items-center gap-2">
+                <FaSearch className="text-accent" />
+                <input
+                  type="text"
+                  placeholder="Buscar eventos..."
+                  value={busqueda}
+                  onChange={e => setBusqueda(e.target.value)}
+                  className="flex-1 input-std"
+                />
+              </div>
+              {busqueda && (
+                <button
+                  onClick={() => setBusqueda('')}
+                  className="w-full px-3 py-2 bg-gray-600/50 text-gray-300 rounded-lg hover:bg-gray-600/70 transition-colors text-sm"
+                >
+                  Limpiar búsqueda
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Panel lateral: búsqueda y lista filtrada */}
+            {/* Panel lateral: lista filtrada */}
             <div className="lg:col-span-1">
-              <div className="bg-secondary rounded-lg p-4">
-                <div className="space-y-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <FaSearch className="text-accent" />
-                    <input
-                      type="text"
-                      placeholder="Buscar eventos..."
-                      value={busqueda}
-                      onChange={e => setBusqueda(e.target.value)}
-                      className="flex-1 input-std"
-                    />
-                  </div>
-                  {busqueda && (
-                    <button
-                      onClick={() => setBusqueda('')}
-                      className="w-full px-3 py-2 bg-gray-600/50 text-gray-300 rounded-lg hover:bg-gray-600/70 transition-colors text-sm"
-                    >
-                      Limpiar búsqueda
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {eventos.filter(ev => {
-                    const matchTipo = ev.eventType === tipoEventoSeleccionado;
-                    const matchBusqueda = ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-                      (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
-                    return matchTipo && matchBusqueda;
-                  }).length === 0 ? (
+              <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
+                <h3 className="text-lg font-semibold mb-4 text-accent">
+                  Eventos ({eventosFiltradosPorTipo.length})
+                </h3>
+                <div className="space-y-3">
+                  {eventosFiltradosPorTipo.length === 0 ? (
                     <div className="p-4 text-gray-400">
                       {busqueda ? 'No se encontraron eventos.' : 'No hay eventos de este tipo.'}
                     </div>
                   ) : (
-                    eventos.filter(ev => {
-                      const matchTipo = ev.eventType === tipoEventoSeleccionado;
-                      const matchBusqueda = ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
-                        (ev.description?.toLowerCase().includes(busqueda.toLowerCase()) ?? false);
-                      return matchTipo && matchBusqueda;
-                    }).map((event) => {
+                    eventosFiltradosPorTipo.map((event) => {
                       const isSelected = eventoSeleccionado?.id === event.id;
                       return (
                         <button

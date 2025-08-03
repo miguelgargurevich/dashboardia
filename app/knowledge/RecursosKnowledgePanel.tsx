@@ -226,15 +226,19 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
       </div>
 
       {/* Buscador */}
-      <div className="relative">
-        <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Buscar recursos..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-secondary border border-primary rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-accent"
-        />
+      <div className="bg-secondary rounded-lg p-4">
+        <div className="space-y-4 mb-4">
+          <div className="flex items-center gap-2">
+            <FaSearch className="text-accent" />
+            <input
+              type="text"
+              placeholder="Buscar recursos..."
+              value={busqueda}
+              onChange={e => setBusqueda(e.target.value)}
+              className="flex-1 input-std"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Vista Lista - Todos los recursos */}
@@ -252,29 +256,30 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                 <div className="space-y-3">
                   {recursosFiltrados.map((recurso) => {
                     const config = getRecursoConfig(recurso.tipo);
+                    const isSelected = recursoSeleccionado?.id === recurso.id;
                     return (
                       <button
                         key={recurso.id}
                         onClick={() => setRecursoSeleccionado(recurso)}
-                        className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:bg-accent/10 ${
-                          recursoSeleccionado?.id === recurso.id
-                            ? 'border-accent bg-accent/10'
-                            : 'border-primary hover:border-accent/50'
+                        className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
+                          isSelected
+                            ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
+                            : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded ${config.color}`}>
+                          <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
                             <config.IconComponent className="text-sm" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-white truncate">
                               {recurso.titulo}
                             </h4>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-yellow-300 mt-1">
                               {config.nombre}
                             </p>
                             {recurso.tamaño && (
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-gray-400">
                                 {formatFileSize(recurso.tamaño)}
                               </p>
                             )}
@@ -299,6 +304,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                 color: item.color || ''
               }))}
               getTipoRecursoLabel={(tipo: string) => getRecursoConfig(tipo).nombre}
+              getRecursoConfig={getRecursoConfig}
               formatFileSize={formatFileSize}
               onEdit={handleEdit}
               onDelete={handleDeleteById}
@@ -322,7 +328,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
               <button
                 key={tipo.id}
                 onClick={() => setTipoRecursoSeleccionado(tipo.id)}
-                className={`text-left p-6 rounded-lg border transition-all duration-300 hover:bg-yellow-900/10 hover:border-yellow-400/30 ${tipo.color || 'border-primary'}`}
+                className={`text-left p-6 rounded-lg border transition-all duration-300 hover:bg-yellow-900/10 hover:border-yellow-400/30 border-primary`}
               >
                 <div className="flex items-center gap-4 mb-3">
                   <div className="p-3 rounded-lg bg-yellow-900/20">
@@ -390,29 +396,30 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                     )
                     .map((recurso) => {
                       const config = getRecursoConfig(recurso.tipo);
+                      const isSelected = recursoSeleccionado?.id === recurso.id;
                       return (
                         <button
                           key={recurso.id}
                           onClick={() => setRecursoSeleccionado(recurso)}
-                          className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:bg-accent/10 ${
-                            recursoSeleccionado?.id === recurso.id
-                              ? 'border-accent bg-accent/10'
-                              : 'border-primary hover:border-accent/50'
+                          className={`w-full text-left p-4 rounded-lg transition-all duration-200 border cursor-pointer ${
+                            isSelected
+                              ? 'bg-yellow-900/20 text-yellow-300 shadow-lg shadow-current/20 border-yellow-400/40'
+                              : 'bg-gradient-to-r from-primary to-secondary/50 hover:from-yellow-900/10 hover:to-accent/5 border border-gray-700/50 hover:border-yellow-400/30 shadow-md hover:shadow-lg'
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded ${config.color}`}>
+                            <div className="p-2 rounded-lg bg-yellow-900/20 text-yellow-300">
                               <config.IconComponent className="text-sm" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-white truncate">
                                 {recurso.titulo}
                               </h4>
-                              <p className="text-xs text-gray-400 mt-1">
+                              <p className="text-xs text-yellow-300 mt-1">
                                 {config.nombre}
                               </p>
                               {recurso.tamaño && (
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-400">
                                   {formatFileSize(recurso.tamaño)}
                                 </p>
                               )}
@@ -436,6 +443,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                   color: item.color || ''
                 }))}
                 getTipoRecursoLabel={(tipo: string) => getRecursoConfig(tipo).nombre}
+                getRecursoConfig={getRecursoConfig}
                 onEdit={handleEdit}
                 onDelete={handleDeleteById}
                 formatFileSize={formatFileSize}
