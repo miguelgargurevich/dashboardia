@@ -303,7 +303,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
                 <button
                   key={tipo.id}
                   onClick={() => setTipoEventoSeleccionado(tipo.id)}
-                  className={`text-left p-6 rounded-lg border transition-all duration-300 ${tipo.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
+                  className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
                 >
                   <div className="flex items-center gap-4 mb-3">
                     <div className="p-3 rounded-lg bg-yellow-900/20">

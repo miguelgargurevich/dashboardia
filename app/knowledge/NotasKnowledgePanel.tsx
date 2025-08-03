@@ -367,13 +367,14 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
               nota.tipo?.toLowerCase() === tipo.nombre.toLowerCase()
             ).length;
             
-            const IconComponent = getIconComponent(tipo.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
+            const config = getNotaConfig(tipo.id);
+            const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
             
             return (
               <button
                 key={tipo.id}
                 onClick={() => setTipoNotaSeleccionado(tipo.id)}
-                className={`text-left p-6 rounded-lg border transition-all duration-300 hover:bg-yellow-900/10 hover:border-yellow-400/30 ${tipo.color || 'border-primary'}`}
+                className={`text-left p-6 rounded-lg border transition-all duration-300 ${config.color} hover:bg-yellow-900/10 hover:border-yellow-400/30`}
               >
                 <div className="flex items-center gap-4 mb-3">
                   <div className="p-3 rounded-lg bg-yellow-900/20">
