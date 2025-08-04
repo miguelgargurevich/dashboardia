@@ -191,14 +191,13 @@ interface Note {
           formData.append('file', file);
           formData.append('titulo', file.name);
           formData.append('tags', JSON.stringify(noteTags.split(',').map(t => t.trim()).filter(Boolean)));
-          
+          formData.append('categoria', 'notas'); // <-- Campo requerido por el backend
           try {
             const resUpload = await fetch('/api/resources/upload', {
               method: 'POST',
               headers: { 'Authorization': `Bearer ${token}` },
               body: formData
             });
-            
             if (resUpload.ok) {
               const data = await resUpload.json();
               if (data.recurso && data.recurso.id) {
@@ -869,7 +868,8 @@ interface Note {
               contenido: editingNote.content || '',
               tipo: tiposNotas[0]?.id || '',
               etiquetas: editingNote.tags || [],
-              date: editingNote.date
+              date: editingNote.date,
+              relatedResources: editingNote.relatedResources || []
             }}
             tiposNotas={tiposNotas.map(tipo => ({
               ...tipo,

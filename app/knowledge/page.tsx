@@ -95,14 +95,12 @@ const KnowledgePage: React.FC = () => {
             <NotasKnowledgePanel token={token} />
           </div>
         )}
-
         {/* Panel de recursos de conocimiento */}
         {seccionActiva === 'recursos' && (
           <div>
             <RecursosKnowledgePanel token={token} />
           </div>
         )}
-
         {/* Panel de eventos de conocimiento */}
         {seccionActiva === 'eventos' && (
           <div>

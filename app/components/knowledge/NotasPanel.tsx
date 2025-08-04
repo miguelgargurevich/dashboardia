@@ -1,4 +1,3 @@
-import type { Tema } from '../../lib/types';
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
 import DetalleNotaPanel from './DetalleNotaPanel';
@@ -145,7 +144,6 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
     <div className="lg:col-span-2">
       <DetalleNotaPanel
         notaSeleccionada={notaSeleccionada}
-        temas={temas}
         descargarNota={descargarNota}
         eliminarNota={eliminarNota}
         renderizarContenidoMarkdown={renderizarContenidoMarkdown}

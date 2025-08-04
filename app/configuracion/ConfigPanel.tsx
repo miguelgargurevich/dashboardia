@@ -10,7 +10,6 @@ import {
   FaCalendarAlt,
   FaStickyNote,
   FaFolderOpen,
-  FaLayerGroup,
   // Iconos para eventos
   FaWrench,
   FaGraduationCap,
@@ -31,15 +30,9 @@ import {
   FaDatabase,
   FaDownload,
   FaUpload,
-  // Iconos para temas
-  FaFolder,
-  FaTag,
-  FaStar,
-  FaBookmark,
-  FaCloud
 } from 'react-icons/fa';
 
-type ConfigType = 'eventos' | 'notas' | 'recursos' | 'temas';
+type ConfigType = 'eventos' | 'notas' | 'recursos';
 
 interface ConfigItem {
   id: string;
@@ -121,20 +114,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
         { value: 'fa-folder-open', label: 'Carpeta', icon: FaFolderOpen },
       ]
     },
-    temas: {
-      title: 'Temas',
-      icon: FaLayerGroup,
-      endpoint: 'temas',
-      defaultIcon: 'fa-layer-group',
-      iconos: [
-        { value: 'fa-layer-group', label: 'Grupo', icon: FaLayerGroup },
-        { value: 'fa-folder', label: 'Carpeta', icon: FaFolder },
-        { value: 'fa-tag', label: 'Etiqueta', icon: FaTag },
-        { value: 'fa-star', label: 'Estrella', icon: FaStar },
-        { value: 'fa-bookmark', label: 'Marcador', icon: FaBookmark },
-        { value: 'fa-cloud', label: 'Nube', icon: FaCloud },
-      ]
-    }
+    // Temas removidos
   };
 
   // Función para obtener icono React
@@ -164,13 +144,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
       'fa-download': FaDownload,
       'fa-upload': FaUpload,
       'fa-folder-open': FaFolderOpen,
-      // Temas
-      'fa-layer-group': FaLayerGroup,
-      'fa-folder': FaFolder,
-      'fa-tag': FaTag,
-      'fa-star': FaStar,
-      'fa-bookmark': FaBookmark,
-      'fa-cloud': FaCloud,
+      // Temas removidos
     };
     
     const IconComponent = iconMap[icono] || tiposConfig[activeTab].icon;

@@ -1,10 +1,30 @@
 import React, { useState, useCallback } from 'react';
 import { FaUpload, FaFile, FaTrash, FaDownload, FaEye, FaSpinner } from 'react-icons/fa';
 
+
+interface S3UploadResult {
+  success: boolean;
+  recurso: {
+    id: string;
+    titulo: string;
+    descripcion: string;
+    filePath: string;
+    tags: string[];
+    categoria: string;
+    fechaCarga: string;
+    tipo: string;
+  };
+  s3: {
+    key: string;
+    url: string;
+    size: number;
+  };
+}
+
 interface FileUploadS3Props {
   categoria: string;
   subcategoria?: string;
-  onUploadComplete?: (result: any) => void;
+  onUploadComplete?: (result: S3UploadResult) => void;
   onError?: (error: string) => void;
   multiple?: boolean;
   maxFileSize?: number; // en MB
@@ -20,7 +40,7 @@ interface UploadedFile {
   uploading: boolean;
   uploaded: boolean;
   error?: string;
-  result?: any;
+  result?: S3UploadResult;
 }
 
 const FileUploadS3: React.FC<FileUploadS3Props> = ({
@@ -41,21 +61,18 @@ const FileUploadS3: React.FC<FileUploadS3Props> = ({
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
 
+
   // Validar archivo
-  const validateFile = (file: File): string | null => {
-    // Verificar tamaño
+  const validateFile = useCallback((file: File): string | null => {
     if (file.size > maxFileSize * 1024 * 1024) {
       return `El archivo es demasiado grande. Máximo permitido: ${maxFileSize}MB`;
     }
-
-    // Verificar tipo
     const extension = '.' + file.name.split('.').pop()?.toLowerCase();
     if (!allowedTypes.includes(extension)) {
       return `Tipo de archivo no permitido. Tipos permitidos: ${allowedTypes.join(', ')}`;
     }
-
     return null;
-  };
+  }, [maxFileSize, allowedTypes]);
 
   // Formatear tamaño de archivo
   const formatFileSize = (bytes: number): string => {
@@ -66,30 +83,16 @@ const FileUploadS3: React.FC<FileUploadS3Props> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Manejar drop de archivos
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragOver(false);
 
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    handleFiles(droppedFiles);
-  }, []);
 
-  // Manejar selección de archivos
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files);
-      handleFiles(selectedFiles);
-    }
-  };
 
   // Procesar archivos seleccionados
-  const handleFiles = (newFiles: File[]) => {
+  const handleFiles = useCallback((newFiles: File[]) => {
     const processedFiles: UploadedFile[] = newFiles.map(file => {
       const error = validateFile(file);
       return {
         file,
-        titulo: file.name.split('.')[0], // Nombre sin extensión como título por defecto
+        titulo: file.name.split('.')[0],
         descripcion: '',
         tags: '',
         uploading: false,
@@ -97,11 +100,27 @@ const FileUploadS3: React.FC<FileUploadS3Props> = ({
         error: error || undefined
       };
     });
-
     if (multiple) {
       setFiles(prev => [...prev, ...processedFiles]);
     } else {
       setFiles(processedFiles);
+    }
+  }, [multiple, validateFile]);
+
+  // Manejar drop de archivos
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    handleFiles(droppedFiles);
+  }, [handleFiles]);
+
+
+  // Manejar selección de archivos
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const selectedFiles = Array.from(e.target.files);
+      handleFiles(selectedFiles);
     }
   };
 
@@ -178,8 +197,6 @@ const FileUploadS3: React.FC<FileUploadS3Props> = ({
 
   // Subir todos los archivos
   const uploadAllFiles = async () => {
-    const validFiles = files.filter(f => !f.error && !f.uploaded);
-    
     for (let i = 0; i < files.length; i++) {
       if (!files[i].error && !files[i].uploaded) {
         await uploadFile(i);
@@ -188,7 +205,7 @@ const FileUploadS3: React.FC<FileUploadS3Props> = ({
   };
 
   // Descargar archivo
-  const downloadFile = async (fileResult: any) => {
+  const downloadFile = async (fileResult: S3UploadResult) => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -293,20 +310,20 @@ const FileUploadS3: React.FC<FileUploadS3Props> = ({
                 <div className="flex items-center gap-1">
                   {fileData.uploaded && (
                     <>
-                      <button
-                        onClick={() => downloadFile(fileData.result)}
-                        className="p-1 text-green-500 hover:text-green-600"
-                        title="Descargar"
-                      >
-                        <FaDownload className="text-xs" />
-                      </button>
-                      <button
-                        onClick={() => window.open(fileData.result?.s3?.url, '_blank')}
-                        className="p-1 text-blue-500 hover:text-blue-600"
-                        title="Ver"
-                      >
-                        <FaEye className="text-xs" />
-                      </button>
+                    <button
+                      onClick={() => fileData.result && downloadFile(fileData.result)}
+                      className="p-1 text-green-500 hover:text-green-600"
+                      title="Descargar"
+                    >
+                      <FaDownload className="text-xs" />
+                    </button>
+                    <button
+                      onClick={() => fileData.result && downloadFile(fileData.result)}
+                      className="p-1 text-blue-500 hover:text-blue-600"
+                      title="Ver"
+                    >
+                      <FaEye className="text-xs" />
+                    </button>
                     </>
                   )}
                   
