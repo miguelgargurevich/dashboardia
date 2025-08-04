@@ -48,10 +48,9 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     
     const tipo = tipoEvento || title;
     const config = getEventoConfig(tipo);
-    const IconComponent = config.IconComponent as any;
+    const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
     const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
-    
-    return <IconComponent className={colorClass} />;
+    return IconComponent ? <IconComponent className={colorClass} /> : <FaCalendarAlt className={colorClass} />;
   };
   // Estado para el formulario reutilizable
   const [formData, setFormData] = useState<EventoFormValues>({

@@ -297,6 +297,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
             eliminarNota={handleDelete}
             renderizarContenidoMarkdown={renderizarContenidoMarkdown}
             onEdit={handleEdit}
+            notaConfig={notaSeleccionada ? getNotaConfig(notaSeleccionada.tipo || 'nota') : undefined}
           />
         </div>
       </div>

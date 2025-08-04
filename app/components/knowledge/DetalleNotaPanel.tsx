@@ -14,12 +14,21 @@ interface Nota {
   relatedResources?: string[];
 }
 
+interface NotaConfig {
+  icono: string;
+  color: string;
+  IconComponent: React.ComponentType<{ className?: string }>;
+  hexColor: string;
+  nombre: string;
+}
+
 interface DetalleNotaPanelProps {
   notaSeleccionada: Nota | null;
   descargarNota: (nota: Nota) => void;
   eliminarNota: (nota: Nota) => void;
   renderizarContenidoMarkdown: (contenido: string) => React.ReactNode;
   onEdit?: (nota: Nota) => void;
+  notaConfig?: NotaConfig;
 }
 
 const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
@@ -28,16 +37,17 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
   eliminarNota, // eslint-disable-line @typescript-eslint/no-unused-vars
   renderizarContenidoMarkdown,
   onEdit,
+  notaConfig,
 }) => {
     return (
     <div className="bg-secondary rounded-lg p-6 h-full">
       {notaSeleccionada ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          <div className="bg-primary/40 rounded-lg p-3 border border-yellow-400/30">
+          <div className={`rounded-lg p-3 border ${notaConfig?.color || 'bg-primary/40 border-yellow-400/30'}`}>
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-yellow-400">
-                  <FaFileAlt />
+                <span className={notaConfig?.color?.split(' ').find(c=>c.startsWith('text-')) || 'text-yellow-400'}>
+                  {notaConfig?.IconComponent ? React.createElement(notaConfig.IconComponent, { className: "text-lg" }) : <FaFileAlt />}
                 </span>
                 <h5 className="font-semibold text-white text-sm"><span className="font-bold text-gray-400 mr-1">Título:</span> {notaSeleccionada.nombre}</h5>
               </div>
