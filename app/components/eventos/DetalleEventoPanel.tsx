@@ -6,7 +6,7 @@ import { Event } from '../../lib/types';
 
 export interface DetalleEventoPanelProps {
   eventoSeleccionado: Event | null;
-  onEdit: () => void;
+  onEdit: (evento: Event) => void;
   onDelete: () => void;
   emptyMessage?: string;
 }
@@ -48,7 +48,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({
                 </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => onEdit()}
+                  onClick={() => eventoSeleccionado && onEdit(eventoSeleccionado)}
                   className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
                   title="Editar evento"
                 >
