@@ -367,7 +367,8 @@ app.get('/api/kb', async (req, res) => {
   try {
     const kbArticles = await prisma.KBArticle.findMany();
     res.json(kbArticles);
-  } catch {
+  } catch (error) {
+    envConfig.logger.error('Error al obtener artículos de la base de conocimientos:', error);
     res.status(500).json({ error: 'Error al obtener artículos de la base de conocimientos' });
   }
 });
