@@ -5,8 +5,8 @@ import { Event } from '../../lib/types';
 
 interface DetalleEventoPanelProps {
   eventoSeleccionado: Event | null;
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit: (evento: Event) => void;
+  onDelete: (evento: Event) => void;
 }
 
 interface CalendarWithDetailProps {
@@ -209,8 +209,8 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
                 <DetalleEventoPanel
                   key={`detalle-evento-dia-${evento.id}-${idx}`}
                   eventoSeleccionado={evento}
-                  onEdit={() => handleEditEvent(evento)}
-                  onDelete={() => handleDeleteEvent(evento)}
+                  onEdit={handleEditEvent}
+                  onDelete={handleDeleteEvent}
                 />
               ))}
             </div>

@@ -7,7 +7,7 @@ import { Event } from '../../lib/types';
 export interface DetalleEventoPanelProps {
   eventoSeleccionado: Event | null;
   onEdit: (evento: Event) => void;
-  onDelete: () => void;
+  onDelete: (evento: Event) => void;
   emptyMessage?: string;
 }
 
@@ -55,7 +55,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({
                   <FaEdit /> Editar
                 </button>
                 <button
-                  onClick={() => onDelete()}
+                  onClick={() => eventoSeleccionado && onDelete(eventoSeleccionado)}
                   className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
                   title="Eliminar evento"
                 >
