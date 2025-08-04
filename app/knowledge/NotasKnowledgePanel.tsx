@@ -210,7 +210,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-accent">Gestión de Notas</h2>
@@ -229,18 +229,16 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
       {/* Navegación de secciones eliminada - solo vista de lista */}
 
       {/* Buscador */}
-      <div className="bg-secondary rounded-lg p-4">
-        <div className="space-y-4 mb-4">
-          <div className="flex items-center gap-2">
-            <FaSearch className="text-accent" />
-            <input
-              type="text"
-              placeholder="Buscar notas..."
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              className="flex-1 input-std"
-            />
-          </div>
+      <div className="bg-secondary rounded-lg p-4 mb-0">
+        <div className="flex items-center gap-2">
+          <FaSearch className="text-accent" />
+          <input
+            type="text"
+            placeholder="Buscar notas..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            className="flex-1 input-std"
+          />
         </div>
       </div>
 

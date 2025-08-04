@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaCalendarAlt } from 'react-icons/fa';
+import { FaPlus, FaCalendarAlt, FaSearch } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 import { useEventosConfig } from '../lib/useConfig';
 // import { getIconComponent } from '../lib/useConfig';
@@ -159,37 +159,33 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
 
   return (
     <div className="bg-secondary/10 rounded-xl shadow-lg overflow-hidden min-h-[600px] flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-accent">Gestión de Eventos</h2>
+       <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-accent">Gestión de Eventos</h2>
         <button
           onClick={() => setmostrarFormularioEvento(true)}
           className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
         >
           <FaPlus />
-          Evento
+          Nuevo Evento
         </button>
-      </div> 
+      </div>
 
-      {/* Navegación eliminada - solo vista de lista */} 
-      
       {/* Buscador */}
-      <div className="bg-secondary rounded-lg p-4">
-        <div className="space-y-4 mb-4">
-          <div className="flex items-center gap-2">
-            {/* <FaSearch className="text-accent" /> */}
-            <input
-              type="text"
-              placeholder="Buscar eventos..."
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-              className="flex-1 input-std"
-            />
-          </div>
+      <div className="bg-secondary rounded-lg p-4 mb-0">
+        <div className="flex items-center gap-2">
+          <FaSearch className="text-accent" />
+          <input
+            type="text"
+            placeholder="Buscar eventos..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            className="flex-1 input-std"
+          />
         </div>
       </div>
+
       {/* Vista de Lista - Todos los eventos */}
-      <div className="flex-1 flex flex-col bg-primary/80">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Panel lateral: lista */}
           <div className="lg:col-span-1">
             <div className="bg-secondary rounded-lg p-6 max-h-96 overflow-y-auto">
@@ -240,7 +236,6 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
             />
           </div>
         </div>
-      </div>
 
       {/* Modal para crear/editar evento */}
       {mostrarFormularioEvento && (

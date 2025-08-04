@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FaPlus, FaSearch } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 import EventoForm from "./EventoForm";
 import type { EventoFormValues } from "./EventoForm";
@@ -19,7 +20,6 @@ interface Event {
   codigoDana?: string;
   nombreNotificacion?: string;
   diaEnvio?: string;
-  query?: string;
 }
 
 
@@ -34,8 +34,8 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Event | null>(null);
-  // Ya no se necesita estado form local, lo maneja EventoForm
   const [saving, setSaving] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -68,20 +68,19 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
       now.setSeconds(0, 0);
       startDate = now.toISOString().slice(0, 16);
     }
-    setEditing({
-      title: '',
-      startDate,
-      endDate: '',
-      location: '',
-      recurrenceType: '',
-      eventType: '',
-      validador: '',
-      modo: '',
-      codigoDana: '',
-      nombreNotificacion: '',
-      diaEnvio: '',
-      query: '',
-    });
+        setEditing({
+          title: '',
+          startDate,
+          endDate: '',
+          location: '',
+          recurrenceType: '',
+          eventType: '',
+          validador: '',
+          modo: '',
+          codigoDana: '',
+          nombreNotificacion: '',
+          diaEnvio: '',
+        });
     setShowModal(true);
   };
   const openEdit = (ev: Event) => {
@@ -121,26 +120,61 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
     await fetchEvents();
   };
 
+  // Filtrar eventos por búsqueda y fecha
+  let filteredEvents = events;
+  if (selectedDate) {
+    const selected = selectedDate.slice(0, 10); // yyyy-MM-dd
+    filteredEvents = filteredEvents.filter(ev => ev.startDate && ev.startDate.slice(0, 10) === selected);
+  }
+  if (busqueda.trim() !== '') {
+    filteredEvents = filteredEvents.filter(ev =>
+      ev.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (ev.location && ev.location.toLowerCase().includes(busqueda.toLowerCase()))
+    );
+  }
+
   return (
-    <div className="bg-primary rounded-lg p-4 shadow-md h-full flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-accent">Lista de eventos</h3>
-        <button className="px-2 py-1 bg-accent text-white rounded hover:bg-accent/80 text-xs" onClick={openNew}>Nuevo evento</button>
+
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-accent">Gestión de Eventos</h2>
+        <button
+          onClick={openNew}
+          className="flex items-center gap-2 bg-accent text-secondary px-4 py-2 rounded-lg hover:bg-accent/80 transition-colors"
+        >
+          <FaPlus />
+          Nuevo Evento
+        </button>
       </div>
-      {loading ? (
-        <div className="text-center text-gray-400">Cargando...</div>
-      ) : (() => {
-        // Filtrar eventos por fecha seleccionada (solo fecha, no hora)
-        let filteredEvents = events;
-        if (selectedDate) {
-          const selected = selectedDate.slice(0, 10); // yyyy-MM-dd
-          filteredEvents = events.filter(ev => ev.startDate && ev.startDate.slice(0, 10) === selected);
-        }
-        if (filteredEvents.length === 0) {
-          return <div className="text-center text-gray-400">No hay eventos</div>;
-        }
-        return (
-          <ul className="divide-y divide-accent/10 overflow-y-auto max-h-96">
+
+      {/* Buscador */}
+      <div className="bg-secondary rounded-lg p-4 mb-0">
+        <div className="relative flex items-center">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-accent text-lg pointer-events-none">
+            <FaSearch />
+          </span>
+          <input
+            type="text"
+            placeholder="Buscar eventos..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            className="flex-1 input-std pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Vista Lista - Todos los eventos */}
+      <div className="bg-primary rounded-lg p-6 max-h-96 overflow-y-auto">
+        <h3 className="text-lg font-semibold mb-4 text-accent">
+          Eventos ({filteredEvents.length})
+        </h3>
+        {loading ? (
+          <div className="text-center text-gray-400">Cargando...</div>
+        ) : filteredEvents.length === 0 ? (
+          <div className="text-center text-gray-400">No hay eventos</div>
+        ) : (
+          <ul className="divide-y divide-accent/10">
             {filteredEvents.map(ev => (
               <li key={ev.id} className="py-2 flex items-center justify-between group">
                 <div>
@@ -155,8 +189,8 @@ export default function EventosListPanel({ selectedDate }: EventosListPanelProps
               </li>
             ))}
           </ul>
-        );
-      })()}
+        )}
+      </div>
 
       {/* Modal para crear/editar evento */}
       {showModal && (
