@@ -1,25 +1,21 @@
 import React from 'react';
 import { FaDownload, FaTrash, FaEye, FaFileAlt, FaEdit } from 'react-icons/fa';
-import { useConfig } from '../../lib/useConfig';
 
 interface Nota {
   id: string;
   nombre: string;
   contenido: string;
-  tema?: string;
+  tipo: string;
   date?: string;
   descripcion?: string;
   etiquetas?: string[];
-}
-
-interface Tema {
-  id: string;
-  nombre: string;
+  status?: string;
+  priority?: string;
+  relatedResources?: string[];
 }
 
 interface DetalleNotaPanelProps {
   notaSeleccionada: Nota | null;
-  temas: Tema[];
   descargarNota: (nota: Nota) => void;
   eliminarNota: (nota: Nota) => void;
   renderizarContenidoMarkdown: (contenido: string) => React.ReactNode;
@@ -29,20 +25,10 @@ interface DetalleNotaPanelProps {
 const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
   notaSeleccionada,
   descargarNota,
-  eliminarNota,
+  eliminarNota, // eslint-disable-line @typescript-eslint/no-unused-vars
   renderizarContenidoMarkdown,
   onEdit,
 }) => {
-  // Hook para obtener configuración de temas
-  const { items: temasConfig } = useConfig('temas');
-
-  // Función para obtener el color de un tema
-  const getColorTema = (temaNombre: string) => {
-    const tema = temasConfig.find((item: any) => 
-      item.nombre.toLowerCase() === temaNombre?.toLowerCase()
-    );
-    return tema?.color || 'bg-accent/20 text-accent';
-  };
     return (
     <div className="bg-secondary rounded-lg p-6 h-full">
       {notaSeleccionada ? (
@@ -93,7 +79,7 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
                 <span className="px-2 py-1 rounded bg-orange-500/20 text-orange-300">🏷️ <span className="font-bold">Etiquetas:</span> {notaSeleccionada.etiquetas.join(', ')}</span>
               )}
               {notaSeleccionada.date && (
-                <span className={`px-2 py-1 rounded ${getColorTema('fecha')}`}>📅 <span className="font-bold">Fecha:</span> {notaSeleccionada.date}</span>
+                <span className="px-2 py-1 rounded bg-blue-400/20 text-blue-400">📅 <span className="font-bold">Fecha:</span> {notaSeleccionada.date}</span>
               )}
             </div>
           </div>

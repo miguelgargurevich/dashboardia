@@ -1,23 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaPaperclip, FaTag, FaBook, FaHashtag, FaLink, FaStickyNote } from "react-icons/fa";
+import { FaPaperclip, FaTag, FaHashtag, FaLink, FaStickyNote } from "react-icons/fa";
 
 interface RecursoFormValues {
   titulo: string;
   descripcion?: string;
   tipo: string;
-  tema: string;
   archivo?: File | null;
   url?: string;
   etiquetas?: string[];
-}
-
-export interface Tema {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  icono: React.ReactNode;
-  color: string;
 }
 
 export interface TipoRecurso {
@@ -29,7 +20,6 @@ export interface TipoRecurso {
 
 interface RecursoFormProps {
   initialValues?: Partial<RecursoFormValues>;
-  temas: Tema[];
   tiposRecursos: TipoRecurso[];
   etiquetasDisponibles: string[];
   onSubmit: (values: RecursoFormValues) => void;
@@ -40,7 +30,6 @@ interface RecursoFormProps {
 
 const RecursoForm: React.FC<RecursoFormProps> = ({
   initialValues,
-  temas,
   tiposRecursos,
   etiquetasDisponibles,
   onSubmit,
@@ -51,7 +40,6 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
   const [titulo, setTitulo] = useState(initialValues?.titulo || "");
   const [descripcion, setDescripcion] = useState(initialValues?.descripcion || "");
   const [tipo, setTipo] = useState(initialValues?.tipo || (tiposRecursos[0]?.id || ""));
-  const [tema, setTema] = useState(initialValues?.tema || (temas[0]?.id || ""));
   const [archivo, setArchivo] = useState<File | null>(null);
   const [url, setUrl] = useState(initialValues?.url || "");
   const [etiquetas, setEtiquetas] = useState<string[]>(initialValues?.etiquetas || []);
@@ -61,7 +49,6 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
       setTitulo(initialValues.titulo || "");
       setDescripcion(initialValues.descripcion || "");
       setTipo(initialValues.tipo || (tiposRecursos[0]?.id || ""));
-      setTema(initialValues.tema || (temas[0]?.id || ""));
       setUrl(initialValues.url || "");
       setEtiquetas(initialValues.etiquetas || []);
     }
@@ -70,7 +57,7 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ titulo, descripcion, tipo, tema, archivo, url, etiquetas });
+    onSubmit({ titulo, descripcion, tipo, archivo, url, etiquetas });
   };
 
   const handleEtiquetasChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,34 +97,19 @@ const RecursoForm: React.FC<RecursoFormProps> = ({
         <FaPaperclip className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
       </div>
 
-      {/* Segunda fila: Tipo y Tema */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <select
-            className="input-std w-full pl-10 appearance-none"
-            value={tipo}
-            onChange={e => setTipo(e.target.value)}
-            required
-          >
-            {tiposRecursos.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
-          <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-        </div>
-        <div className="flex-1 relative">
-          <select
-            className="input-std w-full pl-10 appearance-none"
-            value={tema}
-            onChange={e => setTema(e.target.value)}
-            required
-          >
-            {temas.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
-          <FaBook className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-        </div>
+      {/* Segunda fila: Tipo */}
+      <div className="relative">
+        <select
+          className="input-std w-full pl-10 appearance-none"
+          value={tipo}
+          onChange={e => setTipo(e.target.value)}
+          required
+        >
+          {tiposRecursos.map(t => (
+            <option key={t.id} value={t.id}>{t.nombre}</option>
+          ))}
+        </select>
+        <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
       </div>
 
       {/* Tercera fila: Descripción */}

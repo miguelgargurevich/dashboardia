@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCalendarAlt, FaClock, FaExclamationTriangle } from "react-icons/fa";
-import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 import { useEventosConfig } from '../../lib/useConfig';
 
 interface Event {
@@ -106,7 +105,7 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
     // Usar tipoEvento si está disponible, sino inferir del título
     const tipo = tipoEvento || title;
     const config = getEventoConfig(tipo);
-    const IconComponent = config.IconComponent as any;
+    const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
     
     // Extraer color desde la configuración tailwind
     const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
@@ -157,10 +156,19 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
             const isSoon = diffDays <= 2 && diffDays >= 0;
             const isWeekend = eventDate.getDay() === 0 || eventDate.getDay() === 6;
             const highlight = isToday || isSoon || isWeekend;
+            
+            // Obtener configuración de color del evento
+            const eventConfig = getEventoConfig(event.tipoEvento || event.title);
+            const eventColorClass = eventConfig.color;
+            
             return (
               <div 
                 key={event.id} 
-                className={`rounded-lg p-3 border transition-colors cursor-pointer ${highlight ? 'border-red-500 bg-red-900/30 text-red-200 shadow-lg animate-pulse' : 'bg-primary/40 border border-accent/20 hover:border-accent/40 text-white hover:bg-primary/60'} hover:bg-accent/10`}
+                className={`rounded-lg p-3 border transition-colors cursor-pointer ${
+                  highlight 
+                    ? 'border-red-500 bg-red-900/30 text-red-200 shadow-lg animate-pulse' 
+                    : `bg-primary/40 ${eventColorClass} hover:bg-primary/60`
+                } hover:bg-accent/10`}
                 onClick={() => handleEventClick(event)}
               >
                 <div className="flex items-start justify-between mb-2">
@@ -200,6 +208,12 @@ const UpcomingEvents: React.FC<Props> = ({ token, limit = 5, onEventClick }) => 
 
                 <div className="flex items-center justify-between text-xs mb-2">
                   <div className="flex flex-wrap gap-2">
+                    {/* Etiqueta del tipo de evento con colores de la configuración */}
+                    {event.tipoEvento && (
+                      <span className={`px-2 py-1 rounded font-medium ${eventConfig.color}`}>
+                        {eventConfig.nombre || event.tipoEvento}
+                      </span>
+                    )}
                     {event.modo && (
                       <span className="px-2 py-1 rounded bg-accent/20 text-accent/90">{event.modo}</span>
                     )}

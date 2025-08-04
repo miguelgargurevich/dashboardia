@@ -2,19 +2,13 @@
 
 import { useState, useEffect } from 'react';
 
-interface DailyBarChartProps {
-  token: string;
-  backendUrl: string;
-}
-
 interface TicketData {
   priority: string;
   count: number;
   color: string;
 }
 
-export default function DailyBarChart({ token, backendUrl }: DailyBarChartProps) {
-  const apiUrl = backendUrl;
+export default function DailyBarChart() {
   const [data, setData] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,16 +26,14 @@ export default function DailyBarChart({ token, backendUrl }: DailyBarChartProps)
         
         setData(simulatedData);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Error al cargar datos');
         setLoading(false);
       }
     };
 
-    if (token) {
-      fetchData();
-    }
-  }, [token]);
+    fetchData();
+  }, []);
 
   if (loading) {
     return (

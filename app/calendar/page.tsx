@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 // Importar el formulario de nota de forma dinámica para evitar SSR
 const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
@@ -8,7 +8,7 @@ import EventoForm from '../components/eventos/EventoForm';
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import Modal from '../components/Modal';
-import { useEventosConfig, getIconComponent } from '../lib/useConfig';
+import { useEventosConfig } from '../lib/useConfig';
 
 import { 
   FaCalendarAlt, 
@@ -18,18 +18,10 @@ import {
   FaFileAlt, 
   FaRegStickyNote, 
   FaPlus,
-  FaMapMarkerAlt,
-  FaSyncAlt,
   FaCheckCircle,
-  FaUserCog,
-  FaTag,
-  FaBell,
-  FaRegClock,
   FaEye,
   FaEyeSlash,
-  FaPaperclip,
-  FaExternalLinkAlt,
-  FaExclamationTriangle
+  FaPaperclip
 } from "react-icons/fa";
 
 
@@ -52,55 +44,19 @@ interface Event {
   relatedResources?: string[];
 }
 
-// Tipos para NotaForm
-interface NotaFormValues {
-  nombre: string;
-  contenido: string;
-  tipo: string;
-  etiquetas?: string[];
-  tema: string;
-  priority?: string;
-  date?: string;
-}
-
 const Calendar: React.FC = () => {
   // Hook para obtener configuración de eventos
-  const { items: eventosConfig, getEventoConfig } = useEventosConfig();
-
-  // Función para obtener el icono de un evento o nota
-  const getEventIcon = (tipo: string, categoria: 'evento' | 'nota' = 'evento') => {
-    if (categoria === 'evento') {
-      const config = getEventoConfig(tipo);
-      const IconComponent = config.IconComponent as React.ComponentType<{ className?: string }>;
-      return <IconComponent className="w-4 h-4" />;
-    }
-    
-    // Para notas, usar la configuración de temas
-    const temaConfig = eventosConfig.find(item => 
-      item.nombre.toLowerCase() === tipo.toLowerCase()
-    );
-    
-    if (temaConfig && temaConfig.icono) {
-      const IconComponent = getIconComponent(temaConfig.icono) as React.ComponentType<{ className?: string }>;
-      return <IconComponent className="w-4 h-4" />;
-    }
-    
-    // Icono por defecto
-    const DefaultIcon = getIconComponent('fa-calendar-alt') as React.ComponentType<{ className?: string }>;
-    return <DefaultIcon className="w-4 h-4" />;
-  };
+  const { getEventoConfig } = useEventosConfig();
 
   // --- Estado y lógica para edición y eliminación de eventos ---
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [showEventForm, setShowEventForm] = useState(false);
 
-  // @ts-ignore
   const handleEditEvent = (event: Event) => {
     setEditingEvent(event);
     setShowEventForm(true);
   };
 
-  // @ts-ignore
   const handleDeleteEvent = async (event: Event) => {
     if (!window.confirm('¿Seguro que deseas eliminar este evento?')) return;
     try {
@@ -111,13 +67,12 @@ const Calendar: React.FC = () => {
       });
       if (!res.ok) throw new Error('Error al eliminar evento');
       fetchEvents();
-    } catch (e) {
+    } catch {
       alert('No se pudo eliminar el evento.');
     }
   };
   // Estado para tipos de nota y etiquetas disponibles
-  const [tiposNotas, setTiposNotas] = useState<any[]>([]);
-  const [etiquetasDisponibles, setEtiquetasDisponibles] = useState<string[]>([]);
+  const [tiposNotas, setTiposNotas] = useState<{ id: string; nombre: string; descripcion?: string; color?: string; icono?: string }[]>([]);
 
   // Cargar tipos de nota desde la API de configuración
   useEffect(() => {
@@ -130,7 +85,7 @@ const Calendar: React.FC = () => {
       })
         .then(res => res.json())
         .then(data => setTiposNotas(data))
-        .catch(err => console.error('Error cargando tipos de notas:', err));
+        .catch(() => console.error('Error cargando tipos de notas'));
     }
   }, []);
   const searchParams = useSearchParams();
@@ -142,7 +97,7 @@ const Calendar: React.FC = () => {
       try {
         // Decodificar el token para ver su contenido (sin verificar)
         JSON.parse(atob(token.split('.')[1]));
-      } catch (error) {
+      } catch {
       }
     }
     if (!token) {
@@ -176,34 +131,22 @@ interface Note {
   title: string;
   content: string;
   date: string;
-  createdAt: string;
+  tipo?: string;
+  etiquetas?: string[];
   tags?: string[];
-  tema?: string;
+  priority?: string;
   relatedResources?: string[];
+  createdAt?: string;
 }
 
 
-  // Estado global para temas
-  const [temas, setTemas] = useState<any[]>([]);
-  useEffect(() => {
-    const token = getToken();
-    if (token) {
-      fetch('/api/config/temas', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-        .then(res => res.json())
-        .then((data) => setTemas(data))
-        .catch(err => console.error('Error cargando temas:', err));
-    }
-  }, []);
+  // No longer using temas - removed tema functionality
   const [notes, setNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [noteTags, setNoteTags] = useState(''); // tags separados por coma
-  const [noteTema, setNoteTema] = useState('notificaciones');
+  // Removed noteTema state - no longer using tema functionality
   const [creatingNote, setCreatingNote] = useState(false);
   const [noteFiles, setNoteFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -229,7 +172,7 @@ interface Note {
   };
   const [uploadingFiles, setUploadingFiles] = useState(false);
   // Cargar notas del mes visible
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     setLoadingNotes(true);
     try {
       const token = getToken();
@@ -244,10 +187,10 @@ interface Note {
     } finally {
       setLoadingNotes(false);
     }
-  };
+  }, [visibleMonth]);
   // Crear nota
   const createNote = async () => {
-    console.log('🟢 createNote called with:', { noteTitle, noteContent, noteTema, selectedDate });
+    console.log('🟢 createNote called with:', { noteTitle, noteContent, selectedDate });
     
     if (!noteTitle.trim() && !noteContent.trim()) {
       alert('Por favor, ingresa al menos un título o contenido para la nota.');
@@ -264,7 +207,7 @@ interface Note {
         return;
       }
       
-      let relatedResources: string[] = [];
+      const relatedResources: string[] = [];
       
       // Subir archivos si hay
       if (noteFiles.length > 0) {
@@ -273,9 +216,6 @@ interface Note {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('titulo', file.name);
-          // Usar el primer tema dinámico como fallback
-          const temaFallback = temas[0]?.id || 'notificaciones';
-          formData.append('tema', noteTema || temaFallback);
           formData.append('tags', JSON.stringify(noteTags.split(',').map(t => t.trim()).filter(Boolean)));
           
           try {
@@ -306,7 +246,6 @@ interface Note {
         content: noteContent,
         date: selectedDate,
         tags: noteTags.split(',').map(t => t.trim()).filter(Boolean),
-        tema: noteTema || 'notificaciones', // Fallback tema
         relatedResources
       };
       
@@ -333,7 +272,6 @@ interface Note {
       setNoteTitle('');
       setNoteContent('');
       setNoteTags('');
-      setNoteTema('');
       setNoteFiles([]);
       fetchNotes();
       
@@ -355,16 +293,12 @@ interface Note {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [showNoteForm, setShowNoteForm] = useState(false);
 
-  // @ts-ignore
-  const handleEditNote = (note) => {
+  const handleEditNote = (note: Note) => {
     setEditingNote(note);
     setShowNoteForm(true);
   };
 
-
-
-  // @ts-ignore
-  const handleDeleteNote = async (note) => {
+  const handleDeleteNote = async (note: Note) => {
     if (!window.confirm('¿Seguro que deseas eliminar esta nota?')) return;
     try {
       const token = getToken();
@@ -374,7 +308,7 @@ interface Note {
       });
       if (!res.ok) throw new Error('Error al eliminar nota');
       fetchNotes();
-    } catch (e) {
+    } catch {
       alert('No se pudo eliminar la nota.');
     }
   };
@@ -467,7 +401,7 @@ interface Note {
   };
 
   // Función para cargar eventos
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoadingEvents(true);
       const token = getToken();
@@ -491,13 +425,13 @@ interface Note {
         setEvents([]);
         setRecurringEvents([]);
       }
-    } catch (error) {
+    } catch {
       setEvents([]);
       setRecurringEvents([]);
     } finally {
       setLoadingEvents(false);
     }
-  };
+  }, [visibleMonth]);
 
   // Marcar días con notas
   const hasNotesOnDay = (dateString: string) => notes.some(n => n.date === dateString);
@@ -510,7 +444,7 @@ interface Note {
    
     fetchEvents(); // Cargar eventos (incluye regulares y recurrentes)
     fetchNotes(); // Cargar notas del mes
-  }, [visibleMonth, viewMode]);
+  }, [visibleMonth, viewMode, fetchEvents, fetchNotes]);
 
 
 
@@ -773,28 +707,6 @@ interface Note {
                         max="2100-12-31"
                       />
                     </div>
-                    {/* Selección de tema para la nota */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <label className="text-green-300 font-semibold text-sm" htmlFor="note-tema-select">Tema:</label>
-                      <div className="relative w-full">
-                        <select
-                          id="note-tema-select"
-                          className="input-std w-full pl-10 appearance-none border border-green-400/30 rounded-lg bg-primary text-white text-base focus:ring-2 focus:ring-blue-400/40 focus:outline-none"
-                          value={noteTema}
-                          onChange={e => setNoteTema(e.target.value)}
-                          disabled={creatingNote}
-                        >
-                          <option value="">Selecciona un tema</option>
-                          {temas.map((tema: any) => (
-                            <option key={tema.id} value={tema.id}>{tema.nombre || tema.id}</option>
-                          ))}
-                        </select>
-                        {/* Ícono react-icon según el tipo de tema */}
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-green-400">
-                          {getEventIcon(noteTema, 'nota')}
-                        </span>
-                      </div>
-                    </div>
                     <input
                       type="text"
                       className="w-full px-4 py-3 rounded-lg bg-primary border border-green-400/30 text-white text-base"
@@ -895,8 +807,6 @@ interface Note {
                   ) : selectedDayNotes.length > 0 ? (
                     <ul className="space-y-3">
                       {selectedDayNotes.map(note => {
-                        const temaObj = temas.find((t: any) => t.id === note.tema);
-                        const temaClass = temaObj?.color || 'bg-gray-700/40 text-gray-200';
                         const recursosCount = Array.isArray(note.relatedResources) ? note.relatedResources.length : 0;
                         return (
                           <li key={note.id} className="bg-primary/40 rounded-lg p-3 border border-green-400/30 shadow flex flex-col gap-2">
@@ -908,7 +818,9 @@ interface Note {
                                 <span className="font-semibold text-white text-sm">{note.title || 'Sin título'}</span>
                               </div>
                               <div className="flex items-center gap-2 ml-auto">
-                                <span className="text-[11px] text-gray-400">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                                {note.createdAt && (
+                                  <span className="text-[11px] text-gray-400">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                                )}
                                 <button
                                   className="text-blue-400 hover:text-blue-600 p-1 rounded transition"
                                   title="Editar nota"
@@ -933,9 +845,6 @@ interface Note {
                               <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
                                 {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
                               </span>
-                              {note.tema && (
-                                <span className={`text-xs px-3 py-1 rounded-full font-semibold border border-white/10 shadow-sm ${temaClass}`}>{note.tema}</span>
-                              )}
                               <span className="text-xs text-gray-400 ml-auto">{recursosCount} Archivos</span>
                             </div>
                           </li>
@@ -1012,11 +921,13 @@ interface Note {
               contenido: editingNote.content || '',
               tipo: tiposNotas[0]?.id || '',
               etiquetas: editingNote.tags || [],
-              tema: editingNote.tema || temas[0]?.id || '',
               date: editingNote.date
             }}
-            temas={temas}
-            tiposNotas={tiposNotas}
+            tiposNotas={tiposNotas.map(tipo => ({
+              ...tipo,
+              descripcion: tipo.descripcion || '',
+              color: tipo.color || 'bg-gray-700/40 text-gray-200'
+            }))}
             etiquetasDisponibles={Array.from(new Set(notes.flatMap(n => n.tags || [])))}
             onSubmit={async (values) => {
               // Actualizar nota en backend
@@ -1032,7 +943,6 @@ interface Note {
                     title: values.nombre,
                     content: values.contenido,
                     tags: values.etiquetas,
-                    tema: values.tema,
                     date: values.date || editingNote.date
                   })
                 }

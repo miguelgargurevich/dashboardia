@@ -26,7 +26,7 @@ export async function GET(
     
     // Find note by filename (for backward compatibility)
     // First try to find by exact filename match
-    let note = notes.find((n: any) => 
+    let note = notes.find((n: { filename?: string; title: string; id: string }) => 
       n.filename === filename || 
       `${n.filename}.md` === filename ||
       n.title === filename.replace('.md', '') ||
@@ -35,7 +35,7 @@ export async function GET(
     
     if (!note) {
       // Try to find by partial match in title or filename
-      note = notes.find((n: any) => 
+      note = notes.find((n: { title: string }) => 
         n.title.toLowerCase().includes(filename.replace('.md', '').toLowerCase()) ||
         filename.toLowerCase().includes(n.title.toLowerCase())
       );

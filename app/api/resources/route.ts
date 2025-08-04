@@ -11,7 +11,6 @@ export interface Recurso {
   filePath?: string;
   tags: string[];
   categoria?: string;
-  tema: string; // Para mantener compatibilidad con la estructura actual
   fechaCarga: Date;
   tipoArchivo?: string; // 'pdf', 'word', 'excel', 'video', 'imagen', etc.
   tamaño?: number; // en bytes
@@ -60,7 +59,6 @@ export async function POST(request: NextRequest) {
       filePath,
       tags = [],
       categoria,
-      tema,
       tipoArchivo,
       tamaño
     } = body;
@@ -95,7 +93,7 @@ export async function POST(request: NextRequest) {
       url,
       filePath,
       tags,
-      categoria: tema || categoria || 'general', // Usar tema como categoria en el backend
+      categoria: categoria || 'general', // Usar categoria directamente
       fechaCarga: new Date()
     };
 
@@ -117,7 +115,6 @@ export async function POST(request: NextRequest) {
       success: true,
       recurso: {
         ...nuevoRecurso,
-        tema: nuevoRecurso.categoria,
         tipoArchivo: tipoArchivo || determinarTipoArchivo(filePath || url),
         tamaño,
         estado: 'activo'

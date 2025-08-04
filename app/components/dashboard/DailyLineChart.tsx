@@ -2,16 +2,12 @@
 
 import { useState, useEffect } from 'react';
 
-interface DailyLineChartProps {
-  token: string;
-}
-
 interface DataPoint {
   time: string;
   count: number;
 }
 
-export default function DailyLineChart({ token }: DailyLineChartProps) {
+export default function DailyLineChart() {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,16 +31,14 @@ export default function DailyLineChart({ token }: DailyLineChartProps) {
         
         setData(simulatedData);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Error al cargar datos');
         setLoading(false);
       }
     };
 
-    if (token) {
-      fetchData();
-    }
-  }, [token]);
+    fetchData();
+  }, []);
 
   if (loading) {
     return (

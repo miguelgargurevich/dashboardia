@@ -1,7 +1,7 @@
 "use client";
-import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaFileAlt, FaListUl } from 'react-icons/fa';
-import { useConfig, useRecursosConfig } from '../lib/useConfig';
+import React, { useState, useCallback } from 'react';
+import { FaPlus, FaSearch } from 'react-icons/fa';
+import { useRecursosConfig } from '../lib/useConfig';
 import type { Recurso } from '../lib/types';
 import DetalleRecursoPanel from '../components/resources/DetalleRecursoPanel';
 import Modal from '../components/Modal';
@@ -9,6 +9,15 @@ import RecursoForm from '../components/resources/RecursoForm';
 
 interface RecursosKnowledgePanelProps {
   token: string | null;
+}
+
+interface RecursoFormValues {
+  titulo: string;
+  descripcion?: string;
+  tipo: string;
+  archivo?: File | null;
+  url?: string;
+  etiquetas?: string[];
 }
 
 const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }) => {
@@ -22,20 +31,6 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
   
   // Hook de configuración para recursos
   const { getRecursoConfig, loading: configLoading, items: tiposRecursos } = useRecursosConfig();
-  const temasConfig = useConfig('temas');
-
-  // Función para obtener icono de recurso
-  const getRecursoIcon = (tipoRecurso?: string) => {
-    if (configLoading) {
-      return <FaFileAlt />;
-    }
-    
-    const config = getRecursoConfig(tipoRecurso || '');
-    const IconComponent = config.IconComponent as any;
-    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
-    
-    return <IconComponent className={colorClass} />;
-  };
 
   // Función para formatear tamaño de archivo
   const formatFileSize = (bytes?: number): string => {
@@ -48,7 +43,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
   };
 
   // Función para cargar recursos
-  const cargarRecursos = async () => {
+  const cargarRecursos = useCallback(async () => {
     if (!token) return;
     
     setCargando(true);
@@ -68,17 +63,17 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
     } finally {
       setCargando(false);
     }
-  };
+  }, [token]);
 
   // Effect para cargar recursos al montar el componente
   React.useEffect(() => {
     if (token) {
       cargarRecursos();
     }
-  }, [token]);
+  }, [token, cargarRecursos]);
 
   // Función para manejar submit del formulario
-  const handleGuardarRecurso = async (values: any) => {
+  const handleGuardarRecurso = async (values: RecursoFormValues) => {
     if (!token) return;
 
     try {
@@ -155,7 +150,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
     recursos.flatMap(recurso => recurso.tags)
   )).sort();
 
-  if (configLoading || temasConfig.loading) {
+  if (configLoading) {
     return (
       <div className="p-8 text-center">
         <div className="text-lg text-gray-400">Cargando configuración...</div>
@@ -225,7 +220,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-accent/20 text-accent">
-                          {React.createElement(config.IconComponent as any, { className: "text-sm" })}
+                          {React.createElement(config.IconComponent as React.ComponentType<{ className?: string }>, { className: "text-sm" })}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-white truncate">
@@ -252,13 +247,6 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
         <div className="lg:col-span-2">
           <DetalleRecursoPanel
             recurso={recursoSeleccionado}
-            temas={temasConfig.items.map(item => ({
-              id: item.id,
-              nombre: item.nombre,
-              descripcion: item.descripcion || '',
-              icono: <></>,
-              color: item.color || ''
-            }))}
             getTipoRecursoLabel={(tipo: string) => getRecursoConfig(tipo).nombre}
             getRecursoConfig={getRecursoConfig}
             formatFileSize={formatFileSize}
@@ -276,15 +264,8 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
           title={recursoEditando ? 'Editar Recurso' : 'Nuevo Recurso'} 
           maxWidth="max-w-2xl"
         >
-          <RecursoForm
+                    <RecursoForm
             initialValues={recursoEditando || undefined}
-            temas={temasConfig.items.map(item => ({
-              id: item.id,
-              nombre: item.nombre,
-              descripcion: item.descripcion || '',
-              icono: <></>,
-              color: item.color || ''
-            }))}
             tiposRecursos={tiposRecursos.map(item => ({
               id: item.id,
               nombre: item.nombre,

@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
   FaCalendarAlt,
   FaStickyNote,
-  FaFolderOpen,
-  FaLayerGroup,
   // Iconos para eventos
   FaWrench,
   FaGraduationCap,
@@ -14,22 +12,18 @@ import {
   // Iconos para notas
   FaClipboardList,
   FaBug,
-  FaComments,
-  FaLightbulb,
-  FaCheckCircle,
+  FaCheckSquare,
+  FaExclamationCircle,
+  FaCompass,
   // Iconos para recursos
   FaFile,
+  FaFileAlt,
+  FaFilePdf,
   FaVideo,
   FaLink,
-  FaDatabase,
-  FaDownload,
-  FaUpload,
-  // Iconos para temas
-  FaFolder,
-  FaTag,
-  FaStar,
-  FaBookmark,
-  FaCloud
+  FaBook,
+  FaAddressBook,
+  FaRobot,
 } from 'react-icons/fa';
 
 interface ConfigItem {
@@ -41,42 +35,7 @@ interface ConfigItem {
   activo?: boolean;
 }
 
-type ConfigType = 'eventos' | 'notas' | 'recursos' | 'temas';
-
-// Mapeo de iconos React
-const iconMap: { [key: string]: React.ComponentType } = {
-  // Eventos
-  'fa-wrench': FaWrench,
-  'fa-graduation-cap': FaGraduationCap,
-  'fa-laptop': FaLaptop,
-  'fa-users': FaUsers,
-  'fa-exclamation-triangle': FaExclamationTriangle,
-  'fa-bell': FaBell,
-  'fa-calendar-alt': FaCalendarAlt,
-  'fa-calendar': FaCalendarAlt,
-  // Notas
-  'fa-sticky-note': FaStickyNote,
-  'fa-clipboard-list': FaClipboardList,
-  'fa-bug': FaBug,
-  'fa-comments': FaComments,
-  'fa-lightbulb': FaLightbulb,
-  'fa-check-circle': FaCheckCircle,
-  // Recursos
-  'fa-file': FaFile,
-  'fa-video': FaVideo,
-  'fa-link': FaLink,
-  'fa-database': FaDatabase,
-  'fa-download': FaDownload,
-  'fa-upload': FaUpload,
-  'fa-folder-open': FaFolderOpen,
-  // Temas
-  'fa-layer-group': FaLayerGroup,
-  'fa-folder': FaFolder,
-  'fa-tag': FaTag,
-  'fa-star': FaStar,
-  'fa-bookmark': FaBookmark,
-  'fa-cloud': FaCloud,
-};
+type ConfigType = 'eventos' | 'notas' | 'recursos';
 
 export function useConfig(tipo: ConfigType) {
   const [items, setItems] = useState<ConfigItem[]>([]);
@@ -92,8 +51,7 @@ export function useConfig(tipo: ConfigType) {
         const endpoints: { [key: string]: string } = {
           eventos: 'tipos-eventos',
           notas: 'tipos-notas',
-          recursos: 'tipos-recursos',
-          temas: 'temas'
+          recursos: 'tipos-recursos'
         };
 
         const response = await fetch(`/api/config/${endpoints[tipo]}`);
@@ -118,8 +76,52 @@ export function useConfig(tipo: ConfigType) {
   return { items, loading, error };
 }
 
-export function getIconComponent(iconoValue: string): React.ComponentType {
-  return iconMap[iconoValue] || FaCalendarAlt;
+export function getIconComponent(iconoValue: string): React.ComponentType<React.SVGProps<SVGSVGElement>> {
+  // Mapeo directo de iconos
+  const iconMap: { [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>> } = {
+    'fa-wrench': FaWrench,
+    'fa-graduation-cap': FaGraduationCap,
+    'fa-laptop': FaLaptop,
+    'fa-users': FaUsers,
+    'fa-exclamation-triangle': FaExclamationTriangle,
+    'fa-bell': FaBell,
+    'fa-calendar-alt': FaCalendarAlt,
+    'fa-clipboard-list': FaClipboardList,
+    'fa-book': FaBook,
+    'fa-compass': FaCompass,
+    'fa-sticky-note': FaStickyNote,
+    'fa-check-square': FaCheckSquare,
+    'fa-bug': FaBug,
+    'fa-exclamation-circle': FaExclamationCircle,
+    'fa-file-pdf': FaFilePdf,
+    'fa-link': FaLink,
+    'fa-video': FaVideo,
+    'fa-file': FaFile,
+    'fa-file-alt': FaFileAlt,
+    'fa-address-book': FaAddressBook,
+    'fa-robot': FaRobot
+  };
+
+  // Buscar por valor exacto
+  if (iconMap[iconoValue]) {
+    return iconMap[iconoValue] as React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  }
+
+  // Buscar agregando guión si no lo tiene
+  const iconWithDash = iconoValue.startsWith('fa-') ? iconoValue : `fa-${iconoValue}`;
+  if (iconMap[iconWithDash]) {
+    return iconMap[iconWithDash] as React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  }
+
+  // Buscar quitando 'fa-' si lo tiene
+  const iconWithFa = iconoValue.replace('fa-', '');
+  const iconWithFaAdded = `fa-${iconWithFa}`;
+  if (iconMap[iconWithFaAdded]) {
+    return iconMap[iconWithFaAdded] as React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  }
+
+  // Retornar icono por defecto
+  return FaFile as React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }
 
 export function obtenerHexPorTailwind(tailwindColor: string): string {

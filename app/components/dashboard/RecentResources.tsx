@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { FaFileAlt, FaVideo, FaStickyNote, FaLink, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from "react-icons/fa";
+import { useState, useEffect } from 'react';
+import { FaFileAlt, FaLink, FaVideo, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 interface TipoRecurso {
   id: string;
@@ -44,7 +44,7 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
           'contactos-externos': <FaAddressBook className="text-accent" />,
           'plantillas-formularios': <FaClipboardList className="text-accent" />
         };
-        setTiposRecursos(data.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
+        setTiposRecursos(data.map((t: { id: string; nombre: string; [key: string]: unknown }) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
       })
       .catch(err => {
         console.error('Error cargando tipos de recursos, usando tipos por defecto:', err);
@@ -59,7 +59,10 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
           'archivo': <FaFileAlt className="text-accent" />,
           'video': <FaVideo className="text-accent" />
         };
-        setTiposRecursos(tiposDefault.map((t: any) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
+        setTiposRecursos(tiposDefault.map((t) => ({ 
+          ...t, 
+          icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> 
+        })));
       });
   }, []);
 

@@ -1,25 +1,16 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import RecursosSelectorModal from "./RecursosSelectorModal";
-import { FaFileAlt, FaStickyNote, FaTag, FaHashtag, FaRegStickyNote } from "react-icons/fa";
+import { FaFileAlt, FaStickyNote, FaHashtag, FaRegStickyNote } from "react-icons/fa";
 
 interface NotaFormValues {
   nombre: string;
   contenido: string;
   tipo: string;
   etiquetas?: string[];
-  tema: string;
   priority?: string;
   date?: string; // Único campo de fecha
   relatedResources?: string[];
-}
-
-interface Tema {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  icono: React.ReactNode;
-  color: string;
 }
 
 interface TipoNota {
@@ -29,9 +20,15 @@ interface TipoNota {
   color: string;
 }
 
+interface Recurso {
+  id: string;
+  titulo: string;
+  tipo?: string;
+  descripcion?: string;
+}
+
 interface NotaFormProps {
   initialValues?: NotaFormValues;
-  temas: Tema[];
   tiposNotas: TipoNota[];
   etiquetasDisponibles: string[];
   onSubmit: (values: NotaFormValues) => void;
@@ -42,7 +39,6 @@ interface NotaFormProps {
 
 const NotaForm: React.FC<NotaFormProps> = ({
   initialValues,
-  temas,
   tiposNotas,
   etiquetasDisponibles,
   onSubmit,
@@ -53,11 +49,10 @@ const NotaForm: React.FC<NotaFormProps> = ({
   const [nombre, setNombre] = useState(initialValues?.nombre || "");
   const [contenido, setContenido] = useState(initialValues?.contenido || "");
   const [tipo, setTipo] = useState(initialValues?.tipo || (tiposNotas[0]?.id || ""));
-  const [tema, setTema] = useState(initialValues?.tema || (temas[0]?.id || ""));
   const [etiquetas, setEtiquetas] = useState<string[]>(initialValues?.etiquetas || []);
   const [recursosModalOpen, setRecursosModalOpen] = useState(false);
   // Estado para los detalles de los recursos seleccionados
-  const [recursosSeleccionados, setRecursosSeleccionados] = useState<{ id: string; titulo: string; tipo?: string; descripcion?: string }[]>([]);
+  const [recursosSeleccionados, setRecursosSeleccionados] = useState<Recurso[]>([]);
   const [selectedRecursos, setSelectedRecursos] = useState<string[]>(initialValues?.relatedResources || []);
   const getToday = () => {
     const today = new Date();
@@ -70,7 +65,6 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setNombre(initialValues.nombre || "");
       setContenido(initialValues.contenido || "");
       setTipo(initialValues.tipo || (tiposNotas[0]?.id || ""));
-      setTema(initialValues.tema || (temas[0]?.id || ""));
       setEtiquetas(initialValues.etiquetas || []);
       setDate(initialValues.date || getToday());
       setSelectedRecursos(initialValues.relatedResources || []);
@@ -78,12 +72,11 @@ const NotaForm: React.FC<NotaFormProps> = ({
       setNombre("");
       setContenido("");
       setTipo(tiposNotas[0]?.id || "");
-      setTema(temas[0]?.id || "");
       setEtiquetas([]);
       setDate(getToday());
       setSelectedRecursos([]);
     }
-  }, [JSON.stringify(initialValues), tiposNotas, temas]);
+  }, [initialValues, tiposNotas]);
 
   // Cargar detalles de los recursos seleccionados
   useEffect(() => {
@@ -94,7 +87,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
         .then(res => res.json())
         .then(data => {
           const recursos = Array.isArray(data.resources) ? data.resources : Array.isArray(data.recursos) ? data.recursos : Array.isArray(data) ? data : [];
-          setRecursosSeleccionados(recursos.filter((r: any) => selectedRecursos.includes(r.id)));
+          setRecursosSeleccionados(recursos.filter((r: Recurso) => selectedRecursos.includes(r.id)));
         });
     } else {
       setRecursosSeleccionados([]);
@@ -103,7 +96,7 @@ const NotaForm: React.FC<NotaFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const values = { nombre, contenido, tipo, etiquetas, tema, date, relatedResources: selectedRecursos };
+    const values = { nombre, contenido, tipo, etiquetas, date, relatedResources: selectedRecursos };
     await onSubmit(values);
   };
 
@@ -155,34 +148,19 @@ const NotaForm: React.FC<NotaFormProps> = ({
         </div>
       </div>
 
-      {/* Segunda fila: Tipo y Tema */}
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
-          <select
-            className="input-std w-full pl-10 appearance-none"
-            value={tipo}
-            onChange={e => setTipo(e.target.value)}
-            required
-          >
-            {tiposNotas.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
-          <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-        </div>
-        <div className="flex-1 relative">
-          <select
-            className="input-std w-full pl-10 appearance-none"
-            value={tema}
-            onChange={e => setTema(e.target.value)}
-            required
-          >
-            {temas.map(t => (
-              <option key={t.id} value={t.id}>{t.nombre}</option>
-            ))}
-          </select>
-          <FaTag className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
-        </div>
+      {/* Segunda fila: Tipo */}
+      <div className="relative">
+        <select
+          className="input-std w-full pl-10 appearance-none"
+          value={tipo}
+          onChange={e => setTipo(e.target.value)}
+          required
+        >
+          {tiposNotas.map(t => (
+            <option key={t.id} value={t.id}>{t.nombre}</option>
+          ))}
+        </select>
+        <FaStickyNote className="absolute left-3 top-1/2 -translate-y-1/2 text-accent" />
       </div>
 
       {/* Tercera fila: Contenido */}

@@ -1,7 +1,7 @@
 "use client";
-import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaFileAlt, FaListUl } from 'react-icons/fa';
-import { useConfig, useNotasConfig } from '../lib/useConfig';
+import React, { useState, useCallback } from 'react';
+import { FaPlus, FaSearch } from 'react-icons/fa';
+import { useNotasConfig } from '../lib/useConfig';
 import DetalleNotaPanel from '../components/knowledge/DetalleNotaPanel';
 import Modal from '../components/Modal';
 import NotaForm from '../components/knowledge/NotaForm';
@@ -9,14 +9,30 @@ import NotaForm from '../components/knowledge/NotaForm';
 interface Nota {
   id: string;
   nombre: string;
+  tipo: string;
   contenido: string;
-  tema?: string;
-  tipo?: string;
-  date?: string;
-  descripcion?: string;
   etiquetas?: string[];
   status?: string;
   priority?: string;
+  date?: string;
+  relatedResources?: string[];
+}
+
+interface TipoNota {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  color: string;
+  icono?: string;
+}
+
+interface NotaFormValues {
+  nombre: string;
+  contenido: string;
+  tipo: string;
+  etiquetas?: string[];
+  priority?: string;
+  date?: string;
   relatedResources?: string[];
 }
 
@@ -26,30 +42,13 @@ interface NotasKnowledgePanelProps {
 
 const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   const [notas, setNotas] = useState<Nota[]>([]);
-  const [cargando, setCargando] = useState(false);
   const [mostrarFormularioNota, setMostrarFormularioNota] = useState(false);
   const [notaEditando, setNotaEditando] = useState<Nota | null>(null);
   const [notaSeleccionada, setNotaSeleccionada] = useState<Nota | null>(null);
   const [busqueda, setBusqueda] = useState('');
-  // Eliminamos los estados de sección y tipo seleccionado ya que solo tendremos vista de lista
-  const [filtroEtiqueta, setFiltroEtiqueta] = useState<string>('');
   
   // Hook de configuración para notas
   const { getNotaConfig, loading: configLoading, items: tiposNotas } = useNotasConfig();
-  const temasConfig = useConfig('temas');
-
-  // Función para obtener icono de nota
-  const getNotaIcon = (tipoNota?: string) => {
-    if (configLoading) {
-      return <FaFileAlt />;
-    }
-    
-    const config = getNotaConfig(tipoNota || '');
-    const IconComponent = config.IconComponent as any;
-    const colorClass = config.color.split(' ').find(c => c.includes('text-')) || 'text-accent';
-    
-    return <IconComponent className={colorClass} />;
-  };
 
   // Función para renderizar contenido markdown
   const renderizarContenidoMarkdown = (contenido: string): React.ReactNode => {
@@ -76,10 +75,9 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   };
 
   // Función para cargar notas
-  const cargarNotas = async () => {
+  const cargarNotas = useCallback(async () => {
     if (!token) return;
     
-    setCargando(true);
     try {
       const response = await fetch('/api/content/knowledge', {
         headers: {
@@ -91,45 +89,40 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         const data = await response.json();
         // Procesar las notas del formato del backend
         const notasCargadas: Nota[] = [];
-        const { archivosPorTema } = data;
+        
+        // El API ahora retorna directamente un array de notas
+        const notasArray = Array.isArray(data) ? data : [];
 
-        for (const [tema, notasArray] of Object.entries(archivosPorTema)) {
-          const notas = notasArray as any[];
-          
-          for (const notaInfo of notas) {
-            notasCargadas.push({
-              id: notaInfo.id,
-              nombre: notaInfo.title || notaInfo.nombreSinExtension || 'Sin título',
-              tema: tema,
-              tipo: notaInfo.tipo || 'nota',
-              contenido: notaInfo.content || notaInfo.contenido || '',
-              etiquetas: notaInfo.tags || [],
-              status: notaInfo.status,
-              priority: notaInfo.priority,
-              date: notaInfo.date,
-              relatedResources: notaInfo.relatedResources
-            });
-          }
+        for (const notaInfo of notasArray) {
+          notasCargadas.push({
+            id: notaInfo.id,
+            nombre: notaInfo.title || notaInfo.nombreSinExtension || 'Sin título',
+            tipo: notaInfo.tipo || 'nota',
+            contenido: notaInfo.content || notaInfo.contenido || '',
+            etiquetas: notaInfo.tags || [],
+            status: notaInfo.status,
+            priority: notaInfo.priority,
+            date: notaInfo.date,
+            relatedResources: notaInfo.relatedResources
+          });
         }
         
         setNotas(notasCargadas);
       }
     } catch (error) {
       console.error('Error cargando notas:', error);
-    } finally {
-      setCargando(false);
     }
-  };
+  }, [token]);
 
   // Effect para cargar notas al montar el componente
   React.useEffect(() => {
     if (token) {
       cargarNotas();
     }
-  }, [token]);
+  }, [token, cargarNotas]);
 
   // Función para manejar submit del formulario
-  const handleGuardarNota = async (values: any) => {
+  const handleGuardarNota = async (values: NotaFormValues) => {
     if (!token) return;
 
     try {
@@ -197,11 +190,10 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
     document.body.removeChild(element);
   };
 
-  // Filtrar notas según búsqueda y filtros
+  // Filtrar notas según búsqueda
   const notasFiltradas = notas.filter(nota => 
-    (nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-     nota.contenido.toLowerCase().includes(busqueda.toLowerCase())) &&
-    (!filtroEtiqueta || (nota.etiquetas && nota.etiquetas.includes(filtroEtiqueta)))
+    nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    nota.contenido.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   // Extraer etiquetas disponibles
@@ -209,7 +201,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
     notas.flatMap(nota => nota.etiquetas || [])
   )).sort();
 
-  if (configLoading || temasConfig.loading) {
+  if (configLoading) {
     return (
       <div className="p-8 text-center">
         <div className="text-lg text-gray-400">Cargando configuración...</div>
@@ -275,7 +267,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
                   >
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded ${config.color}`}>
-                        {React.createElement(config.IconComponent as any, { className: "text-sm" })}
+                        {React.createElement(config.IconComponent as React.ComponentType<{ className?: string }>, { className: "text-sm" })}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-white truncate">
@@ -301,10 +293,6 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         <div className="lg:col-span-2">
           <DetalleNotaPanel
             notaSeleccionada={notaSeleccionada}
-            temas={temasConfig.items.map(item => ({
-              id: item.id,
-              nombre: item.nombre
-            }))}
             descargarNota={descargarNota}
             eliminarNota={handleDelete}
             renderizarContenidoMarkdown={renderizarContenidoMarkdown}
@@ -324,22 +312,14 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
           <NotaForm
             initialValues={notaEditando ? {
               nombre: notaEditando.nombre,
-              contenido: notaEditando.contenido,
+              contenido: notaEditando.contenido || '',
               tipo: notaEditando.tipo || 'nota',
               etiquetas: notaEditando.etiquetas,
-              tema: notaEditando.tema || '',
               priority: notaEditando.priority,
               date: notaEditando.date,
               relatedResources: notaEditando.relatedResources
             } : undefined}
-            temas={temasConfig.items.map(item => ({
-              id: item.id,
-              nombre: item.nombre,
-              descripcion: item.descripcion || '',
-              icono: <></>,
-              color: item.color || ''
-            }))}
-            tiposNotas={tiposNotas.map((item: any) => ({
+            tiposNotas={tiposNotas.map((item: TipoNota) => ({
               id: item.id,
               nombre: item.nombre,
               descripcion: item.descripcion || '',

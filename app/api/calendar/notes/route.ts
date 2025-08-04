@@ -7,8 +7,6 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    // Eliminar el filtro forzado de tema para mostrar todas las notas
-    // searchParams.set('tema', 'actividades-diarias'); // Comentado para mostrar todas las notas
     const queryString = searchParams.toString();
     
     console.log('🔍 Calendar API: Request received');
@@ -37,7 +35,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Adaptar las notas del modelo unificado al formato que espera el calendario
-    const adaptedNotes = data.map((note: any) => ({
+    const adaptedNotes = data.map((note: { 
+      id: string; 
+      date: string; 
+      title: string; 
+      content: string; 
+      tipo?: string; 
+      etiquetas?: string[];
+      tags?: string[];
+      relatedResources?: string[];
+      createdAt?: string;
+      updatedAt?: string;
+      priority?: string;
+      status?: string;
+    }) => ({
       id: note.id,
       date: note.date, // Solo usar el campo de fecha unificado
       title: note.title,
@@ -77,7 +88,6 @@ export async function POST(request: NextRequest) {
     // Mapear datos del frontend al formato del backend
     const noteData = {
       ...body,
-      tema: body.tema || 'notificaciones', // Tema por defecto: notificaciones
       // Mapear 'type' a 'tipo' si viene del frontend
       tipo: body.type || body.tipo || 'personal'
     };

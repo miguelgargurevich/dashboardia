@@ -11,7 +11,6 @@ interface EventoData {
   descripcion?: string;
   fechaInicio: string;
   fechaFin: string;
-  tema?: string;
   tipoEvento?: string;
   ubicacion?: string;
   esRecurrente?: boolean;
@@ -58,15 +57,12 @@ interface Event {
   ubicacion?: string;
   tipoEvento?: string;
   esRecurrente?: boolean;
-  tema?: string;
   recursos?: Array<{ id: string; titulo: string; }>;
 }
 
 import ProximosEventosCard from './components/dashboard/ProximosEventosCard';
-import { FaRegCalendarAlt } from "react-icons/fa";
-// ...existing code...
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export default function Home() {
   const router = useRouter();
@@ -93,9 +89,8 @@ export default function Home() {
   const [visibleMonth, setVisibleMonth] = useState<string>(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`);
   const [events, setEvents] = useState<Event[]>([]);
   const [recurringEvents, setRecurringEvents] = useState<Event[]>([]);
-  const [showRecurringEvents, setShowRecurringEvents] = useState(true);
+  const [showRecurringEvents] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(false);
-  const [triggerDateSelection, setTriggerDateSelection] = useState<number>(0);
   
   // Estados para el modal de edición
   const [editingEvent, setEditingEvent] = useState<EventoData | null>(null);
@@ -154,12 +149,60 @@ export default function Home() {
       eventsCount: allEvents.length
     };
   };
+  // Dummy para notas
+  const hasNotesOnDay = () => false;
+
+  const fetchEventsData = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      if (!token) {
+        setEvents([]);
+        setRecurringEvents([]);
+        setLoadingEvents(false);
+        return;
+      }
+      const backendUrl = getBackendUrl();
+      const response = await fetch(`${backendUrl}/api/events/calendar?month=${visibleMonth}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        setEvents([]);
+        setRecurringEvents([]);
+        setLoadingEvents(false);
+        return;
+      }
+      const eventData = await response.json();
+      if (Array.isArray(eventData)) {
+        // Mantener todos los datos del evento, solo normalizar los campos necesarios
+        const normalizedEvents = eventData.map((evento: Event) => ({
+          ...evento,
+          // Asegurar que los campos básicos estén disponibles para CalendarWithDetail
+          title: evento.titulo || evento.title || '',
+          startDate: evento.fechaInicio || evento.startDate || '',
+          recurrencePattern: evento.recurrencePattern || 'ninguno'
+        }));
+        
+        setEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') === 'ninguno'));
+        setRecurringEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') !== 'ninguno'));
+      } else {
+        setEvents([]);
+        setRecurringEvents([]);
+      }
+    } catch {
+      setEvents([]);
+      setRecurringEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [visibleMonth, token]);
+
   // Fetch real de eventos desde la API
   useEffect(() => {
     fetchEventsData();
-  }, [visibleMonth, token]);
-  // Dummy para notas
-  const hasNotesOnDay = () => false;
+  }, [fetchEventsData]);
 
   // Funciones para edición de eventos
   const handleEditEvent = async (event: Event) => {
@@ -193,7 +236,7 @@ export default function Home() {
     }
   };
 
-  const handleSubmitEvent = async (eventoData: any) => {
+  const handleSubmitEvent = async (eventoData: Partial<EventoData>) => {
     try {
       const backendUrl = getBackendUrl();
       const response = await fetch(`${backendUrl}/api/events/${editingEvent?.id}`, {
@@ -241,53 +284,6 @@ export default function Home() {
         console.error('Error:', error);
         alert('Error al eliminar el evento');
       }
-    }
-  };
-
-  const fetchEventsData = async () => {
-    setLoadingEvents(true);
-    try {
-      if (!token) {
-        setEvents([]);
-        setRecurringEvents([]);
-        setLoadingEvents(false);
-        return;
-      }
-      const backendUrl = getBackendUrl();
-      const response = await fetch(`${backendUrl}/api/events/calendar?month=${visibleMonth}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) {
-        setEvents([]);
-        setRecurringEvents([]);
-        setLoadingEvents(false);
-        return;
-      }
-      const eventData = await response.json();
-      if (Array.isArray(eventData)) {
-        // Mantener todos los datos del evento, solo normalizar los campos necesarios
-        const normalizedEvents = eventData.map((evento: any) => ({
-          ...evento,
-          // Asegurar que los campos básicos estén disponibles para CalendarWithDetail
-          title: evento.titulo || evento.title || '',
-          startDate: evento.fechaInicio || evento.startDate || '',
-          recurrencePattern: evento.recurrencePattern || 'ninguno'
-        }));
-        
-        setEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') === 'ninguno'));
-        setRecurringEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') !== 'ninguno'));
-      } else {
-        setEvents([]);
-        setRecurringEvents([]);
-      }
-    } catch (error) {
-      setEvents([]);
-      setRecurringEvents([]);
-    } finally {
-      setLoadingEvents(false);
     }
   };
 
@@ -356,7 +352,6 @@ export default function Home() {
                     // Actualizar el mes visible si el evento es de otro mes
                     const [year, month] = date.split('-');
                     setVisibleMonth(`${year}-${month}`);
-                    setTriggerDateSelection(prev => prev + 1);
                   }}
                 />
               </div>

@@ -44,6 +44,14 @@ backend/prisma/migrations/*/migration_lock.toml
 *.swp
 *.swo
 *.tmp
+*.bak
+*.backup
+*~
+*.old
+
+# TypeScript build info
+*.tsbuildinfo
+tsconfig.tsbuildinfo
 
 # Ignore coverage
 coverage/

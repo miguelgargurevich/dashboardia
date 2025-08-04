@@ -1,6 +1,5 @@
 "use client";
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
-import DailyBarChart from '../components/dashboard/DailyBarChart';
 import WeeklyBarChart from '../components/dashboard/WeeklyBarChart';
 import DailyLineChart from '../components/dashboard/DailyLineChart';
 import WeeklyLineChart from '../components/dashboard/WeeklyLineChart';
@@ -75,7 +74,7 @@ export default function Dashboard() {
                 <h3 className="text-xl font-bold text-gray-200">Tickets por Prioridad - Semanal</h3>
               </div>
               <div className="bg-primary rounded-lg p-4">
-                <WeeklyBarChart token={token || ''} />
+                <WeeklyBarChart />
               </div>
             </div>
           </div>
@@ -88,7 +87,7 @@ export default function Dashboard() {
                 <h3 className="text-xl font-bold text-gray-200">Tendencia de Tickets - Diario</h3>
               </div>
               <div className="bg-primary rounded-lg p-4">
-                <DailyLineChart token={token || ''} />
+                <DailyLineChart />
               </div>
             </div>
             

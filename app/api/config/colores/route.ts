@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * API de Colores para Configuración
@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * - Los colores reales se almacenan en las propiedades 'color' de cada tipo individual
  * - Esta API sirve como "catálogo" de opciones disponibles en la interfaz de administración
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/colores`, {
       method: 'GET',

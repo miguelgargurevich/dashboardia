@@ -1,27 +1,38 @@
 import React from 'react';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
-import { FaEdit, FaTrash, FaCalendarAlt, FaEye } from 'react-icons/fa';
-import { useEventosConfig, useConfig } from '../../lib/useConfig';
+import { FaEdit, FaEye } from 'react-icons/fa';
+import { useEventosConfig } from '../../lib/useConfig';
+
+interface Evento {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: string;
+  location?: string;
+  diaEnvio?: string;
+  modo?: string;
+  validador?: string;
+  codigoDana?: string;
+  recurrencePattern?: string;
+  eventType?: string;
+  relatedResources?: string[];
+}
 
 export interface DetalleEventoPanelProps {
-  eventoSeleccionado: any | null;
-  onEdit: (evento: any) => void;
+  eventoSeleccionado: Evento | null;
+  onEdit: (evento: Evento) => void;
   onDelete: (id: string) => void;
   emptyMessage?: string;
 }
 
-const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccionado, onEdit, onDelete, emptyMessage }) => {
+const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ 
+  eventoSeleccionado, 
+  onEdit, 
+  onDelete, // eslint-disable-line @typescript-eslint/no-unused-vars
+  emptyMessage 
+}) => {
   // Hooks para obtener configuración
   const { getEventoConfig, loading: eventosLoading } = useEventosConfig();
-  const { items: temasConfig } = useConfig('temas');
-
-  // Función para obtener el color de un tema
-  const getColorTema = (temaNombre: string) => {
-    const tema = temasConfig.find((item: any) => 
-      item.nombre.toLowerCase() === temaNombre?.toLowerCase()
-    );
-    return tema?.color || 'bg-accent/20 text-accent';
-  };
 
   // Obtener configuración del evento actual
   const eventoConfig = eventoSeleccionado ? getEventoConfig(eventoSeleccionado.eventType || 'evento') : null;
@@ -91,7 +102,7 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ eventoSeleccion
             <div className="flex flex-wrap gap-2 text-xs mb-1 mt-2">
               {/* Primera línea */}
               {eventoSeleccionado.diaEnvio && (
-                <span className={`px-2 py-1 rounded ${getColorTema('fecha')}`}>
+                <span className="px-2 py-1 rounded bg-blue-400/20 text-blue-400">
                   📅 <span className="font-bold">Día de envío:</span> {eventoSeleccionado.diaEnvio}
                 </span>
               )}

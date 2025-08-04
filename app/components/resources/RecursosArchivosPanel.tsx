@@ -4,11 +4,10 @@ import { FaSearch } from "react-icons/fa";
 import DetalleRecursoPanel from "./DetalleRecursoPanel";
 
 
-import type { Recurso, Tema } from '../../lib/types';
+import type { Recurso } from '../../lib/types';
 
 interface RecursosArchivosPanelProps {
-  recursos: import('../../lib/types').Recurso[];
-  temas: import('../../lib/types').Tema[];
+  recursos: Recurso[];
   recursoSeleccionado: import('../../lib/types').Recurso | null;
   setRecursoSeleccionado: React.Dispatch<React.SetStateAction<import('../../lib/types').Recurso | null>>;
   busqueda: string;
@@ -22,7 +21,6 @@ interface RecursosArchivosPanelProps {
   getIconoTipoRecurso: (tipo: string, tipoArchivo?: string) => React.ReactNode;
   getTipoRecursoLabel: (tipo: string, tipoArchivo?: string) => string;
   formatFileSize: (bytes: number) => string;
-  temaSeleccionado: string | null;
   setRecursoEditando?: React.Dispatch<React.SetStateAction<import('../../lib/types').Recurso | null>>;
   setMostrarFormularioRecurso: (v: boolean) => void;
   eliminarRecurso: (id: string) => void;
@@ -30,7 +28,6 @@ interface RecursosArchivosPanelProps {
 
 const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
   recursos,
-  temas,
   recursoSeleccionado,
   setRecursoSeleccionado,
   busqueda,
@@ -44,7 +41,6 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
   getIconoTipoRecurso,
   getTipoRecursoLabel,
   formatFileSize,
-  temaSeleccionado,
   setRecursoEditando,
   setMostrarFormularioRecurso,
   eliminarRecurso
@@ -105,8 +101,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                   (recurso.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) || false);
                 const matchTipo = !filtroTipo || recurso.tipo === filtroTipo;
                 const matchEtiqueta = !filtroEtiqueta || recurso.tags.includes(filtroEtiqueta);
-                const matchTema = !temaSeleccionado || recurso.tema === temaSeleccionado;
-                return matchBusqueda && matchTipo && matchEtiqueta && matchTema;
+                return matchBusqueda && matchTipo && matchEtiqueta;
               }).map((recurso) => {
                 const isSelected = recursoSeleccionado?.id === recurso.id;
                 return (
@@ -126,7 +121,7 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-white text-base truncate flex-1">{recurso.titulo}</h3>
                       <div className="text-xs text-yellow-300 mb-1">
-                        {temas.find(t => t.id === recurso.tema)?.nombre} • {getTipoRecursoLabel(recurso.tipo, recurso.tipoArchivo)}
+                        {getTipoRecursoLabel(recurso.tipo, recurso.tipoArchivo)}
                       </div>
                       {recurso.descripcion && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{recurso.descripcion}</p>}
                       <div className="flex items-center gap-2 flex-wrap">
@@ -149,7 +144,6 @@ const RecursosArchivosPanel: React.FC<RecursosArchivosPanelProps> = ({
       <div className="lg:col-span-2">
         <DetalleRecursoPanel
           recurso={recursoSeleccionado}
-          temas={temas}
           getTipoRecursoLabel={getTipoRecursoLabel}
           formatFileSize={formatFileSize}
           onEdit={setRecursoEditando ? (r) => { setRecursoEditando(r); setMostrarFormularioRecurso(true); } : undefined}

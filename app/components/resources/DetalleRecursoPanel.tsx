@@ -1,13 +1,12 @@
 "use client";
 import React from "react";
 import { FaEdit, FaTrash, FaEye, FaDownload } from "react-icons/fa";
-import type { Recurso, Tema } from '../../lib/types';
+import type { Recurso } from '../../lib/types';
 
 interface DetalleRecursoPanelProps {
   recurso: Recurso | null;
-  temas: Tema[];
   getTipoRecursoLabel: (tipo: string, tipoArchivo?: string) => string;
-  getRecursoConfig?: (tipo: string) => { IconComponent: any; color: string; nombre: string };
+  getRecursoConfig?: (tipo: string) => { IconComponent: React.ComponentType<{ className?: string }>; color: string; nombre: string };
   formatFileSize: (bytes: number) => string;
   onEdit?: (recurso: Recurso) => void;
   onDelete?: (id: string) => void;

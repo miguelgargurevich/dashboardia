@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAuthHeaders, hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
 // GET /api/config/tipos-recursos - Obtener todos los tipos de recursos
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/config/tipos-recursos`, {
       method: 'GET',

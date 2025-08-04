@@ -2,17 +2,13 @@
 
 import { useState, useEffect } from 'react';
 
-interface WeeklyBarChartProps {
-  token: string;
-}
-
 interface TicketData {
   priority: string;
   count: number;
   color: string;
 }
 
-export default function WeeklyBarChart({ token }: WeeklyBarChartProps) {
+export default function WeeklyBarChart() {
   const [data, setData] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,16 +26,14 @@ export default function WeeklyBarChart({ token }: WeeklyBarChartProps) {
         
         setData(simulatedData);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Error al cargar datos');
         setLoading(false);
       }
     };
 
-    if (token) {
-      fetchData();
-    }
-  }, [token]);
+    fetchData();
+  }, []);
 
   if (loading) {
     return (

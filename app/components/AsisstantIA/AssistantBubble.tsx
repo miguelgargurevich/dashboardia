@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { FaFileAlt, FaLink, FaVideo, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from "react-icons/fa";
+import { FaRobot, FaTimes, FaPaperPlane } from "react-icons/fa";
 import { useConfig, getIconComponent } from '../../lib/useConfig';
 // Simple Markdown a HTML (bold, listas, saltos de línea, tablas)
 function markdownToHtml(text: string): string {
@@ -20,7 +20,7 @@ function markdownToHtml(text: string): string {
     const lines = html.split(/<br\/>/);
     let table = '';
     let inTable = false;
-    for (let line of lines) {
+    for (const line of lines) {
       if (/^\|(.+)\|$/.test(line.trim())) {
         const cells = line.trim().split('|').filter(Boolean);
         if (!inTable) { table += '<table><tr>' + cells.map(c => `<th>${c}</th>`).join('') + '</tr>'; inTable = true; }
@@ -36,11 +36,8 @@ function markdownToHtml(text: string): string {
   return html;
 }
 import { motion, AnimatePresence } from "framer-motion";
-import { FaRobot } from "react-icons/fa";
 import { usePathname } from 'next/navigation';
-// Importa los temas desde knowledge/page.tsx
-
-// Carga dinámica de temas desde public/temas.json
+// Componente de Asistente IA
 
 type TipoRecurso = { id: string; nombre: string; descripcion: string; color: string; icono?: React.ReactNode };
 
@@ -50,11 +47,7 @@ export default function AssistantBubble() {
   const pathname = usePathname();
   
   // Hooks para configuración dinámica
-  const { items: temasConfig } = useConfig('temas');
   const { items: recursosConfig } = useConfig('recursos');
-  
-  const [temasActuales, setTemasActuales] = useState<string[]>([]);
-  const [temasFull, setTemasFull] = useState<any[]>([]);
   const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -70,21 +63,17 @@ export default function AssistantBubble() {
   // Conversational, text-only initial prompt
   const initialPrompt = isLoginPage
     ? '🤖 ¡Hola! Soy tu asistente experto en soporte. Puedes preguntarme cómo registrarte, iniciar sesión o qué puedes hacer en el dashboard. Ejemplo: "¿Cómo me registro?"'
-    : `🤖 ¡Hola! Soy tu asistente experto. Puedes pedirme que cree notas, suba recursos, agregue URLs, consulte eventos, o cualquier otra tarea.\n\nAl crear una nota o recurso, te sugeriré los temas actuales: (cargando temas...). El tag se colocará automáticamente según el tema seleccionado, pero puedes agregar otros tags si lo deseas.\n\nEjemplo: "Crea una nota para el evento de hoy y adjunta estos archivos".`;
+    : `🤖 ¡Hola! ¿En qué puedo ayudarte hoy?
+
+Puedes pedirme que cree una nota, que organice algún recurso o que revise el calendario.
+
+Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de seguridad".`;
 
   // Inicializa mensajes solo una vez al montar
   useEffect(() => {
     setMessages([{ role: 'assistant', content: initialPrompt }]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoginPage]);
-
-  // Configurar temas desde el hook de configuración
-  useEffect(() => {
-    if (temasConfig.length > 0) {
-      setTemasFull(temasConfig);
-      setTemasActuales(temasConfig.map(t => t.nombre));
-    }
-  }, [temasConfig]);
 
   // Configurar tipos de recursos desde el hook de configuración
   useEffect(() => {
@@ -124,13 +113,6 @@ export default function AssistantBubble() {
     }
   }, [messages, open]);
 
-  // Conversational: remove all wizard and step state
-  
-  // Remove all wizard and step-based flows. All logic will be conversational and context-aware.
-
-  // Funciones auxiliares para extraer datos
-
-  // Remove handleAddUrl and handleUploadResource. All handled in sendMessage.
 
   async function sendMessage(e: any) {
     e.preventDefault();
@@ -144,9 +126,7 @@ export default function AssistantBubble() {
         for (const file of attachedFiles) {
           const formData = new FormData();
           formData.append('file', file);
-          // Usar el primer tema dinámico como fallback
-          const temaFallback = temasFull[0]?.nombre || 'Sin tema';
-          formData.append('topic', value || temaFallback);
+          formData.append('topic', value || 'General');
           const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
           // Subir archivo
           const res = await fetch(`${apiUrl}/api/upload`, {
@@ -163,15 +143,15 @@ export default function AssistantBubble() {
               filePath = data.filePath || null;
             } catch {}
             setMessages(msgs => [...msgs, { role: 'assistant', content: `Archivo adjuntado correctamente: ${file.name}` }]);
-            // Crear recurso automáticamente
-            const temaDetectado = temasActuales.find(t => (value || '').toLowerCase().includes(t.toLowerCase())) || temasFull[0]?.nombre || 'General';
+            // Crear recurso automáticamente con categoría básica
+            const categoria = 'General';
             const resourcePayload = {
               tipo: 'archivo',
               titulo: file.name,
               descripcion: value || '',
               filePath,
-              tags: [temaDetectado],
-              categoria: temaDetectado
+              tags: [categoria],
+              categoria: categoria
             };
             try {
               const resResource = await fetch(`${apiUrl}/api/resources`, {
@@ -216,7 +196,7 @@ export default function AssistantBubble() {
         const recursosSugeridos = tiposRecursos.length > 0
           ? tiposRecursos.map(t => `${t.icono ? '' : ''}${t.nombre}`).join(', ')
           : 'archivo, url, video, etc.';
-        setMessages(msgs => [...msgs, { role: 'assistant', content: `Temas sugeridos: ${temasActuales.join(', ')}. Tipos de recursos disponibles: ${recursosSugeridos}. El tag se colocará automáticamente según el tema seleccionado, pero puedes agregar otros tags si lo deseas.` }]);
+        setMessages(msgs => [...msgs, { role: 'assistant', content: `Tipos de recursos disponibles: ${recursosSugeridos}. Puedes usar tags para organizar tu contenido. ¿En qué más puedo ayudarte?` }]);
       } else {
         setMessages(msgs => [...msgs, { role: 'assistant', content: '¿En qué más puedo ayudarte? Puedes preguntarme sobre registro, login, funcionalidades del dashboard, o cómo agrupar notas y recursos por temas/tags.' }]);
       }
@@ -228,46 +208,61 @@ export default function AssistantBubble() {
     // Flujos inteligentes para crear nota y recursos
     setMessages(msgs => [...msgs, { role: 'user', content: value }]);
 
-    // Detectar si el usuario quiere crear una nota
-    if (/nota|crear nota|nueva nota|agregar nota/i.test(value) && !/descrip/i.test(value)) {
-      setMessages(msgs => [...msgs, { role: 'assistant', content: 'Por favor, escribe la descripción de la nota. El título, tema y tags se generarán automáticamente.' }]);
+    // Detectar si el usuario quiere crear una nota con una descripción específica
+    if (/crear nota|nueva nota|crea una nota/i.test(value) && value.toLowerCase().includes('sobre')) {
+      // El usuario ya especificó la descripción en su mensaje
+      // Usar tag por defecto o extraer de contexto
+      const categoria = 'General';
+      const tagsDetectados = [categoria];
+      
+      // Generar título automático basado en el contenido
+      const tituloAuto = `Nota sobre ${categoria} - ${new Date().toLocaleDateString()}`;
+      
+      // Crear la nota directamente
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Necesitas iniciar sesión para crear notas.' }]);
+          setInput('');
+          setLoading(false);
+          return;
+        }
+
+        const noteData = {
+          title: tituloAuto,
+          content: value,
+          tipo: 'nota',
+          tags: tagsDetectados,
+          status: 'activo',
+          priority: 'Media'
+        };
+
+        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+        const res = await fetch(`${apiUrl}/api/notes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(noteData)
+        });
+
+        if (res.ok) {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: `¡Perfecto! He creado una nota con el contenido que proporcionaste. La nota ha sido guardada exitosamente.` }]);
+        } else {
+          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Hubo un error al crear la nota. Por favor, inténtalo de nuevo.' }]);
+        }
+      } catch (err) {
+        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al crear la nota. Verifica tu conexión e inténtalo de nuevo.' }]);
+      }
       setInput('');
       setLoading(false);
       return;
     }
 
-    // Si el mensaje es la descripción de la nota (después de pedirla)
-    if (messages.length > 0 && /Por favor, escribe la descripción de la nota/.test(messages[messages.length-1].content)) {
-      // Generar título automático: "Nota de Hoy - [tema]"
-      // const hoy = new Date();
-      // Extraer tema y tags de la descripción usando palabras clave de temas
-      let temaDetectado = temasActuales.find(t => value.toLowerCase().includes(t.toLowerCase())) || temasFull[0]?.nombre || 'General';
-      let tagsDetectados = [temaDetectado];
-      // Título automático
-      const tituloAuto = `Nota de Hoy - ${temaDetectado}`;
-      // Si hay archivos adjuntos, crear recursos también
-      if (attachedFiles.length > 0) {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: `Se detectaron archivos adjuntos. Se crearán recursos automáticamente con el tema y tags por defecto: ${temaDetectado}.` }]);
-        // Aquí podrías llamar a la lógica de subida de recursos si lo deseas
-      }
-      // Enviar a backend la nota ya estructurada
-      const notaPayload = `Título: ${tituloAuto}\nTema: ${temaDetectado}\nContenido: ${value}\nEtiquetas: ${tagsDetectados.join(', ')}`;
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-        const res = await fetch(`${apiUrl}/api/assistant`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [...messages, { role: 'user', content: notaPayload }] })
-        });
-        if (res.status === 401) {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: 'No tienes acceso a esa función. Por favor inicia sesión para continuar.' }]);
-        } else {
-          const data = await res.json();
-          setMessages(msgs => [...msgs, { role: 'assistant', content: data.reply }]);
-        }
-      } catch (err) {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el asistente IA.' }]);
-      }
+    // Si el usuario solo dice "crear nota" sin descripción, pedirle más información
+    if (/^(crear nota|nueva nota|agregar nota)$/i.test(value.trim())) {
+      setMessages(msgs => [...msgs, { role: 'assistant', content: 'Por favor, especifica sobre qué tema quieres crear la nota. Por ejemplo: "Crea una nota sobre la nueva política de seguridad en el tema de Soporte Técnico".' }]);
       setInput('');
       setLoading(false);
       return;

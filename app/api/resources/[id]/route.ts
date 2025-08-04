@@ -20,7 +20,7 @@ export async function PUT(
       headers: createAuthHeaders(request),
       body: JSON.stringify({
         ...body,
-        categoria: body.tema || body.categoria,
+        categoria: body.categoria,
         updatedAt: new Date()
       })
     });
@@ -34,10 +34,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      recurso: {
-        ...recursoActualizado,
-        tema: recursoActualizado.categoria
-      }
+      recurso: recursoActualizado
     });
 
   } catch (error) {
@@ -118,10 +115,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      recurso: {
-        ...recurso,
-        tema: recurso.categoria
-      }
+      recurso: recurso
     });
 
   } catch (error) {

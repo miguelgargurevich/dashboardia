@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callGeminiAPI, GeminiConfigs, cleanAIGeneratedText } from '../../../lib/gemini';
-import type { GeminiConfig } from '../../../lib/gemini';
+import { callGeminiAPI, GeminiConfigs, cleanAIGeneratedText, type GeminiConfig } from '../../../lib/gemini';
 import { hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
 interface GenerateNoteRequest {
   titulo: string;
-  tema: string;
   descripcion: string;
   tipo: 'procedimiento' | 'manual' | 'guia' | 'nota' | 'checklist';
   puntosClave?: string[];
@@ -21,12 +19,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body: GenerateNoteRequest = await request.json();
-    const { titulo, tema, descripcion, tipo, puntosClave, etiquetas, contexto } = body;
+    const { titulo, descripcion, tipo, puntosClave, etiquetas, contexto } = body;
 
     // Validar datos requeridos
-    if (!titulo || !tema || !descripcion || !tipo) {
+    if (!titulo || !descripcion || !tipo) {
       return NextResponse.json(
-        { error: 'Faltan campos requeridos: titulo, tema, descripcion, tipo' },
+        { error: 'Faltan campos requeridos: titulo, descripcion, tipo' },
         { status: 400 }
       );
     }
@@ -34,7 +32,6 @@ export async function POST(request: NextRequest) {
     // Generar contenido con IA
     const contenidoMarkdown = await generarContenidoConIA({
       titulo,
-      tema,
       descripcion,
       tipo,
       puntosClave,
@@ -55,7 +52,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         title: titulo,
         content: contenidoMarkdown,
-        tema: tema,
         tipo: tipo,
         descripcion: descripcion,
         tags: etiquetas || [],
@@ -90,14 +86,13 @@ export async function POST(request: NextRequest) {
 // Función para generar contenido con IA
 async function generarContenidoConIA(params: {
   titulo: string;
-  tema: string;
   descripcion: string;
   tipo: string;
   puntosClave?: string[];
   etiquetas?: string[];
   contexto?: string;
 }): Promise<string> {
-  const { titulo, tema, descripcion, tipo, puntosClave, etiquetas, contexto } = params;
+  const { titulo, descripcion, tipo, puntosClave, etiquetas, contexto } = params;
 
   // Seleccionar configuración de IA según el tipo de contenido
   function getGeminiConfigForContentType(tipo: string): GeminiConfig {
@@ -123,7 +118,6 @@ Necesito que generes un ${tipo} completo y detallado sobre "${titulo}".
 
 **Información base:**
 - Título: ${titulo}
-- Tema/Categoría: ${tema}
 - Descripción: ${descripcion}
 - Tipo de documento: ${tipo}`;
 
@@ -241,15 +235,13 @@ El contenido debe ser completo, útil y listo para usar en un entorno profesiona
 // Función fallback para generar contenido básico si falla la IA
 function generarContenidoFallback(params: {
   titulo: string;
-  tema: string;
   descripcion: string;
   tipo: string;
   puntosClave?: string[];
 }): string {
-  const { titulo, tema, descripcion, tipo, puntosClave } = params;
+  const { titulo, descripcion, tipo, puntosClave } = params;
   
   let contenido = `# ${titulo}\n\n`;
-  contenido += `**Categoría:** ${tema}\n`;
   contenido += `**Tipo:** ${tipo}\n\n`;
   contenido += `## Descripción\n\n${descripcion}\n\n`;
   

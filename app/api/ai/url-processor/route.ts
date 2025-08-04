@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { callGeminiForJSON, GeminiConfigs } from '../../../lib/gemini';
 import { hasValidAuth, createUnauthorizedResponse } from '../../../lib/auth';
 
+interface UrlMetadata {
+  titulo: string;
+  descripcion: string;
+  tipoContenido: string;
+  etiquetas: string[];
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Validar autenticación
@@ -9,7 +16,7 @@ export async function POST(request: NextRequest) {
       return createUnauthorizedResponse();
     }
 
-    const { url, tema } = await request.json();
+    const { url } = await request.json();
 
     if (!url) {
       return NextResponse.json(
@@ -72,7 +79,7 @@ export async function POST(request: NextRequest) {
     // Generar contenido con IA
     try {
       // Usar Gemini IA para analizar y generar metadatos
-      const resultadoIA = await procesarUrlConGemini(url, tituloOriginal, descripcionMeta, tema);
+      const resultadoIA = await procesarUrlConGemini(url, tituloOriginal, descripcionMeta);
       
       if (resultadoIA) {
         console.log('✅ URL procesada exitosamente con Gemini IA');
@@ -88,7 +95,7 @@ export async function POST(request: NextRequest) {
       // Fallback: generar contenido básico
       const dominioUrl = new URL(url).hostname;
       let tipoContenido = 'pagina-contenidos';
-      let etiquetas = ['recurso', 'soporte'];
+      const etiquetas = ['recurso', 'soporte'];
       
       // Detectar tipo de contenido basado en URL
       if (url.includes('youtube.com') || url.includes('vimeo.com') || url.includes('.mp4')) {
@@ -103,11 +110,6 @@ export async function POST(request: NextRequest) {
       } else if (url.includes('api') || url.includes('reference') || url.includes('docs')) {
         tipoContenido = 'referencia';
         etiquetas.push('referencia', 'api');
-      }
-
-      // Agregar etiquetas basadas en el tema
-      if (tema) {
-        etiquetas.push(tema);
       }
 
       // Generar título y descripción
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function procesarUrlConGemini(url: string, titulo: string, descripcion: string, tema: string): Promise<any> {
+async function procesarUrlConGemini(url: string, titulo: string, descripcion: string): Promise<UrlMetadata | null> {
   try {
     const dominioUrl = new URL(url).hostname;
     
@@ -149,7 +151,6 @@ async function procesarUrlConGemini(url: string, titulo: string, descripcion: st
 - Dominio: ${dominioUrl}
 - Título extraído: "${titulo || 'No disponible'}"
 - Descripción meta: "${descripcion || 'No disponible'}"
-- Tema del recurso: "${tema || 'general'}"
 
 **INSTRUCCIONES:**
 1. Analiza el dominio y la URL para determinar el tipo de contenido
@@ -206,19 +207,12 @@ Responde solo con el JSON, sin explicaciones adicionales.`;
         .map((tag: string) => tag.toLowerCase().trim())
         .filter((tag: string) => tag.length > 0);
       
-      // Agregar etiqueta del tema si no está incluida
-      if (tema && !resultado.etiquetas.includes(tema.toLowerCase())) {
-        resultado.etiquetas.push(tema.toLowerCase());
-        resultado.etiquetas = resultado.etiquetas.slice(0, 5);
-      }
-      
       return resultado;
     }
-
+    
     return null;
-
   } catch (error) {
-    console.error('Error llamando a la API de Gemini para URL:', error);
+    console.error('Error en procesarUrlConGemini:', error);
     return null;
   }
 }
