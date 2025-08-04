@@ -1,14 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { FaFileAlt, FaLink, FaVideo, FaBrain, FaAddressBook, FaClipboardList, FaLayerGroup } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
-interface TipoRecurso {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  color: string;
-  icono?: React.ReactNode;
-}
+import { useRecursosConfig } from '../../lib/useConfig';
 
 interface Resource {
   id: string;
@@ -28,43 +21,7 @@ interface Props {
 const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tiposRecursos, setTiposRecursos] = useState<TipoRecurso[]>([]);
-
-  // Cargar tipos de recursos desde API o usar tipos por defecto
-  useEffect(() => {
-    // Intentar cargar desde API, si falla usar tipos por defecto
-    fetch('/api/config/tipos-recursos')
-      .then(res => res.json())
-      .then((data) => {
-        const iconMap: Record<string, React.ReactNode> = {
-          'url': <FaLink className="text-accent" />,
-          'archivo': <FaFileAlt className="text-accent" />,
-          'video': <FaVideo className="text-accent" />,
-          'ia-automatizacion': <FaBrain className="text-accent" />,
-          'contactos-externos': <FaAddressBook className="text-accent" />,
-          'plantillas-formularios': <FaClipboardList className="text-accent" />
-        };
-        setTiposRecursos(data.map((t: { id: string; nombre: string; [key: string]: unknown }) => ({ ...t, icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> })));
-      })
-      .catch(err => {
-        console.error('Error cargando tipos de recursos, usando tipos por defecto:', err);
-        // Tipos por defecto si falla la API
-        const tiposDefault = [
-          { id: 'url', nombre: 'URL', descripcion: 'Enlace web', color: 'text-blue-500' },
-          { id: 'archivo', nombre: 'Archivo', descripcion: 'Documento', color: 'text-green-500' },
-          { id: 'video', nombre: 'Video', descripcion: 'Archivo de video', color: 'text-red-500' }
-        ];
-        const iconMap: Record<string, React.ReactNode> = {
-          'url': <FaLink className="text-accent" />,
-          'archivo': <FaFileAlt className="text-accent" />,
-          'video': <FaVideo className="text-accent" />
-        };
-        setTiposRecursos(tiposDefault.map((t) => ({ 
-          ...t, 
-          icono: iconMap[t.id] || <FaLayerGroup className="text-accent" /> 
-        })));
-      });
-  }, []);
+  const { getRecursoConfig } = useRecursosConfig();
 
   useEffect(() => {
     async function fetchResources() {
@@ -82,16 +39,18 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
 
   return (
     <div className="bg-primary rounded-lg p-4 shadow-md">
-      {/* <h3 className="text-lg font-bold mb-4 text-accent">Recursos recientes</h3> */}
       {loading ? <div>Cargando...</div> : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {resources.map(resource => {
-            // Buscar tipo de recurso por id
-            const tipo = tiposRecursos.find(t => t.id === resource.tipo);
+            // Usar configuración de tipos de recursos desde el hook
+            const recursoConfig = getRecursoConfig(resource.tipo);
+            const IconComponent = recursoConfig.IconComponent as React.ComponentType<{ className?: string }>;
+            
             return (
               <div key={resource.id} className="bg-accent/10 rounded-lg p-3 flex flex-col gap-2 animate-fade-in">
                 <span className="font-bold text-accent flex items-center gap-2">
-                  {tipo?.icono || <FaLayerGroup className="text-accent" />} {tipo?.nombre || resource.tipo}
+                  <IconComponent className="text-accent" />
+                  {recursoConfig.nombre}
                 </span>
                 <span className="font-semibold">{resource.titulo}</span>
                 <span className="text-sm text-gray-300">{resource.descripcion}</span>

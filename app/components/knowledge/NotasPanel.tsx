@@ -1,15 +1,7 @@
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
 import DetalleNotaPanel from './DetalleNotaPanel';
-import { getIconComponent } from '../../lib/useConfig';
-
-interface TipoNota {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  color: string;
-  icono?: string;
-}
+import { useNotasConfig } from '../../lib/useConfig';
 
 interface Nota {
   id: string;
@@ -31,7 +23,6 @@ interface NotasPanelProps {
   setFiltroEtiquetaNota: (v: string) => void;
   cargando: boolean;
   notasFiltradas: Nota[];
-  tiposNotas: TipoNota[];
   notaSeleccionada: Nota | null;
   setNotaSeleccionada: (n: Nota | null) => void;
   descargarNota: (n: Nota) => void;
@@ -51,9 +42,11 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
   setNotaSeleccionada,
   descargarNota,
   eliminarNota,
-  renderizarContenidoMarkdown,
-  tiposNotas
-}) => (
+  renderizarContenidoMarkdown
+}) => {
+  const { getNotaConfig } = useNotasConfig();
+  
+  return (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div className="lg:col-span-1">
       <div className="bg-secondary rounded-lg p-4">
@@ -102,9 +95,10 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {notasFiltradas.map((nota, index) => {
-              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t: TipoNota) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo, icono: 'fa-sticky-note' };
-              const [bgColor, textColor] = tipoNota.color.split(' ');
-              const IconComponent = getIconComponent(tipoNota.icono || 'fa-sticky-note') as React.ComponentType<{ className?: string }>;
+              // Usar configuración de tipos de notas desde el hook
+              const notaConfig = getNotaConfig(nota.tipo);
+              const [bgColor, textColor] = notaConfig.color.split(' ');
+              const IconComponent = notaConfig.IconComponent as React.ComponentType<{ className?: string }>;
               const isSelected = notaSeleccionada?.nombre === nota.nombre;
               return (
                 <button
@@ -123,7 +117,7 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-white text-base truncate flex-1">{nota.nombre}</h3>
                       <div className="text-xs text-yellow-300 mb-1">
-                        {tipoNota.nombre}
+                        {notaConfig.nombre}
                       </div>
                       {nota.etiquetas && nota.etiquetas.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-1">
@@ -160,6 +154,7 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
       />
     </div>
   </div>
-);
+  );
+};
 
 export default NotasPanel;
