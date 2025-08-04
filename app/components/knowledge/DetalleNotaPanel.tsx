@@ -43,7 +43,7 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
     <div className="bg-secondary rounded-lg p-6 h-full">
       {notaSeleccionada ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          <div className={`rounded-lg p-3 border ${notaConfig?.color || 'bg-primary/40 border-yellow-400/30'}`}>
+          <div className={`bg-primary/40 rounded-lg p-3 border-2 ${notaConfig?.color ? (notaConfig.color.split(' ').find(c => c.includes('border-')) || 'border-yellow-400') : 'border-yellow-400'}`}>
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className={notaConfig?.color?.split(' ').find(c=>c.startsWith('text-')) || 'text-yellow-400'}>
@@ -68,14 +68,15 @@ const DetalleNotaPanel: React.FC<DetalleNotaPanelProps> = ({
                     <FaEdit /> Editar
                   </button>
                 )}
-                {/* Botón eliminar oculto temporalmente */}
-                <button
-                  style={{ display: 'none' }}
-                  className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
-                  title="Eliminar nota"
-                >
-                  <FaTrash /> Eliminar
-                </button>
+                {eliminarNota && (
+                  <button
+                    onClick={() => eliminarNota(notaSeleccionada)}
+                    className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
+                    title="Eliminar nota"
+                  >
+                    <FaTrash /> Eliminar
+                  </button>
+                )}
               </div>
             </div>
             {notaSeleccionada.descripcion && (

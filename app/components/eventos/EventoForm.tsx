@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect } from "react";
 import RecursosSelectorModal from "./RecursosSelectorModal";
@@ -78,14 +77,17 @@ const EventoForm: React.FC<EventoFormProps> = ({
             'Content-Type': 'application/json',
           },
         })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data.recursos)) {
-              setRecursosSeleccionados(
-                data.recursos.filter((r: any) => initialValues.relatedResources?.includes(r.id))
-              );
-            }
-          })
+      .then(res => res.json())
+      .then(data => {
+        const recursosArr = Array.isArray(data.recursos)
+          ? data.recursos
+          : Array.isArray(data.resources)
+            ? data.resources
+            : [];
+        setRecursosSeleccionados(
+          recursosArr.filter((r: { id: string }) => initialValues.relatedResources?.includes(r.id))
+        );
+      })
           .catch(error => {
             console.error('Error fetching resources:', error);
           });

@@ -20,8 +20,6 @@ import {
   FaRegStickyNote, 
   FaPlus,
   FaCheckCircle,
-  FaEye,
-  FaEyeSlash,
   FaPaperclip
 } from "react-icons/fa";
 
@@ -102,7 +100,7 @@ const Calendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(initialDate);
   const [events, setEvents] = useState<Event[]>([]);
   const [recurringEvents, setRecurringEvents] = useState<Event[]>([]);
-  const [showRecurringEvents, setShowRecurringEvents] = useState<boolean>(true);
+  // const [showRecurringEvents, setShowRecurringEvents] = useState<boolean>(true); // Eliminado por solicitud
   const [loadingEvents, setLoadingEvents] = useState(false);
 
   // --- Notas diarias ---
@@ -344,10 +342,10 @@ interface Note {
       return eventDate === selectedDate;
     });
     
-    const dayRecurringEvents = showRecurringEvents ? recurringEvents.filter(event => {
+    const dayRecurringEvents = recurringEvents.filter(event => {
       const eventDate = new Date(event.startDate).toISOString().slice(0, 10);
       return eventDate === selectedDate;
-    }) : [];
+    });
     
     return [...regularEvents, ...dayRecurringEvents];
   })();
@@ -359,10 +357,10 @@ interface Note {
       const eventDate = new Date(event.startDate).toISOString().slice(0, 10);
       return eventDate === dateString;
     });
-    const dayRecurringEvents = showRecurringEvents ? recurringEvents.filter(event => {
+    const dayRecurringEvents = recurringEvents.filter(event => {
       const eventDate = new Date(event.startDate).toISOString().slice(0, 10);
       return eventDate === dateString;
-    }) : [];
+    });
     const allEvents = [...dayEvents, ...dayRecurringEvents];
     return {
       date: dateString,
@@ -468,28 +466,7 @@ interface Note {
                   })}
                 </span>
               </div>
-              {/* Control de eventos recurrentes */}
-              <div className="flex items-center gap-2">
-                <button
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors font-medium text-sm border ${
-                    showRecurringEvents 
-                      ? 'bg-yellow-400/20 border-yellow-400/40 text-yellow-400 hover:bg-yellow-600/30' 
-                      : 'bg-gray-600/20 border-gray-600/40 text-gray-400 hover:bg-gray-600/30'
-                  }`}
-                  onClick={() => setShowRecurringEvents(!showRecurringEvents)}
-                  title={showRecurringEvents ? 'Ocultar eventos recurrentes' : 'Mostrar eventos recurrentes'}
-                >
-                  {showRecurringEvents ? <FaEyeSlash /> : <FaEye />}
-                  {loadingEvents && (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b border-current"></div>
-                  )}
-                  {!loadingEvents && recurringEvents.length > 0 && (
-                    <span className="text-xs bg-blue-500/30 px-1 rounded-full">
-                      {recurringEvents.length}
-                    </span>
-                  )}
-                </button>
-              </div>
+              {/* Control de eventos recurrentes eliminado por solicitud */}
             </div>
           </div>
         </div>

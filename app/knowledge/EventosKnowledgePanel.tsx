@@ -1,7 +1,7 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaCalendarAlt } from 'react-icons/fa';
+import { FaPlus, FaCalendarAlt } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 import { useEventosConfig } from '../lib/useConfig';
 // import { getIconComponent } from '../lib/useConfig';
@@ -108,7 +108,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       recurrencePattern: evento.recurrencePattern || '',
       eventType: evento.eventType || '',
       diaEnvio: evento.diaEnvio || '',
-      relatedResources: evento.relatedResources || [],
+      relatedResources: Array.isArray(evento.relatedResources) ? evento.relatedResources : [],
     });
     setmostrarFormularioEvento(true);
   };
@@ -176,7 +176,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
       <div className="bg-secondary rounded-lg p-4">
         <div className="space-y-4 mb-4">
           <div className="flex items-center gap-2">
-            <FaSearch className="text-accent" />
+            {/* <FaSearch className="text-accent" /> */}
             <input
               type="text"
               placeholder="Buscar eventos..."

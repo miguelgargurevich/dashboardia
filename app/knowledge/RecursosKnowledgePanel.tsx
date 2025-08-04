@@ -208,6 +208,9 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                 {recursosFiltrados.map((recurso) => {
                   const config = getRecursoConfig(recurso.tipo);
                   const isSelected = recursoSeleccionado?.id === recurso.id;
+                  // Extraer color de fondo y texto desde config.color
+                  const bgColor = config.color?.split(' ').find(c => c.startsWith('bg-')) || 'bg-accent/20';
+                  const textColor = config.color?.split(' ').find(c => c.startsWith('text-')) || 'text-accent';
                   return (
                     <button
                       key={recurso.id}
@@ -219,7 +222,7 @@ const RecursosKnowledgePanel: React.FC<RecursosKnowledgePanelProps> = ({ token }
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-accent/20 text-accent">
+                        <div className={`p-2 rounded-lg ${bgColor} ${textColor}`}>
                           {React.createElement(config.IconComponent as React.ComponentType<{ className?: string }>, { className: "text-sm" })}
                         </div>
                         <div className="flex-1 min-w-0">

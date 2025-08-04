@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
 import { FaEdit, FaEye, FaTrash } from 'react-icons/fa';
 import { useEventosConfig } from '../../lib/useConfig';
 import { Event } from '../../lib/types';
+
+import dynamic from 'next/dynamic';
+// Importar el modal de recursos de forma dinámica para evitar SSR issues
+const RecursosViewerModal = dynamic(() => import('./RecursosViewerModal'), { ssr: false });
 
 export interface DetalleEventoPanelProps {
   eventoSeleccionado: Event | null;
@@ -17,6 +21,10 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({
   onDelete,
   emptyMessage
 }) => {
+  // Obtener el token de localStorage si no se pasa como prop
+  // const token = typeof window !== 'undefined' ? (propToken || window.localStorage.getItem('token') || null) : null;
+  // Estado para mostrar el modal de recursos relacionados
+  const [modalRecursosOpen, setModalRecursosOpen] = useState(false);
   // Hooks para obtener configuración
   const { getEventoConfig, loading: eventosLoading } = useEventosConfig();
 
@@ -143,13 +151,32 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({
                   </div>
                   <div className="flex items-center gap-2">
                     {eventoSeleccionado.relatedResources && eventoSeleccionado.relatedResources.length > 0 ? (
-                      <span className="text-xs px-2 py-1 rounded bg-indigo-500/20 text-indigo-400">
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 hover:text-indigo-200 font-bold transition border border-indigo-400/30 cursor-pointer"
+                        onClick={() => setModalRecursosOpen(true)}
+                        title="Ver recursos relacionados"
+                      >
                         <span className="font-bold mr-1">📎 Recursos:</span> {eventoSeleccionado.relatedResources.length}
-                      </span>
+                      </button>
                     ) : (
                       <span className="text-xs px-2 py-1 rounded bg-gray-600/20 text-gray-400">
                         📎 Recursos: 0
                       </span>
+                    )}
+                    {/* Modal de recursos relacionados solo lectura */}
+                    {modalRecursosOpen && eventoSeleccionado && Array.isArray(eventoSeleccionado.relatedResources) && (
+                      (() => {
+                        // Siempre pasar solo IDs y token
+                        return (
+                          <RecursosViewerModal
+                            open={modalRecursosOpen}
+                            onClose={() => setModalRecursosOpen(false)}
+                            recursoIds={eventoSeleccionado.relatedResources || []}
+                            token={typeof window !== 'undefined' ? (window.localStorage.getItem('token') || undefined) : undefined}
+                          />
+                        );
+                      })()
                     )}
                   </div>
                 </div>

@@ -23,12 +23,11 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
     <div className="bg-secondary rounded-lg p-6 h-full">
       {recurso ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          <div className={`rounded-lg p-3 border ${getRecursoConfig && recurso.tipo ? getRecursoConfig(recurso.tipo).color : 'bg-primary/40 border-yellow-400/30'}`}>
+          <div className={`bg-primary/40 rounded-lg p-3 border-2 ${getRecursoConfig && recurso.tipo ? (getRecursoConfig(recurso.tipo).color.split(' ').find(c => c.includes('border-')) || 'border-yellow-400') : 'border-yellow-400'}`}>
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2">
                 {getRecursoConfig && recurso.tipo && (() => {
                   const config = getRecursoConfig(recurso.tipo);
-                  // Buscar la clase text-... para el color del icono
                   const textColor = config.color.split(' ').find(c => c.startsWith('text-')) || 'text-yellow-400';
                   const IconComponent = config.IconComponent;
                   return <span className={textColor}><IconComponent className="w-4 h-4" /></span>;
