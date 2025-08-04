@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FaPlus, 
   FaEdit, 
@@ -31,7 +31,7 @@ import {
   FaDatabase,
   FaDownload,
   FaUpload,
-  // Mas Iconos 
+  // Iconos para temas
   FaFolder,
   FaTag,
   FaStar,
@@ -39,7 +39,7 @@ import {
   FaCloud
 } from 'react-icons/fa';
 
-type ConfigType = 'eventos' | 'notas' | 'recursos';
+type ConfigType = 'eventos' | 'notas' | 'recursos' | 'temas';
 
 interface ConfigItem {
   id: string;
@@ -77,7 +77,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
   });
 
   // Configuración de tipos
-  const tiposConfig = useMemo(() => ({
+  const tiposConfig = {
     eventos: {
       title: 'Tipos de Eventos',
       icon: FaCalendarAlt,
@@ -120,8 +120,22 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
         { value: 'fa-download', label: 'Descarga', icon: FaDownload },
         { value: 'fa-folder-open', label: 'Carpeta', icon: FaFolderOpen },
       ]
+    },
+    temas: {
+      title: 'Temas',
+      icon: FaLayerGroup,
+      endpoint: 'temas',
+      defaultIcon: 'fa-layer-group',
+      iconos: [
+        { value: 'fa-layer-group', label: 'Grupo', icon: FaLayerGroup },
+        { value: 'fa-folder', label: 'Carpeta', icon: FaFolder },
+        { value: 'fa-tag', label: 'Etiqueta', icon: FaTag },
+        { value: 'fa-star', label: 'Estrella', icon: FaStar },
+        { value: 'fa-bookmark', label: 'Marcador', icon: FaBookmark },
+        { value: 'fa-cloud', label: 'Nube', icon: FaCloud },
+      ]
     }
-  }), []);
+  };
 
   // Función para obtener icono React
   const obtenerIconoReact = (icono: string) => {
@@ -150,7 +164,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
       'fa-download': FaDownload,
       'fa-upload': FaUpload,
       'fa-folder-open': FaFolderOpen,
-      // Mas Iconos
+      // Temas
       'fa-layer-group': FaLayerGroup,
       'fa-folder': FaFolder,
       'fa-tag': FaTag,
@@ -172,37 +186,6 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
 
   // Cargar datos cuando cambia el tab activo
   useEffect(() => {
-    const cargarColores = async () => {
-      try {
-        const response = await fetch('/api/config/colores');
-        if (response.ok) {
-          const data = await response.json();
-          setColores(data);
-          if (!formData.color && data.length > 0 && !editando) {
-            setFormData(prev => ({ ...prev, color: data[0].tailwind }));
-          }
-        }
-      } catch (error) {
-        console.error('Error cargando colores:', error);
-      }
-    };
-
-    const cargarItems = async () => {
-      try {
-        setLoading(true);
-        const currentConfig = tiposConfig[activeTab];
-        const response = await fetch(`/api/config/${currentConfig.endpoint}`);
-        if (response.ok) {
-          const data = await response.json();
-          setItems(data);
-        }
-      } catch (error) {
-        console.error(`Error cargando ${activeTab}:`, error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const cargarDatos = async () => {
       await Promise.all([
         cargarColores(),
@@ -210,7 +193,49 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
       ]);
     };
     cargarDatos();
-  }, [activeTab, editando, formData.color, tiposConfig]);
+  }, [activeTab]);
+
+  const cargarColores = async () => {
+    try {
+      const response = await fetch('/api/config/colores');
+      if (response.ok) {
+        const data = await response.json();
+        setColores(data);
+        if (!formData.color && data.length > 0 && !editando) {
+          setFormData(prev => ({ 
+            ...prev, 
+            color: data[0].tailwind,
+            icono: prev.icono || tiposConfig[activeTab].defaultIcon
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando colores:', error);
+      // Colores por defecto
+      const coloresDefault = [
+        { nombre: "Azul", hex: "#3B82F6", tailwind: "bg-blue-500/20 text-blue-400 border-blue-400/30" },
+        { nombre: "Morado", hex: "#8B5CF6", tailwind: "bg-purple-500/20 text-purple-400 border-purple-400/30" },
+        { nombre: "Verde", hex: "#10B981", tailwind: "bg-green-500/20 text-green-400 border-green-400/30" },
+        { nombre: "Rojo", hex: "#EF4444", tailwind: "bg-red-500/20 text-red-400 border-red-400/30" }
+      ];
+      setColores(coloresDefault);
+    }
+  };
+
+  const cargarItems = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/config/${tiposConfig[activeTab].endpoint}`);
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data);
+      }
+    } catch (error) {
+      console.error(`Error cargando ${activeTab}:`, error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const manejarSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

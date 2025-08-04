@@ -1,18 +1,15 @@
+import type { Tema } from '../../lib/types';
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
 import DetalleNotaPanel from './DetalleNotaPanel';
-import { useNotasConfig } from '../../lib/useConfig';
+import { getIconComponent } from '../../lib/useConfig';
 
-interface Nota {
+interface TipoNota {
   id: string;
   nombre: string;
-  tipo: string;
-  contenido: string;
-  etiquetas?: string[];
-  status?: string;
-  priority?: string;
-  date?: string;
-  relatedResources?: string[];
+  descripcion: string;
+  color: string;
+  icono?: string;
 }
 
 interface NotasPanelProps {
@@ -22,11 +19,13 @@ interface NotasPanelProps {
   filtroEtiquetaNota: string;
   setFiltroEtiquetaNota: (v: string) => void;
   cargando: boolean;
-  notasFiltradas: Nota[];
-  notaSeleccionada: Nota | null;
-  setNotaSeleccionada: (n: Nota | null) => void;
-  descargarNota: (n: Nota) => void;
-  eliminarNota: (n: Nota) => void;
+  notasFiltradas: any[];
+  temas: any[];
+  tiposNotas: TipoNota[];
+  notaSeleccionada: any;
+  setNotaSeleccionada: (n: any) => void;
+  descargarNota: (n: any) => void;
+  eliminarNota: (n: any) => void;
   renderizarContenidoMarkdown: (c: string) => React.ReactNode;
 }
 
@@ -38,15 +37,14 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
   setFiltroEtiquetaNota,
   cargando,
   notasFiltradas,
+  temas,
   notaSeleccionada,
   setNotaSeleccionada,
   descargarNota,
   eliminarNota,
-  renderizarContenidoMarkdown
-}) => {
-  const { getNotaConfig } = useNotasConfig();
-  
-  return (
+  renderizarContenidoMarkdown,
+  tiposNotas
+}) => (
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div className="lg:col-span-1">
       <div className="bg-secondary rounded-lg p-4">
@@ -95,10 +93,9 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {notasFiltradas.map((nota, index) => {
-              // Usar configuración de tipos de notas desde el hook
-              const notaConfig = getNotaConfig(nota.tipo);
-              const [bgColor, textColor] = notaConfig.color.split(' ');
-              const IconComponent = notaConfig.IconComponent as React.ComponentType<{ className?: string }>;
+              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t: any) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo, icono: 'fa-sticky-note' };
+              const [bgColor, textColor] = tipoNota.color.split(' ');
+              const IconComponent = getIconComponent(tipoNota.icono || 'fa-sticky-note') as React.ComponentType<{ className?: string }>;
               const isSelected = notaSeleccionada?.nombre === nota.nombre;
               return (
                 <button
@@ -117,7 +114,7 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-white text-base truncate flex-1">{nota.nombre}</h3>
                       <div className="text-xs text-yellow-300 mb-1">
-                        {notaConfig.nombre}
+                        {tipoNota.nombre}
                       </div>
                       {nota.etiquetas && nota.etiquetas.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-1">
@@ -148,13 +145,13 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
     <div className="lg:col-span-2">
       <DetalleNotaPanel
         notaSeleccionada={notaSeleccionada}
+        temas={temas}
         descargarNota={descargarNota}
         eliminarNota={eliminarNota}
         renderizarContenidoMarkdown={renderizarContenidoMarkdown}
       />
     </div>
   </div>
-  );
-};
+);
 
 export default NotasPanel;
