@@ -1,5 +1,7 @@
+import tailwindcssAnimate from 'tailwindcss-animate';
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
@@ -18,6 +20,8 @@ module.exports = {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
-}
+  plugins: [tailwindcssAnimate],
+};
+
+export default config;
 

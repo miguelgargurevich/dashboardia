@@ -1,16 +1,18 @@
 // Backend base para Dashboard IA Soporte
 // Inicialización Express y Prisma
-const express = require('express');
+import express from 'express';
+
 const app = express();
-const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const cors = require('cors');
-const os = require('os');
-require('dotenv').config();
+import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import cors from 'cors';
+import os from 'os';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // Importar configuración de entorno
-const envConfig = require('./src/config');
+import envConfig from './src/config.js';
 
 // Validar entorno al inicio
 envConfig.validateEnvironment();
@@ -29,7 +31,7 @@ const fetch = (...args) => import('node-fetch').then(mod => mod.default(...args)
 // Swagger configuration (solo en desarrollo)
 let swaggerUi, specs;
 if (envConfig.config.swagger.enabled) {
-  const swagger = require('./src/swagger');
+  const swagger = await import('./src/swagger.js');
   swaggerUi = swagger.swaggerUi;
   specs = swagger.specs;
 }
@@ -66,7 +68,7 @@ if (envConfig.config.swagger.enabled && swaggerUi && specs) {
 }
 
 // Rutas avanzadas del dashboard (protegidas y agrupadas)
-const dashboardRoutes = require('./src/routes');
+import dashboardRoutes from './src/routes.js';
 
 // Endpoints de autenticación deben ir antes de las rutas avanzadas
 /**
@@ -371,37 +373,32 @@ app.get('/api/kb', async (req, res) => {
 });
 
 const port = envConfig.config.port;
-if (require.main === module) {
-  app.listen(port, () => {
-    const ifaces = os.networkInterfaces();
-    let local = `http://localhost:${port}`;
-    let network = '';
-    for (const name of Object.keys(ifaces)) {
-      for (const iface of ifaces[name]) {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          network = `http://${iface.address}:${port}`;
-          break;
-        }
+app.listen(port, () => {
+  const ifaces = os.networkInterfaces();
+  let local = `http://localhost:${port}`;
+  let network = '';
+  for (const name of Object.keys(ifaces)) {
+    for (const iface of ifaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        network = `http://${iface.address}:${port}`;
+        break;
       }
-      if (network) break;
     }
-    
-    envConfig.logger.info(`Backend running in ${envConfig.env} mode`);
-    console.log('\n🚀 Backend Dashboard IA Soporte');
-    console.log(`📦 Entorno: ${envConfig.env.toUpperCase()}`);
-    console.log(`🌐 Puerto: ${port}`);
-    console.log(`\n  Local:            ${local}`);
-    if (network) console.log(`  Network:          ${network}`);
-    
-    if (envConfig.config.swagger.enabled) {
-      console.log(`\n📚 Swagger UI:       ${local}/api-docs`);
-    }
-    
-    console.log('\n🔗 Endpoints disponibles:');
-    console.log('  /api/login, /api/tickets, /api/events, etc.');
-    console.log('\n⚡ Database:', envConfig.isDevelopment() ? 'Local PostgreSQL' : 'Supabase');
-    console.log('\n🛑 Para detener el servidor usa Ctrl+C\n');
-  });
-}
+    if (network) break;
+  }
+  envConfig.logger.info(`Backend running in ${envConfig.env} mode`);
+  console.log('\n🚀 Backend Dashboard IA Soporte');
+  console.log(`📦 Entorno: ${envConfig.env.toUpperCase()}`);
+  console.log(`🌐 Puerto: ${port}`);
+  console.log(`\n  Local:            ${local}`);
+  if (network) console.log(`  Network:          ${network}`);
+  if (envConfig.config.swagger.enabled) {
+    console.log(`\n📚 Swagger UI:       ${local}/api-docs`);
+  }
+  console.log('\n🔗 Endpoints disponibles:');
+  console.log('  /api/login, /api/tickets, /api/events, etc.');
+  console.log('\n⚡ Database:', envConfig.isDevelopment() ? 'Local PostgreSQL' : 'Supabase');
+  console.log('\n🛑 Para detener el servidor usa Ctrl+C\n');
+});
 
-module.exports = app;
+// export default app; // Uncomment if you need to import app elsewhere

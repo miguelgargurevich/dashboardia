@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaPaperclip, FaTag, FaBook, FaHashtag, FaLink, FaStickyNote, FaSpinner } from "react-icons/fa";
+import { FaBook, FaHashtag, FaLink, FaStickyNote, FaSpinner } from "react-icons/fa";
 import FileUploadS3 from "../FileUploadS3";
-import useRecursosS3 from "../../hooks/useRecursosS3";
+import useRecursosS3, { UploadResult, RecursoS3 } from "../../hooks/useRecursosS3";
+import { TipoRecurso } from "../../lib/types";
 
 interface RecursoFormValues {
   titulo: string;
@@ -14,27 +15,11 @@ interface RecursoFormValues {
   etiquetas?: string[];
 }
 
-export interface Tema {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  icono: React.ReactNode;
-  color: string;
-}
-
-export interface TipoRecurso {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  color: string;
-}
-
 interface RecursoFormS3Props {
   initialValues?: Partial<RecursoFormValues>;
-  temas: Tema[];
   tiposRecursos: TipoRecurso[];
   etiquetasDisponibles: string[];
-  onSubmit: (values: any) => void;
+  onSubmit: (values: UploadResult | RecursoS3 | RecursoFormValues) => void;
   onCancel?: () => void;
   loading?: boolean;
   submitLabel?: string;
@@ -44,7 +29,6 @@ interface RecursoFormS3Props {
 
 const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
   initialValues,
-  temas,
   tiposRecursos,
   etiquetasDisponibles,
   onSubmit,
@@ -64,11 +48,10 @@ const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
   });
 
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<any>(null);
+  const [uploadedFile, setUploadedFile] = useState<UploadResult | null>(null);
   const [newEtiqueta, setNewEtiqueta] = useState('');
 
   const { 
-    uploadRecurso, 
     createRecursoUrl, 
     updateRecurso,
     loading: s3Loading, 
@@ -84,7 +67,7 @@ const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
     }
   }, [initialValues]);
 
-  const handleInputChange = (field: keyof RecursoFormValues, value: any) => {
+  const handleInputChange = (field: keyof RecursoFormValues, value: string | string[]) => {
     setValues(prev => ({
       ...prev,
       [field]: value
@@ -102,7 +85,7 @@ const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
     handleInputChange('etiquetas', values.etiquetas?.filter(e => e !== etiqueta) || []);
   };
 
-  const handleFileUploadComplete = (result: any) => {
+  const handleFileUploadComplete = (result: UploadResult) => {
     setUploadedFile(result);
     setShowFileUpload(false);
     
@@ -128,7 +111,7 @@ const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
       if (modo === 'editar' && initialValues?.titulo) {
         // Modo edición - solo actualizar datos, no archivo
         result = await updateRecurso(
-          (initialValues as any).id,
+          (initialValues as { id: string }).id,
           {
             titulo: values.titulo,
             descripcion: values.descripcion,
@@ -194,7 +177,7 @@ const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
               onChange={(e) => handleInputChange('tipo', e.target.value)}
               className="input-std w-full"
               required
-              disabled={loading || s3Loading || uploadedFile}
+              disabled={loading || s3Loading || !!uploadedFile}
             >
               <option value="">Selecciona un tipo</option>
               {tiposRecursos.map(tipo => (
@@ -217,7 +200,7 @@ const RecursoFormS3: React.FC<RecursoFormS3Props> = ({
               disabled={loading || s3Loading}
             >
               <option value="">Selecciona un tema</option>
-              {temas.map(tema => (
+              {tiposRecursos.map(tema => (
                 <option key={tema.id} value={tema.nombre.toLowerCase()}>
                   {tema.nombre}
                 </option>

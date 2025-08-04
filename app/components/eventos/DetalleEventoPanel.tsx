@@ -1,35 +1,21 @@
 import React from 'react';
 import { formatFechaDDMMYYYY } from '../../lib/formatFecha';
-import { FaEdit, FaEye } from 'react-icons/fa';
+import { FaEdit, FaEye, FaTrash } from 'react-icons/fa';
 import { useEventosConfig } from '../../lib/useConfig';
-
-interface Evento {
-  id: string;
-  title: string;
-  description?: string;
-  startDate: string;
-  location?: string;
-  diaEnvio?: string;
-  modo?: string;
-  validador?: string;
-  codigoDana?: string;
-  recurrencePattern?: string;
-  eventType?: string;
-  relatedResources?: string[];
-}
+import { Event } from '../../lib/types';
 
 export interface DetalleEventoPanelProps {
-  eventoSeleccionado: Evento | null;
-  onEdit: (evento: Evento) => void;
-  onDelete: (id: string) => void;
+  eventoSeleccionado: Event | null;
+  onEdit: () => void;
+  onDelete: () => void;
   emptyMessage?: string;
 }
 
 const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({ 
   eventoSeleccionado, 
-  onEdit, 
-  onDelete, // eslint-disable-line @typescript-eslint/no-unused-vars
-  emptyMessage 
+  onEdit,
+  onDelete,
+  emptyMessage
 }) => {
   // Hooks para obtener configuración
   const { getEventoConfig, loading: eventosLoading } = useEventosConfig();
@@ -44,12 +30,12 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({
                            eventoConfig?.item; // Verificar que existe la configuración real del evento
 
   return (
-    <div className="bg-secondary rounded-lg p-6 h-full">
+    <div className="bg-secondary rounded-lg p-4 h-full">
       {eventoSeleccionado ? (
         // Solo mostrar el contenido cuando los datos estén completamente listos
         isEventDataReady ? (
           <div className="space-y-2 max-h-96 overflow-y-auto">
-            <div className={`bg-primary/40 rounded-lg p-3 border-2 ${eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('border-')) || 'border-yellow-400' : 'border-yellow-400'}`}>
+            <div className={`bg-primary/40 rounded-lg p-2 border-2 ${eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('border-')) || 'border-yellow-400' : 'border-yellow-400'}`}>
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className={eventoConfig?.color ? eventoConfig.color.split(' ').find(c => c.includes('text-')) || 'text-yellow-400' : 'text-yellow-400'}>
@@ -62,22 +48,19 @@ const DetalleEventoPanel: React.FC<DetalleEventoPanelProps> = ({
                 </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => onEdit(eventoSeleccionado)}
+                  onClick={() => onEdit()}
                   className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
                   title="Editar evento"
                 >
                   <FaEdit /> Editar
                 </button>
-                {/* Botón eliminar oculto temporalmente */}
-                {/*
                 <button
-                  onClick={() => onDelete(eventoSeleccionado.id)}
+                  onClick={() => onDelete()}
                   className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
                   title="Eliminar evento"
                 >
                   <FaTrash /> Eliminar
                 </button>
-                */}
               </div>
             </div>
             {eventoSeleccionado.description && (

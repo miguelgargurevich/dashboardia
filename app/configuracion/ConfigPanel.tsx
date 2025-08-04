@@ -31,7 +31,7 @@ import {
   FaDatabase,
   FaDownload,
   FaUpload,
-  // Iconos para temas
+  // Mas Iconos 
   FaFolder,
   FaTag,
   FaStar,
@@ -150,7 +150,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({ initialType = 'eventos' }) =>
       'fa-download': FaDownload,
       'fa-upload': FaUpload,
       'fa-folder-open': FaFolderOpen,
-      // Temas
+      // Mas Iconos
       'fa-layer-group': FaLayerGroup,
       'fa-folder': FaFolder,
       'fa-tag': FaTag,

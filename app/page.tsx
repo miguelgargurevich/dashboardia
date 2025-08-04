@@ -4,6 +4,7 @@ import CalendarWithDetail from './components/eventos/CalendarWithDetail';
 import DetalleEventoPanel from './components/eventos/DetalleEventoPanel';
 import EventoForm from './components/eventos/EventoForm';
 import Modal from './components/Modal';
+import { Event } from './lib/types';
 
 interface EventoData {
   id: string;
@@ -32,32 +33,6 @@ interface EventoData {
   modo?: string;
   codigoDana?: string;
   diaEnvio?: string;
-}
-
-interface Event {
-  id: string;
-  title: string;
-  description?: string;
-  startDate: string;
-  endDate?: string;
-  location?: string;
-  recurrencePattern: string;
-  eventType?: string;
-  isRecurring?: boolean;
-  diaEnvio?: string;
-  relatedResources?: string[];
-  validador?: string;
-  modo?: string;
-  codigoDana?: string;
-  // Campos nuevos con nombres en español
-  titulo?: string;
-  descripcion?: string;
-  fechaInicio?: string;
-  fechaFin?: string;
-  ubicacion?: string;
-  tipoEvento?: string;
-  esRecurrente?: boolean;
-  recursos?: Array<{ id: string; titulo: string; }>;
 }
 
 import ProximosEventosCard from './components/dashboard/ProximosEventosCard';
@@ -126,11 +101,6 @@ export default function Home() {
     setVisibleMonth(`${year}-${month}`);
     setSelectedDate(`${year}-${month}-${String(today.getDate()).padStart(2, '0')}`);
   };
-  // Obtener eventos del día seleccionado
-  const selectedDayEvents = events.filter(event => {
-    const eventDate = new Date(event.startDate).toISOString().slice(0, 10);
-    return eventDate === selectedDate;
-  });
   // Obtener eventos del día (sin notas)
   const getDayContent = (dateString: string) => {
     const dayEvents = events.filter(event => {
@@ -315,7 +285,6 @@ export default function Home() {
             <div className="flex flex-col gap-6">
 
                 <CalendarWithDetail
-                  token={token || ''}
                   weekDays={weekDays}
                   monthNames={monthNames}
                   mon={mon}
@@ -326,15 +295,11 @@ export default function Home() {
                   firstDayOfWeek={firstDayOfWeek}
                   days={days}
                   selectedDate={selectedDate}
-                  visibleMonth={visibleMonth}
                   changeMonth={changeMonth}
                   goToToday={goToToday}
                   getDayContent={getDayContent}
                   setSelectedDate={setSelectedDate}
-                  showRecurringEvents={showRecurringEvents}
-                  recurringEvents={recurringEvents}
                   loadingEvents={loadingEvents}
-                  selectedDayEvents={selectedDayEvents}
                   hasNotesOnDay={hasNotesOnDay}
                   DetalleEventoPanel={DetalleEventoPanel}
                   handleEditEvent={handleEditEvent}

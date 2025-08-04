@@ -9,6 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import Modal from '../components/Modal';
 import { useEventosConfig } from '../lib/useConfig';
+import { Event } from '../lib/types';
 
 import { 
   FaCalendarAlt, 
@@ -23,26 +24,6 @@ import {
   FaEyeSlash,
   FaPaperclip
 } from "react-icons/fa";
-
-
-type EventType = 'incidente' | 'mantenimiento' | 'reunion' | 'capacitacion' | 'otro';
-type RecurrencePattern = 'ninguno' | 'diario' | 'semanal' | 'mensual' | 'trimestral' | 'anual';
-
-interface Event {
-  id: string;
-  title: string;
-  description?: string;
-  startDate: string;
-  endDate?: string;
-  location?: string;
-  validador?: string;
-  modo?: string;
-  codigoDana?: string;
-  diaEnvio?: string;
-  eventType: EventType;
-  recurrencePattern: RecurrencePattern;
-  relatedResources?: string[];
-}
 
 const Calendar: React.FC = () => {
   // Hook para obtener configuración de eventos
@@ -122,7 +103,6 @@ const Calendar: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [recurringEvents, setRecurringEvents] = useState<Event[]>([]);
   const [showRecurringEvents, setShowRecurringEvents] = useState<boolean>(true);
-  // const [loading, setLoading] = useState(false); // Eliminado: ya no se usa
   const [loadingEvents, setLoadingEvents] = useState(false);
 
   // --- Notas diarias ---
@@ -139,14 +119,12 @@ interface Note {
   createdAt?: string;
 }
 
-
-  // No longer using temas - removed tema functionality
+  // --- Notas diarias ---
   const [notes, setNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [noteTags, setNoteTags] = useState(''); // tags separados por coma
-  // Removed noteTema state - no longer using tema functionality
   const [creatingNote, setCreatingNote] = useState(false);
   const [noteFiles, setNoteFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -190,8 +168,6 @@ interface Note {
   }, [visibleMonth]);
   // Crear nota
   const createNote = async () => {
-    console.log('🟢 createNote called with:', { noteTitle, noteContent, selectedDate });
-    
     if (!noteTitle.trim() && !noteContent.trim()) {
       alert('Por favor, ingresa al menos un título o contenido para la nota.');
       return;
@@ -248,10 +224,6 @@ interface Note {
         tags: noteTags.split(',').map(t => t.trim()).filter(Boolean),
         relatedResources
       };
-      
-      console.log('� DEBUG - selectedDate value:', selectedDate);
-      console.log('🔍 DEBUG - selectedDate type:', typeof selectedDate);
-      console.log('�🚀 Sending note payload:', notePayload);
       
       const res = await fetch('/api/calendar/notes', {
         method: 'POST',
@@ -441,10 +413,9 @@ interface Note {
 
   // Efectos
   useEffect(() => {
-   
     fetchEvents(); // Cargar eventos (incluye regulares y recurrentes)
     fetchNotes(); // Cargar notas del mes
-  }, [visibleMonth, viewMode, fetchEvents, fetchNotes]);
+  }, [visibleMonth, fetchEvents, fetchNotes]);
 
 
 

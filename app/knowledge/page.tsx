@@ -39,7 +39,7 @@ const KnowledgePage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-accent mb-2">Base de Conocimiento</h1>
-          <p className="text-gray-400">Documentación organizada por temas y actividades del equipo de soporte</p>
+          <p className="text-gray-400">Documentación organizada del equipo de soporte</p>
         </div>
 
         {/* Navegación por secciones */}

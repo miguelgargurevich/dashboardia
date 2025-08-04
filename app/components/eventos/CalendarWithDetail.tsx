@@ -1,36 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FaAngleLeft, FaAngleRight, FaRegCalendarAlt } from "react-icons/fa";
 import { useEventosConfig } from '../../lib/useConfig';
+import { Event } from '../../lib/types';
 
-interface Event {
-  id: string;
-  title: string;
-  description?: string;
-  startDate: string;
-  endDate?: string;
-  location?: string;
-  recurrencePattern: string;
-  eventType?: string;
-  isRecurring?: boolean;
-  diaEnvio?: string;
-  relatedResources?: string[];
-  validador?: string;
-  modo?: string;
-  codigoDana?: string;
-  // Campos nuevos con nombres en español
-  titulo?: string;
-  descripcion?: string;
-  fechaInicio?: string;
-  fechaFin?: string;
-  ubicacion?: string;
-  tipoEvento?: string;
-  esRecurrente?: boolean;
-  tema?: string;
-  recursos?: Array<{ id: string; titulo: string; }>;
+interface DetalleEventoPanelProps {
+  eventoSeleccionado: Event | null;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 interface CalendarWithDetailProps {
-  token?: string;
   weekDays: string[];
   monthNames: string[];
   mon: number;
@@ -41,7 +20,6 @@ interface CalendarWithDetailProps {
   firstDayOfWeek: number;
   days: number[];
   selectedDate: string;
-  visibleMonth: string;
   changeMonth: (offset: number) => void;
   goToToday: () => void;
   getDayContent: (dateString: string) => {
@@ -51,18 +29,14 @@ interface CalendarWithDetailProps {
     eventsCount: number;
   };
   setSelectedDate: (date: string) => void;
-  showRecurringEvents: boolean;
-  recurringEvents: Event[];
   loadingEvents: boolean;
-  selectedDayEvents: Event[];
   hasNotesOnDay: (dateString: string) => boolean;
-  DetalleEventoPanel: React.ComponentType<any>;
+  DetalleEventoPanel: React.ComponentType<DetalleEventoPanelProps>;
   handleEditEvent: (event: Event) => void;
   handleDeleteEvent: (event: Event) => void;
 }
 
 const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
-  token,
   weekDays,
   monthNames,
   mon,
@@ -77,10 +51,7 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
   goToToday,
   getDayContent,
   setSelectedDate,
-  showRecurringEvents,
-  recurringEvents,
   loadingEvents,
-  selectedDayEvents,
   hasNotesOnDay,
   DetalleEventoPanel,
   handleEditEvent,
@@ -178,20 +149,20 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
                       }}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className={`text-xs px-1 py-0.5 rounded truncate ${
-                        event.recurrencePattern !== 'ninguno' 
-                          ? (() => {
-                              const config = getEventoConfig(event.eventType || 'evento');
-                              return config.color + ' border font-semibold';
-                            })()
-                          : (() => {
-                              const config = getEventoConfig(event.eventType || 'evento');
-                              return config.color;
-                            })()
-                      }`}>
-                         {/* Comentado por el usuairo */}
-                        {/* {event.title} */}
-                      </div>
+                      {(() => {
+                        const config = getEventoConfig(event.eventType || 'evento');
+                        const isRecurring = event.recurrencePattern !== 'ninguno';
+                        return (
+                          <div className={`text-xs px-1 py-0.5 rounded truncate ${
+                            isRecurring 
+                              ? config.color + ' border font-semibold'
+                              : config.color
+                          }`}>
+                            {/* Comentado por el usuario */}
+                            {/* {event.title} */}
+                          </div>
+                        );
+                      })()}
                     </div>
                   ))}
                   {/* Contador si hay más de 4 eventos */}
@@ -219,14 +190,14 @@ const CalendarWithDetail: React.FC<CalendarWithDetailProps> = ({
         </div>
       </div>
       {/* Panel de Eventos del Día: muestra todos los eventos del día seleccionado */}
-      <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-secondary border border-accent/20 rounded-xl shadow-lg p-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
             <FaRegCalendarAlt />
-            Eventos del día {selectedDate} ({getDayContent(selectedDate).events.length|| 0})
+            Eventos del día {selectedDate} ({getDayContent(selectedDate).events?.length || 0})
           </h2>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {loadingEvents ? (
             <div className="text-center py-6">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent mx-auto"></div>

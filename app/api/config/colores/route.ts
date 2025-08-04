@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
  * API de Colores para Configuración
  * 
  * Propósito: Proporciona una paleta estándar de colores para que los administradores
- * elijan al configurar temas, tipos de eventos, notas y recursos.
+ * elijan al configurar, tipos de eventos, notas y recursos.
  * 
  * NOTA IMPORTANTE: 
  * - Esta API NO es la fuente de verdad para los colores de cada tipo

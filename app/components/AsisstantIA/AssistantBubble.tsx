@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { FaRobot, FaTimes, FaPaperPlane } from "react-icons/fa";
+import { FaRobot } from "react-icons/fa";
 import { useConfig, getIconComponent } from '../../lib/useConfig';
 // Simple Markdown a HTML (bold, listas, saltos de línea, tablas)
 function markdownToHtml(text: string): string {
@@ -78,8 +78,11 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
   // Configurar tipos de recursos desde el hook de configuración
   useEffect(() => {
     if (recursosConfig.length > 0) {
-      setTiposRecursos(recursosConfig.map((t: any) => ({
-        ...t,
+      setTiposRecursos(recursosConfig.map((t) => ({
+        id: t.id,
+        nombre: t.nombre,
+        descripcion: t.descripcion || '',
+        color: t.color,
         icono: (() => {
           const IconComponent = getIconComponent(t.icono || 'fa-file-alt') as React.ComponentType<{ className?: string }>;
           return <IconComponent className="text-accent" />;
@@ -107,16 +110,10 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
     }
   }, [messages, open]);
 
-  useEffect(() => {
-    if (open && chatRef.current) {
-      chatRef.current.scrollTop = chatRef.current.scrollHeight;
-    }
-  }, [messages, open]);
-
-
-  async function sendMessage(e: any) {
+  async function sendMessage(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const value = e.target?.value || input;
+    const target = e.target as HTMLFormElement;
+    const value = (target?.value as string) || input;
     if (!value.trim() && attachedFiles.length === 0) { setLoading(false); return; }
     setLoading(true);
     // Si hay archivos adjuntos y está logueado, subir primero
@@ -169,7 +166,7 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
             }
           }
         }
-      } catch (err) {
+      } catch {
         setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al subir los archivos.' }]);
       }
       setAttachedFiles([]);
@@ -198,7 +195,7 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
           : 'archivo, url, video, etc.';
         setMessages(msgs => [...msgs, { role: 'assistant', content: `Tipos de recursos disponibles: ${recursosSugeridos}. Puedes usar tags para organizar tu contenido. ¿En qué más puedo ayudarte?` }]);
       } else {
-        setMessages(msgs => [...msgs, { role: 'assistant', content: '¿En qué más puedo ayudarte? Puedes preguntarme sobre registro, login, funcionalidades del dashboard, o cómo agrupar notas y recursos por temas/tags.' }]);
+        setMessages(msgs => [...msgs, { role: 'assistant', content: '¿En qué más puedo ayudarte? Puedes preguntarme sobre registro, login, funcionalidades del dashboard, o cómo agrupar notas y recursos por tags.' }]);
       }
       setInput('');
       setLoading(false);
@@ -210,9 +207,9 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
 
     // Detectar si el usuario quiere crear una nota con una descripción específica
     if (/crear nota|nueva nota|crea una nota/i.test(value) && value.toLowerCase().includes('sobre')) {
-      // El usuario ya especificó la descripción en su mensaje
-      // Usar tag por defecto o extraer de contexto
-      const categoria = 'General';
+      // Extraer el tema del mensaje del usuario para usar en tags
+      const sobreMatch = value.toLowerCase().match(/sobre\s+(.+?)(\.|$|,)/);
+      const categoria = sobreMatch ? sobreMatch[1].trim() : 'general';
       const tagsDetectados = [categoria];
       
       // Generar título automático basado en el contenido
@@ -234,8 +231,10 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
           tipo: 'nota',
           tags: tagsDetectados,
           status: 'activo',
-          priority: 'Media'
+          priority: 'media'
         };
+
+        console.log('🟡 Frontend: Sending note data:', noteData);
 
         const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
         const res = await fetch(`${apiUrl}/api/notes`, {
@@ -250,9 +249,12 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
         if (res.ok) {
           setMessages(msgs => [...msgs, { role: 'assistant', content: `¡Perfecto! He creado una nota con el contenido que proporcionaste. La nota ha sido guardada exitosamente.` }]);
         } else {
-          setMessages(msgs => [...msgs, { role: 'assistant', content: 'Hubo un error al crear la nota. Por favor, inténtalo de nuevo.' }]);
+          const errorText = await res.text();
+          console.error('Error creating note:', res.status, errorText);
+          setMessages(msgs => [...msgs, { role: 'assistant', content: `Hubo un error al crear la nota: ${errorText}. Por favor, inténtalo de nuevo.` }]);
         }
       } catch (err) {
+        console.error('Network error creating note:', err);
         setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al crear la nota. Verifica tu conexión e inténtalo de nuevo.' }]);
       }
       setInput('');
@@ -283,12 +285,11 @@ Por ejemplo, dime algo como: "Crea una nota sobre la nueva política de segurida
         setMessages(msgs => [...msgs, { role: 'assistant', content: data.reply }]);
       }
     } catch (err) {
+      console.error('Error al conectar con el asistente IA:', err);
       setMessages(msgs => [...msgs, { role: 'assistant', content: 'Error al conectar con el asistente IA.' }]);
     }
     setInput('');
     setLoading(false);
-  // Reinicia sugerencia de temas al abrir nueva conversación
-  // Eliminado: useEffect para setTemaSugerido, ya no se usa
   }
 
   return (

@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
 function requireAuth(req, res, next) {
@@ -16,4 +16,4 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+export { requireAuth };

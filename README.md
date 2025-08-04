@@ -71,7 +71,7 @@ Dashboard IA Soporte es una solución moderna para la gestión de soporte técni
 ├── app/                  # Frontend principal (Next.js App Router)
 │   ├── api/              # Endpoints API (auth, calendar, content, events, resources, tickets, IA, etc.)
 │   ├── components/       # Componentes reutilizables (dashboard, charts, IA, modales, etc.)
-│   ├── configuracion/    # Configuración de temas y ajustes
+│   ├── configuracion/    # Configuración y ajustes
 │   ├── dashboard/        # Página principal del dashboard
 │   ├── knowledge/        # Base de conocimiento
 │   ├── lib/              # Librerías utilitarias (auth, gemini, etc.)
@@ -156,7 +156,7 @@ El login utiliza los usuarios del seed del backend:
 - **Gestión de tickets:** Visualización, filtrado, estadísticas y tendencias de tickets por prioridad, departamento y tiempo.
 - **Eventos y calendario:** Gestión de eventos, calendario interactivo, notas diarias y eventos próximos.
 - **Base de conocimiento:** Acceso a manuales, procedimientos y recursos en markdown.
-- **Recursos:** Subida, consulta y gestión de archivos recientes y asociados a tickets o temas.
+- **Recursos:** Subida, consulta y gestión de archivos recientes.
 - **Notas diarias:** Registro y consulta de notas diarias asociadas a eventos o usuarios.
 - **Asistente IA (Chatbot):**
   - Flotante en el dashboard, visible solo para usuarios autenticados.
@@ -164,7 +164,7 @@ El login utiliza los usuarios del seed del backend:
   - Soporte para adjuntar múltiples archivos (PDF, Word, Excel, imágenes, videos, texto) por drag & drop o selector.
   - Los archivos se envían al backend por el endpoint `/api/upload`.
   - El asistente puede guiar el registro y enviar credenciales por correo.
-- **Personalización de temas:** Configuración de colores y fuentes desde el panel de configuración.
+- **Personalización de Colores e Iconos:** Configuración de colores y fuentes desde el panel de configuración.
 
 ---
 
@@ -172,7 +172,6 @@ El login utiliza los usuarios del seed del backend:
 
 - Los colores y fuentes se configuran en `tailwind.config.js`.
 - El layout global y los estilos base están en `app/layout.tsx` y `app/globals.css`.
-- El panel de configuración de temas está en `app/configuracion/TemasConfigPanel.tsx`.
 
 ---
 

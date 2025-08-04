@@ -161,16 +161,17 @@ const validateEnvironment = () => {
   logger.info(`Entorno validado: ${currentEnv}`);
 };
 
-module.exports = {
+const envConfig = {
   env: currentEnv,
   config: currentConfig,
   shared: sharedConfig,
   logger,
   getDatabaseUrl,
   validateEnvironment,
-  
   // Helpers útiles
   isDevelopment: () => currentEnv === 'development',
   isProduction: () => currentEnv === 'production',
   isTest: () => currentEnv === 'test'
 };
+
+export default envConfig;

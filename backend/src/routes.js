@@ -1,9 +1,11 @@
-const express = require('express');
+
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth } from './auth.js';
+import S3Service from './services/S3Service.js';
+import multer from 'multer';
+
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const { requireAuth } = require('./auth');
-const S3Service = require('./services/S3Service');
-const multer = require('multer');
 const prisma = new PrismaClient();
 
 // Configurar multer para manejar archivos en memoria
@@ -25,7 +27,7 @@ const systemPrompt = `
 Eres un asistente experto en soporte técnico y gestión de sistemas. Tu objetivo es ayudar a los usuarios a administrar su dashboard de soporte, crear contenido, gestionar recursos y resolver consultas técnicas.
 
 CAPACIDADES PRINCIPALES:
-- Crear y gestionar notas organizadas por temas
+- Crear y gestionar notas organizadas por tipos
 - Subir y organizar recursos (documentos, URLs, videos)
 - Consultar eventos y calendario
 - Proporcionar soporte técnico especializado
@@ -33,15 +35,15 @@ CAPACIDADES PRINCIPALES:
 
 CONTEXTO DEL SISTEMA:
 - Dashboard de soporte con gestión de eventos, recursos y conocimiento
-- Usuarios pueden crear notas categorizadas por temas
+- Usuarios pueden crear notas categorizadas por tipos
 - Sistema de etiquetas para organización
 - Calendario integrado para eventos
 - Base de datos de recursos compartidos
 
 INSTRUCCIONES ESPECIALES PARA CREACIÓN DE NOTAS:
-- Cuando el usuario solicite crear una nota con formato "Crea una nota sobre [tema] en el tema de [categoría]", confirma que la nota fue creada exitosamente
-- Si el usuario solo dice "crear nota" sin más contexto, pide que especifique el tema
-- Extrae automáticamente el tema y categoría de la solicitud del usuario
+- Cuando el usuario solicite crear una nota, confirma que la nota fue creada exitosamente
+- Si el usuario solo dice "crear nota" sin más contexto, pide que especifique el contenido
+- Extrae automáticamente el tipo y categoría de la solicitud del usuario
 - Genera títulos descriptivos basados en el contenido proporcionado
 - Usa un tono confirmativo y positivo cuando las acciones se completen
 
@@ -117,7 +119,7 @@ router.get('/api/resources/recent', requireAuth, async (req, res) => {
 // Recursos por tipo
 // GET /api/resources?tipo=video|nota|archivo&limit=10&skip=0
 router.get('/api/resources', requireAuth, async (req, res) => {
-  const { tipo, categoria, estado, page = 1, limit = 50 } = req.query;
+  const { tipo, categoria, page = 1, limit = 50 } = req.query;
   const limitNum = Math.max(1, Math.min(parseInt(limit) || 50, 100));
   const skip = (Math.max(1, parseInt(page)) - 1) * limitNum;
   
@@ -160,10 +162,7 @@ router.post('/api/resources', requireAuth, async (req, res) => {
       url,
       filePath,
       tags = [],
-      categoria,
-      tipoArchivo,
-      tamaño,
-      nombreOriginal
+      categoria
     } = req.body;
 
     // Validaciones básicas
@@ -934,7 +933,7 @@ router.post('/api/assistant', async (req, res) => {
     let data;
     try {
       data = await response.json();
-    } catch (jsonErr) {
+    } catch {
       data = {};
     }
     if (!response || typeof data !== 'object') {
@@ -980,7 +979,7 @@ router.post('/api/assistant', async (req, res) => {
       }});
     }
     return res.status(200).json({ reply: text });
-  } catch (error) {
+  } catch {
     return res.status(503).json({ error: {
       code: 503,
       message: 'El servidor de IA no está disponible actualmente. Por favor, asegúrate de que el backend esté en funcionamiento o intenta más tarde.'
@@ -1048,7 +1047,7 @@ router.get('/api/daily-notes', requireAuth, async (req, res) => {
   try {
     const { month, date } = req.query;
     let whereClause = {
-      tema: 'actividades-diarias' // Filtrar solo notas de actividades diarias
+      date: { not: null } // Filtrar solo notas que tienen fecha (notas diarias)
     };
     
     if (date) {
@@ -1114,9 +1113,7 @@ router.post('/api/daily-notes', requireAuth, async (req, res) => {
         tipo: type, // Mapear 'type' a 'tipo' del modelo unificado
         tags,
         relatedResources,
-        userId,
-        tema: 'actividades-diarias', // Asignar tema específico
-        descripcion: `Nota diaria del ${date}` // Descripción automática
+        userId
       }
     });
     
@@ -1146,7 +1143,7 @@ router.put('/api/daily-notes/:id', requireAuth, async (req, res) => {
     const existingNote = await prisma.note.findFirst({
       where: { 
         id,
-        tema: 'actividades-diarias' // Solo permitir actualizar notas diarias
+        date: { not: null } // Solo permitir actualizar notas diarias (que tienen fecha)
       }
     });
     
@@ -1185,7 +1182,7 @@ router.delete('/api/daily-notes/:id', requireAuth, async (req, res) => {
     const existingNote = await prisma.note.findFirst({
       where: { 
         id,
-        tema: 'actividades-diarias' // Solo permitir eliminar notas diarias
+        date: { not: null } // Solo permitir eliminar notas diarias (que tienen fecha)
       }
     });
     
@@ -1269,7 +1266,7 @@ router.get('/api/daily-notes/stats', requireAuth, async (req, res) => {
   try {
     const { month } = req.query;
     let whereClause = {
-      tema: 'actividades-diarias' // Solo estadísticas de notas diarias
+      date: { not: null } // Solo estadísticas de notas diarias (que tienen fecha)
     };
     
     if (month) {
@@ -1472,7 +1469,7 @@ router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
     } = req.query;
     
     let whereClause = {
-      tema: 'actividades-diarias' // Solo buscar en notas diarias
+      date: { not: null } // Solo buscar en notas diarias (que tienen fecha)
     };
     
     // Búsqueda por texto
@@ -1532,15 +1529,11 @@ router.get('/api/daily-notes/search', requireAuth, async (req, res) => {
 
 // ===== RUTAS PARA NOTAS GENERALES (REEMPLAZA ARCHIVOS .MD) =====
 
-// GET /api/notes - Obtener todas las notas o filtradas por tema
+// GET /api/notes - Obtener todas las notas
 router.get('/api/notes', requireAuth, async (req, res) => {
   try {
-    const { tema, tipo, status, search } = req.query;
+    const { tipo, status, search, month } = req.query;
     let whereClause = {};
-    
-    if (tema) {
-      whereClause.tema = tema;
-    }
     
     if (tipo) {
       whereClause.tipo = tipo;
@@ -1549,19 +1542,24 @@ router.get('/api/notes', requireAuth, async (req, res) => {
     if (status) {
       whereClause.status = status;
     }
+
+    // Filtro por mes para el calendario
+    if (month) {
+      whereClause.date = {
+        startsWith: month // Para fechas en formato YYYY-MM-DD
+      };
+    }
     
     if (search) {
       whereClause.OR = [
         { title: { contains: search, mode: 'insensitive' } },
-        { content: { contains: search, mode: 'insensitive' } },
-        { descripcion: { contains: search, mode: 'insensitive' } }
+        { content: { contains: search, mode: 'insensitive' } }
       ];
     }
     
     const notes = await prisma.note.findMany({
       where: whereClause,
       orderBy: [
-        { tema: 'asc' },
         { createdAt: 'desc' }
       ]
     });
@@ -1603,9 +1601,7 @@ router.post('/api/notes', requireAuth, async (req, res) => {
     const {
       title,
       content,
-      tema,
       tipo = 'nota',
-      descripcion,
       tags = [],
       context,
       keyPoints = [],
@@ -1622,10 +1618,10 @@ router.post('/api/notes', requireAuth, async (req, res) => {
     console.log('🔍 Backend: date value details:', JSON.stringify({ date }));
     
     // Validaciones básicas
-    if (!title || !content || !tema) {
+    if (!title || !content) {
       console.log('❌ Backend: Missing required fields');
       return res.status(400).json({ 
-        error: 'Faltan campos requeridos: title, content, tema' 
+        error: 'Faltan campos requeridos: title, content' 
       });
     }
     
@@ -1634,9 +1630,7 @@ router.post('/api/notes', requireAuth, async (req, res) => {
       data: {
         title,
         content,
-        tema,
         tipo,
-        descripcion,
         tags,
         context,
         keyPoints,
@@ -1663,13 +1657,14 @@ router.put('/api/notes/:id', requireAuth, async (req, res) => {
     const {
       title,
       content,
-      tema,
       tipo,
-      descripcion,
       tags,
       context,
       keyPoints,
-      status
+      status,
+      date,
+      priority,
+      relatedResources
     } = req.body;
     
     const existingNote = await prisma.note.findUnique({
@@ -1685,13 +1680,14 @@ router.put('/api/notes/:id', requireAuth, async (req, res) => {
       data: {
         title,
         content,
-        tema,
         tipo,
-        descripcion,
         tags,
         context,
         keyPoints,
         status,
+        date,
+        priority,
+        relatedResources,
         updatedAt: new Date()
       }
     });
@@ -1730,12 +1726,12 @@ router.delete('/api/notes/:id', requireAuth, async (req, res) => {
 // GET /api/notes/stats - Estadísticas de notas (incluye actividades diarias)
 router.get('/api/notes/stats', requireAuth, async (req, res) => {
   try {
-    const { month, tema } = req.query;
+    const { month, tipo } = req.query;
     let whereClause = {};
     
-    // Filtrar por tema si se especifica
-    if (tema) {
-      whereClause.tema = tema;
+    // Filtrar por tipo si se especifica
+    if (tipo) {
+      whereClause.tipo = tipo;
     }
     
     if (month) {
@@ -1749,8 +1745,8 @@ router.get('/api/notes/stats', requireAuth, async (req, res) => {
       where: whereClause
     });
     
-    // Si es tema de actividades-diarias, agrupar estadísticas por día
-    if (tema === 'actividades-diarias') {
+    // Si es tipo de actividades-diarias, agrupar estadísticas por día
+    if (tipo === 'actividades-diarias') {
       const statsByDay = {};
       
       notes.forEach(note => {
@@ -1807,7 +1803,7 @@ router.get('/api/notes/stats', requireAuth, async (req, res) => {
         }
       });
     } else {
-      // Estadísticas generales para otros temas
+      // Estadísticas generales para otros tipos
       const statsByType = {};
       const statsByPriority = {};
       const statsByStatus = {};
@@ -1853,20 +1849,15 @@ router.get('/api/notes/stats', requireAuth, async (req, res) => {
 // GET /api/notes/search - Búsqueda avanzada de notas
 router.get('/api/notes/search', requireAuth, async (req, res) => {
   try {
-    const { q, tema, tipo, tags, limit = 50 } = req.query;
+    const { q, tipo, tags, limit = 50 } = req.query;
     
     let whereClause = {};
     
     if (q) {
       whereClause.OR = [
         { title: { contains: q, mode: 'insensitive' } },
-        { content: { contains: q, mode: 'insensitive' } },
-        { descripcion: { contains: q, mode: 'insensitive' } }
+        { content: { contains: q, mode: 'insensitive' } }
       ];
-    }
-    
-    if (tema) {
-      whereClause.tema = tema;
     }
     
     if (tipo) {
@@ -1895,96 +1886,6 @@ router.get('/api/notes/search', requireAuth, async (req, res) => {
   }
 });
 
-// =============================================================================
-// RUTAS DE CONFIGURACIÓN
-// =============================================================================
-
-// TEMAS - CRUD
-router.get('/api/config/temas', async (req, res) => {
-  try {
-    const temas = await prisma.tema.findMany({
-      where: { activo: true },
-      orderBy: { nombre: 'asc' }
-    });
-    res.json(temas);
-  } catch (error) {
-    console.error('Error obteniendo temas:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
-
-router.post('/api/config/temas', requireAuth, async (req, res) => {
-  try {
-    const { nombre, descripcion, color } = req.body;
-    
-    const tema = await prisma.tema.create({
-      data: {
-        nombre,
-        descripcion,
-        color,
-        activo: true
-      }
-    });
-    
-    res.status(201).json(tema);
-  } catch (error) {
-    console.error('Error creando tema:', error);
-    if (error.code === 'P2002') {
-      res.status(400).json({ error: 'Ya existe un tema con ese nombre' });
-    } else {
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  }
-});
-
-router.put('/api/config/temas/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { nombre, descripcion, color, activo } = req.body;
-    
-    const tema = await prisma.tema.update({
-      where: { id },
-      data: {
-        nombre,
-        descripcion,
-        color,
-        activo
-      }
-    });
-    
-    res.json(tema);
-  } catch (error) {
-    console.error('Error actualizando tema:', error);
-    if (error.code === 'P2025') {
-      res.status(404).json({ error: 'Tema no encontrado' });
-    } else if (error.code === 'P2002') {
-      res.status(400).json({ error: 'Ya existe un tema con ese nombre' });
-    } else {
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  }
-});
-
-router.delete('/api/config/temas/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // Soft delete - marcamos como inactivo
-    const tema = await prisma.tema.update({
-      where: { id },
-      data: { activo: false }
-    });
-    
-    res.json({ message: 'Tema desactivado correctamente' });
-  } catch (error) {
-    console.error('Error desactivando tema:', error);
-    if (error.code === 'P2025') {
-      res.status(404).json({ error: 'Tema no encontrado' });
-    } else {
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  }
-});
 
 // COLORES DISPONIBLES PARA CONFIGURACIÓN
 // Propósito: Paleta estándar para que los administradores elijan al configurar tipos
@@ -2114,7 +2015,7 @@ router.delete('/api/config/tipos-eventos/:id', requireAuth, async (req, res) => 
   try {
     const { id } = req.params;
     
-    const tipo = await prisma.tipoEvento.update({
+    await prisma.tipoEvento.update({
       where: { id },
       data: { activo: false }
     });
@@ -2200,7 +2101,7 @@ router.delete('/api/config/tipos-notas/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
-    const tipo = await prisma.tipoNota.update({
+    await prisma.tipoNota.update({
       where: { id },
       data: { activo: false }
     });
@@ -2286,7 +2187,7 @@ router.delete('/api/config/tipos-recursos/:id', requireAuth, async (req, res) =>
   try {
     const { id } = req.params;
     
-    const tipo = await prisma.tipoRecurso.update({
+    await prisma.tipoRecurso.update({
       where: { id },
       data: { activo: false }
     });
@@ -2352,4 +2253,4 @@ router.get('/api/s3/test-connection', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

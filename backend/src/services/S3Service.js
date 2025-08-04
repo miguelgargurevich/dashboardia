@@ -1,7 +1,7 @@
-const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } = require('@aws-sdk/client-s3');
-const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-const crypto = require('crypto');
-const path = require('path');
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import crypto from 'crypto';
+import path from 'path';
 
 class S3Service {
   constructor() {
@@ -219,4 +219,4 @@ class S3Service {
   }
 }
 
-module.exports = S3Service;
+export default S3Service;
