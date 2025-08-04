@@ -5,8 +5,10 @@ const prisma = new PrismaClient();
 
 
 async function main() {
-  // Eliminar todos los eventos existentes (de prueba)
+  // Eliminar todos los eventos, recursos y notas existentes (de prueba)
   await prisma.event.deleteMany({});
+  await prisma.resource.deleteMany({});
+  await prisma.note.deleteMany({});
   // Variable global para fechas
   const now = new Date();
   // Usuarios
@@ -128,30 +130,6 @@ async function main() {
     }
   }
 
-  // Recursos
-  const resources = [
-    { tipo: 'enlace', titulo: 'Video Azure', url: 'https://youtube.com/azure', tags: ['azure', 'video'], categoria: 'Cloud' },
-    { tipo: 'nota', titulo: 'Nota rápida', descripcion: 'Recordatorio importante', tags: ['personal'], categoria: 'General' },
-    { tipo: 'archivo', titulo: 'Manual PDF', filePath: '/uploads/manual.pdf', tags: ['manual'], categoria: 'Documentos' },
-    { tipo: 'video', titulo: 'Capacitación Teams', url: 'https://youtube.com/teams', tags: ['teams', 'capacitación'], categoria: 'Colaboración' },
-    { tipo: 'enlace', titulo: 'Guía VPN', url: 'https://intranet/vpn', tags: ['vpn', 'manual'], categoria: 'Redes' },
-    // Recursos extra para pruebas
-    { tipo: 'archivo', titulo: 'Política Seguridad', filePath: '/uploads/politica-seguridad.pdf', tags: ['seguridad', 'pdf'], categoria: 'Seguridad' },
-    { tipo: 'url', titulo: 'Portal de Soporte', url: 'https://soporte.empresa.com', tags: ['soporte', 'web'], categoria: 'Soporte' },
-    { tipo: 'video', titulo: 'Onboarding IT', url: 'https://youtube.com/onboarding', tags: ['onboarding', 'it'], categoria: 'Recursos Humanos' },
-    { tipo: 'ia-automatizacion', titulo: 'Bot de Automatización', descripcion: 'Automatiza procesos comunes', tags: ['ia', 'automatización'], categoria: 'Automatización' },
-    { tipo: 'contactos-externos', titulo: 'Proveedor de Hosting', descripcion: 'Contacto de soporte hosting', tags: ['hosting', 'contacto'], categoria: 'Infraestructura' },
-    { tipo: 'plantillas-formularios', titulo: 'Plantilla Solicitud Acceso', filePath: '/uploads/solicitud-acceso.docx', tags: ['plantilla', 'acceso'], categoria: 'Formularios' },
-    { tipo: 'archivo', titulo: 'Manual de Usuario', filePath: '/uploads/manual-usuario.pdf', tags: ['manual', 'usuario'], categoria: 'Documentos' },
-    { tipo: 'url', titulo: 'Wiki Interna', url: 'https://wiki.empresa.com', tags: ['wiki', 'documentación'], categoria: 'Documentación' },
-    { tipo: 'archivo', titulo: 'Procedimiento Backup', filePath: '/uploads/backup.pdf', tags: ['backup', 'procedimiento'], categoria: 'Infraestructura' },
-    { tipo: 'video', titulo: 'Capacitación Seguridad', url: 'https://youtube.com/seguridad', tags: ['seguridad', 'capacitacion'], categoria: 'Seguridad' },
-    { tipo: 'url', titulo: 'Panel de Control', url: 'https://panel.empresa.com', tags: ['panel', 'control'], categoria: 'Administración' }
-  ];
-  for (const r of resources) {
-    const exists = await prisma.resource.findMany({ where: { titulo: r.titulo }, take: 1 });
-    if (exists.length === 0) await prisma.resource.create({ data: r });
-  }
 
   // Eventos de negocio (limpiados sin campos inexistentes)
   const businessEvents = [
@@ -314,6 +292,42 @@ async function main() {
   ];
   
   for (const e of businessEvents) {
+    // Crear recursos relacionados y obtener sus IDs
+    let resourceIds = [];
+    if (e.relatedResources && e.relatedResources.length > 0) {
+      for (const res of e.relatedResources) {
+        let resourceData = {};
+        if (res.startsWith('http')) {
+          resourceData = {
+            tipo: 'Enlaces Web',
+            titulo: res,
+            url: res,
+            fechaCarga: now
+          };
+        } else {
+          resourceData = {
+            tipo: 'Archivos',
+            titulo: res,
+            filePath: res,
+            fechaCarga: now
+          };
+        }
+        // Buscar si ya existe un recurso con ese url o filePath
+        let existing = null;
+        if (resourceData.url) {
+          existing = await prisma.resource.findFirst({ where: { url: resourceData.url } });
+        } else if (resourceData.filePath) {
+          existing = await prisma.resource.findFirst({ where: { filePath: resourceData.filePath } });
+        }
+        let resource;
+        if (!existing) {
+          resource = await prisma.resource.create({ data: resourceData });
+        } else {
+          resource = existing;
+        }
+        resourceIds.push(resource.id);
+      }
+    }
     // Crear el evento para cada mes del año actual
     for (let mes = 0; mes < 12; mes++) {
       const year = now.getFullYear();
@@ -327,22 +341,14 @@ async function main() {
       const eventData = {
         ...e,
         startDate,
-        endDate
+        endDate,
+        relatedResources: resourceIds
       };
       delete eventData.recurrentDay;
       await prisma.event.create({ data: eventData });
     }
   }
 
-  // Recursos con fechas recientes
-  await prisma.resource.createMany({
-    data: [
-      { tipo: 'archivo', titulo: 'Manual de usuario', descripcion: 'PDF de ayuda', filePath: '/files/manual.pdf', url: '', tags: ['manual'], categoria: 'Documentación', fechaCarga: new Date(now.getTime() - 3600000) },
-      { tipo: 'video', titulo: 'Tutorial de red', descripcion: 'Video explicativo', filePath: '', url: 'https://youtu.be/tutorial', tags: ['tutorial'], categoria: 'Video', fechaCarga: new Date(now.getTime() - 7200000) },
-      { tipo: 'nota', titulo: 'Nota interna', descripcion: 'Recordatorio de soporte', filePath: '', url: '', tags: ['nota'], categoria: 'Notas', fechaCarga: new Date(now.getTime() - 10800000) }
-    ],
-    skipDuplicates: true
-  });
 }
 
 main()

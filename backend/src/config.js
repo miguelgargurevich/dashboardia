@@ -4,7 +4,7 @@
 const config = {
   // Configuración por defecto para desarrollo
   development: {
-    database: process.env.DATABASE_URL_DEV,
+    database: process.env.DATABASE_URL,
     port: process.env.PORT_DEV || 4000,
     cors: {
       origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://127.0.0.1:3000"],
