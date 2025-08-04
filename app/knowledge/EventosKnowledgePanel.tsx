@@ -1,10 +1,10 @@
 
 "use client";
 import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaCalendarAlt, FaListUl } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import { formatFechaDDMMYYYY } from '../lib/formatFecha';
 import { useEventosConfig } from '../lib/useConfig';
-import { getIconComponent } from '../lib/useConfig';
+// import { getIconComponent } from '../lib/useConfig';
 import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import Modal from '../components/Modal';
 import EventoForm from '../components/eventos/EventoForm';
@@ -38,7 +38,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [busqueda, setBusqueda] = useState('');
   // Eliminamos los estados de sección y tipo seleccionado ya que solo tendremos vista de lista
-  const { getEventoConfig, loading: configLoading, items: tiposEventos } = useEventosConfig();
+  const { getEventoConfig, loading: configLoading } = useEventosConfig();
 
   // Función para obtener icono basado en configuración
   const getEventIcon = (title: string, tipoEvento?: string) => {
@@ -67,18 +67,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
     eventType: '',
   });
 
-  const [currentEvento, setCurrentEvento] = useState<EventoFormValues>({
-    title: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    location: '',
-    modo: '',
-    validador: '',
-    codigoDana: '',
-    recurrencePattern: '',
-    eventType: ''
-  });
+  // Eliminado: currentEvento y setCurrentEvento (no usados)
 
   React.useEffect(() => {
     if (token) cargarEventos(token);
@@ -99,7 +88,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
         const data = await res.json();
         setEventos(Array.isArray(data) ? data : []);
       }
-    } catch (e) {
+    } catch {
       // Manejo de error
     } finally {
       // setCargando(false);
@@ -248,7 +237,7 @@ const EventosKnowledgePanel: React.FC<EventosKnowledgePanelProps> = ({ token }) 
             <DetalleEventoPanel
               eventoSeleccionado={eventoSeleccionado}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={() => eventoSeleccionado && handleDelete(eventoSeleccionado.id)}
             />
           </div>
         </div>
