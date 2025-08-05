@@ -1,10 +1,21 @@
 /** @type {import('next').NextConfig} */
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: false,
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'dtlvqpmyukwcbpllgpue.supabase.co',
+        port: '',
+        pathname: '/storage/v1/s3/dashborad/**',
+      },
+    ],
   },
   async rewrites() {
     return [
