@@ -55,7 +55,31 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
                 <span className="font-semibold">{resource.titulo}</span>
                 <span className="text-sm text-gray-300">{resource.descripcion}</span>
                 <span className="text-xs text-gray-400">{formatFechaDDMMYYYY(resource.fechaCarga)}</span>
-                {resource.filePath && <a href={resource.filePath} className="text-xs text-blue-400 underline">Descargar</a>}
+                {resource.filePath && (
+                  <button
+                    className="text-xs text-blue-400 underline"
+                    onClick={async () => {
+                      try {
+                        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
+                        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                        const key = resource.filePath!.replace(/^https?:\/\/[^/]+\//, '');
+                        const res = await fetch(`${backendUrl}/api/resources/download/${encodeURIComponent(key)}`, {
+                          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+                        });
+                        const data = await res.json();
+                        if (data.downloadUrl) {
+                          window.open(data.downloadUrl, '_blank');
+                        } else {
+                          alert('No se pudo obtener el enlace de descarga.');
+                        }
+                      } catch (err) {
+                        alert('Error al descargar el archivo.');
+                      }
+                    }}
+                  >
+                    Descargar
+                  </button>
+                )}
                 {resource.url && <a href={resource.url} className="text-xs text-blue-400 underline">Ver recurso</a>}
               </div>
             );

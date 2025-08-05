@@ -244,14 +244,33 @@ const RecursosViewerModal: React.FC<RecursosViewerModalProps> = ({ open, onClose
                 {/* Botón de descarga alineado a la derecha */}
                 <div className="mt-6 flex justify-end">
                   {(recursoPreview.filePath || recursoPreview.url) && (
-                    <a
-                      href={recursoPreview.filePath || recursoPreview.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
                       className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/90 transition shadow"
+                      onClick={async () => {
+                        if (recursoPreview.filePath) {
+                          try {
+                            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
+                            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                            const key = recursoPreview.filePath.replace(/^https?:\/\/[^/]+\//, '');
+                            const res = await fetch(`${backendUrl}/api/resources/download/${encodeURIComponent(key)}`, {
+                              headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+                            });
+                            const data = await res.json();
+                            if (data.downloadUrl) {
+                              window.open(data.downloadUrl, '_blank');
+                            } else {
+                              alert('No se pudo obtener el enlace de descarga.');
+                            }
+                          } catch (err) {
+                            alert('Error al descargar el archivo.');
+                          }
+                        } else if (recursoPreview.url) {
+                          window.open(recursoPreview.url, '_blank');
+                        }
+                      }}
                     >
                       <FaDownload /> Descargar
-                    </a>
+                    </button>
                   )}
                 </div>
               </>

@@ -36,7 +36,28 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.open(recurso?.url || recurso?.filePath, '_blank')}
+                  onClick={async () => {
+                    if (recurso?.filePath) {
+                      try {
+                        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
+                        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+                        const key = recurso.filePath.replace(/^https?:\/\/[^/]+\//, '');
+                        const res = await fetch(`${backendUrl}/api/resources/download/${encodeURIComponent(key)}`, {
+                          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+                        });
+                        const data = await res.json();
+                        if (data.downloadUrl) {
+                          window.open(data.downloadUrl, '_blank');
+                        } else {
+                          alert('No se pudo obtener el enlace de descarga.');
+                        }
+                      } catch (err) {
+                        alert('Error al descargar el archivo.');
+                      }
+                    } else if (recurso?.url) {
+                      window.open(recurso.url, '_blank');
+                    }
+                  }}
                   className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
                   title="Descargar recurso"
                 >
