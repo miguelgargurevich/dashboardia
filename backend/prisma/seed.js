@@ -14,14 +14,7 @@ async function main() {
   // Usuarios
   const users = [
     { name: 'Admin', email: 'admin@soporte.com', password: await bcrypt.hash('admin123', 10), role: 'admin' },
-    { name: 'Usuario', email: 'usuario@soporte.com', password: await bcrypt.hash('user123', 10), role: 'user' },
-    { name: 'Miguel Fernandez', email: 'miguel@soporte.com', password: await bcrypt.hash('miguel123', 10), role: 'soporte' },
-    { name: 'Miguel Gargurevich', email: 'miguel.gargurevich@gmail.com', password: await bcrypt.hash('miguel123', 10), role: 'user' },
-    { name: 'Sofia Lyz', email: 'sofia@soporte.com', password: await bcrypt.hash('sofia123', 10), role: 'user' },
-    { name: 'Carlos Fernando', email: 'carlos@soporte.com', password: await bcrypt.hash('carlos123', 10), role: 'user' },
-    { name: 'Juan Pérez', email: 'juan.perez@soporte.com', password: await bcrypt.hash('juan123', 10), role: 'soporte' },
-    { name: 'Ana Torres', email: 'ana.torres@soporte.com', password: await bcrypt.hash('ana123', 10), role: 'soporte' },
-    { name: 'Luis Gómez', email: 'luis.gomez@soporte.com', password: await bcrypt.hash('luis123', 10), role: 'soporte' }
+    { name: 'Miguel Gargurevich', email: 'miguel.gargurevich@gmail.com', password: await bcrypt.hash('miguel123', 10), role: 'user' }
   ];
   let soporteUsers = [];
   for (const u of users) {
@@ -47,9 +40,7 @@ async function main() {
 
   // Tipos de Eventos
   const tiposEventos = [
-    { nombre: 'mantenimiento', icono: 'fa-wrench', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' },
     { nombre: 'capacitacion', icono: 'fa-graduation-cap', color: 'bg-green-500/20 text-green-400 border-green-400/30' },
-    { nombre: 'demo', icono: 'fa-laptop', color: 'bg-purple-500/20 text-purple-400 border-purple-400/30' },
     { nombre: 'reunion', icono: 'fa-users', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' },
     { nombre: 'incidente', icono: 'fa-exclamation-triangle', color: 'bg-red-500/20 text-red-400 border-red-400/30' },
     { nombre: 'notificaciones', icono: 'fa-bell', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-400/30' },
@@ -74,14 +65,11 @@ async function main() {
 
   // Tipos de Notas
   const tiposNotas = [
-    { nombre: 'Procedimiento', descripcion: 'Documentos de procesos paso a paso', icono: 'fa-clipboard-list', color: 'bg-blue-500/20 text-blue-400 border-blue-400/30' },
     { nombre: 'Manual', descripcion: 'Manuales de usuario y técnicos', icono: 'fa-book', color: 'bg-green-500/20 text-green-400 border-green-400/30' },
     { nombre: 'Guía', descripcion: 'Guías de referencia rápida', icono: 'fa-compass', color: 'bg-purple-500/20 text-purple-400 border-purple-400/30' },
     { nombre: 'Nota', descripcion: 'Notas generales y recordatorios', icono: 'fa-sticky-note', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-400/30' },
     { nombre: 'Checklist', descripcion: 'Listas de verificación', icono: 'fa-check-square', color: 'bg-orange-500/20 text-orange-400 border-orange-400/30' },
     { nombre: 'Incidente', descripcion: 'Documentación de incidentes', icono: 'fa-bug', color: 'bg-red-500/20 text-red-400 border-red-400/30' },
-    { nombre: 'Capacitación', descripcion: 'Material de formación', icono: 'fa-graduation-cap', color: 'bg-indigo-500/20 text-indigo-400 border-indigo-400/30' },
-    { nombre: 'Urgente', descripcion: 'Notas de alta prioridad', icono: 'fa-exclamation-circle', color: 'bg-red-600/20 text-red-300 border-red-300/30' }
   ];
 
   for (const tn of tiposNotas) {

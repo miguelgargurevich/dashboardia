@@ -2,7 +2,8 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from './auth.js';
-import S3Service from './services/S3Service.js';
+// import S3Service from './services/S3Service.js';
+import { createSupabaseClient } from './utils/supabase.js';
 import multer from 'multer';
 
 const router = express.Router();
@@ -16,8 +17,7 @@ const upload = multer({
   }
 });
 
-// Instancia del servicio S3
-const s3Service = new S3Service();
+// Eliminar instancia de S3Service, ahora usamos Supabase
 
 // Proteger solo rutas privadas, NO /api/assistant
 // router.use(requireAuth); // Comentado para proteger solo rutas privadas
@@ -291,16 +291,23 @@ router.delete('/api/resources/:id', requireAuth, async (req, res) => {
       }
     });
 
-    // Si tiene archivo en S3, eliminarlo
-    if (resource.filePath && resource.filePath.includes('amazonaws.com')) {
+    // Si tiene archivo en Supabase Storage, eliminarlo
+    if (resource.filePath && resource.filePath.includes(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
       try {
-        // Extraer key de la URL
+        // Extraer key de la URL pública
         const url = new URL(resource.filePath);
-        const key = url.pathname.substring(1); // Remover el primer "/"
-        await s3Service.deleteFile(key);
-      } catch (s3Error) {
-        console.error('Error eliminando archivo de S3:', s3Error);
-        // Continuar con la eliminación del registro aunque falle S3
+        // La ruta después de /object/public/<bucket>/
+        const parts = url.pathname.split('/');
+        const bucketIndex = parts.findIndex(p => p === process.env.SUPABASE_S3_BUCKET);
+        const key = parts.slice(bucketIndex + 1).join('/');
+        const supabase = createSupabaseClient();
+        const { error: delError } = await supabase.storage.from(process.env.SUPABASE_S3_BUCKET).remove([key]);
+        if (delError) {
+          console.error('Error eliminando archivo de Supabase Storage:', delError);
+        }
+      } catch (storageError) {
+        console.error('Error eliminando archivo de Supabase Storage:', storageError);
+        // Continuar con la eliminación del registro aunque falle Storage
       }
     }
 
@@ -374,44 +381,43 @@ router.post('/api/resources/upload', requireAuth, upload.single('file'), async (
     if (!file) {
       return res.status(400).json({ error: 'No se proporcionó ningún archivo' });
     }
-    
     if (!titulo || !categoria) {
       return res.status(400).json({ error: 'Título y categoría son requeridos' });
     }
-
-    // Validar tipo y tamaño de archivo
-    if (!s3Service.isAllowedFileType(file.originalname)) {
+    // Validar tipo y tamaño de archivo (solo ejemplo, puedes mejorar)
+    const allowedTypes = ['pdf','doc','docx','xls','xlsx','ppt','pptx','png','jpg','jpeg','gif','txt','csv','mp4','mp3','zip','rar'];
+    const ext = file.originalname.split('.').pop().toLowerCase();
+    if (!allowedTypes.includes(ext)) {
       return res.status(400).json({ error: 'Tipo de archivo no permitido' });
     }
-
-    if (!s3Service.isAllowedFileSize(file.size)) {
+    if (file.size > 100 * 1024 * 1024) {
       return res.status(400).json({ error: 'El archivo es demasiado grande (máximo 100MB)' });
     }
 
-    // Generar clave para S3
-    const s3Key = s3Service.generateS3Key(file.originalname, categoria, subcategoria);
+    // Subir archivo a Supabase Storage
+    const supabase = createSupabaseClient();
+    const filePath = `resources/${Date.now()}_${file.originalname}`;
+    const { data, error } = await supabase.storage
+      .from(process.env.SUPABASE_S3_BUCKET)
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+    if (error) return res.status(500).json({ error: error.message });
 
-    // Subir archivo a S3
-    const uploadResult = await s3Service.uploadFile(
-      file.buffer,
-      s3Key,
-      file.mimetype,
-      {
-        titulo,
-        categoria,
-        originalName: file.originalname
-      }
-    );
+    // Obtener URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from(process.env.SUPABASE_S3_BUCKET)
+      .getPublicUrl(filePath);
 
     // Crear registro en la base de datos
     const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
-    
     const nuevoRecurso = await prisma.resource.create({
       data: {
         tipo: 'archivo',
         titulo,
         descripcion: descripcion || '',
-        filePath: uploadResult.url,
+        filePath: publicUrlData.publicUrl,
         tags: tagsArray,
         categoria: categoria || 'general',
         fechaCarga: new Date()
@@ -421,13 +427,12 @@ router.post('/api/resources/upload', requireAuth, upload.single('file'), async (
     res.status(201).json({
       success: true,
       recurso: nuevoRecurso,
-      s3: {
-        key: uploadResult.key,
-        url: uploadResult.url,
-        size: uploadResult.size
+      storage: {
+        path: filePath,
+        url: publicUrlData.publicUrl,
+        size: file.size
       }
     });
-
   } catch (error) {
     console.error('Error en upload de recurso:', error);
     res.status(500).json({ error: 'Error subiendo archivo', details: error.message });
@@ -468,29 +473,29 @@ router.get('/api/resources/download/:key(*)', requireAuth, async (req, res) => {
   try {
     const key = req.params.key;
     const expires = parseInt(req.query.expires) || 3600;
+    const supabase = createSupabaseClient();
 
-    console.log('[DOWNLOAD] Key recibido:', key);
-
-    // Verificar que el archivo existe y obtener info
-    const fileInfo = await s3Service.getFileInfo(key);
+    // Verificar que el archivo existe (opcional, puedes omitir para performance)
+    // const { data: fileData, error: fileError } = await supabase.storage.from(process.env.SUPABASE_S3_BUCKET).list('', { search: key });
+    // if (fileError || !fileData || fileData.length === 0) {
+    //   return res.status(404).json({ error: 'Archivo no encontrado' });
+    // }
 
     // Generar URL firmada
-    const downloadUrl = await s3Service.getSignedDownloadUrl(key, expires);
-
-    console.log('[DOWNLOAD] URL firmada generada:', downloadUrl);
+    const { data, error } = await supabase.storage
+      .from(process.env.SUPABASE_S3_BUCKET)
+      .createSignedUrl(key, expires);
+    if (error || !data) {
+      return res.status(404).json({ error: 'Archivo no encontrado o error generando URL' });
+    }
 
     res.json({
       success: true,
-      downloadUrl,
-      fileInfo,
+      downloadUrl: data.signedUrl,
       expiresIn: expires
     });
-
   } catch (error) {
     console.error('Error generando URL de descarga:', error);
-    if (error.message.includes('NoSuchKey')) {
-      return res.status(404).json({ error: 'Archivo no encontrado' });
-    }
     res.status(500).json({ error: 'Error generando URL de descarga', details: error.message });
   }
 });
