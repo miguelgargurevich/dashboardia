@@ -253,16 +253,44 @@ router.put('/api/resources/:id', requireAuth, async (req, res) => {
 router.delete('/api/resources/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Obtener el recurso para ver si tiene archivo en S3
     const resource = await prisma.resource.findUnique({
       where: { id }
     });
-    
+
     if (!resource) {
       return res.status(404).json({ error: 'Recurso no encontrado' });
     }
-    
+
+    // Eliminar referencia en notas
+    await prisma.note.updateMany({
+      where: {
+        relatedResources: {
+          has: id
+        }
+      },
+      data: {
+        relatedResources: {
+          set: prisma.raw('array_remove("relatedResources", $1)', id)
+        }
+      }
+    });
+
+    // Eliminar referencia en eventos
+    await prisma.event.updateMany({
+      where: {
+        relatedResources: {
+          has: id
+        }
+      },
+      data: {
+        relatedResources: {
+          set: prisma.raw('array_remove("relatedResources", $1)', id)
+        }
+      }
+    });
+
     // Si tiene archivo en S3, eliminarlo
     if (resource.filePath && resource.filePath.includes('amazonaws.com')) {
       try {
@@ -275,11 +303,11 @@ router.delete('/api/resources/:id', requireAuth, async (req, res) => {
         // Continuar con la eliminación del registro aunque falle S3
       }
     }
-    
+
     await prisma.resource.delete({
       where: { id }
     });
-    
+
     res.json({ message: 'Recurso eliminado correctamente' });
   } catch (err) {
     if (err.code === 'P2025') {

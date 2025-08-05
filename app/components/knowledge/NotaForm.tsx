@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import RecursosSelectorModal from "./RecursosSelectorModal";
+import FileUploadS3 from "../FileUploadS3";
 import { FaFileAlt, FaStickyNote, FaHashtag, FaRegStickyNote } from "react-icons/fa";
 
 interface NotaFormValues {
@@ -206,6 +207,22 @@ const NotaForm: React.FC<NotaFormProps> = ({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Subida de archivos a S3 */}
+      <div className="mb-2">
+        <label className="block text-sm font-medium text-gray-300 mb-2">Adjuntar nuevo archivo</label>
+        <FileUploadS3
+          categoria="notas"
+          onUploadComplete={result => {
+            // El recurso subido está en result.recurso
+            const recurso = result.recurso;
+            setSelectedRecursos(prev => prev.includes(recurso.id) ? prev : [...prev, recurso.id]);
+            setRecursosSeleccionados(prev => prev.some(r => r.id === recurso.id) ? prev : [...prev, recurso]);
+          }}
+          onError={err => alert('Error subiendo archivo: ' + err)}
+          multiple={false}
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">Recursos Relacionados</label>
