@@ -441,11 +441,15 @@ router.get('/api/resources/download/:key(*)', requireAuth, async (req, res) => {
     const key = req.params.key;
     const expires = parseInt(req.query.expires) || 3600;
 
+    console.log('[DOWNLOAD] Key recibido:', key);
+
     // Verificar que el archivo existe y obtener info
     const fileInfo = await s3Service.getFileInfo(key);
-    
+
     // Generar URL firmada
     const downloadUrl = await s3Service.getSignedDownloadUrl(key, expires);
+
+    console.log('[DOWNLOAD] URL firmada generada:', downloadUrl);
 
     res.json({
       success: true,
