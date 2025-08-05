@@ -4,12 +4,12 @@ import { hasValidAuth, createUnauthorizedResponse } from '../../../../lib/auth';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 // PUT /api/content/knowledge/[id] - Actualizar nota de conocimiento
-export async function PUT(request: NextRequest, context: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: any) {
   try {
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();
     }
-    const { id } = context.params;
+    const { id } = params;
     const body = await request.json();
     // Mapear datos del frontend al formato del backend
     const noteData = {
