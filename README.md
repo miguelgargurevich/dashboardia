@@ -10,33 +10,26 @@ Centralizar la gestión de soporte técnico, recursos, eventos y conocimiento en
 
 ---
 
-## 📦 Estructura del Proyecto
+
+## 📦 Estructura del Proyecto (Monorepo)
 
 ```
-├── app/                  # Frontend principal (Next.js App Router)
-│   ├── api/              # Endpoints API (auth, calendar, content, events, resources, IA, etc.)
-│   ├── components/       # Componentes reutilizables (dashboard, charts, IA, modales, etc.)
-│   ├── configuracion/    # Configuración y ajustes
-│   ├── dashboard/        # Página principal del dashboard
-│   ├── knowledge/        # Base de conocimiento
-│   ├── lib/              # Librerías utilitarias (auth, gemini, etc.)
-│   ├── login/            # Página de login
-│   ├── calendar/         # Calendario de eventos y notas
-│   ├── globals.css       # Estilos globales
-│   ├── layout.tsx        # Layout global
-│   └── page.tsx          # Página raíz
-├── backend/              # Backend Node.js (API REST, Prisma, seed, migraciones)
-│   ├── app.js            # Servidor principal
-│   ├── prisma/           # Esquema y migraciones de base de datos
-│   └── src/              # Rutas y lógica de backend
-├── lib/                  # Configuración compartida
-├── public/               # Archivos públicos y base de conocimiento en markdown
-│   └── notas-md/         # Manuales y procedimientos en markdown
-├── tailwind.config.js    # Configuración de Tailwind CSS
-├── postcss.config.js     # Configuración de PostCSS
-├── tsconfig*.json        # Configuración de TypeScript
-├── package.json          # Dependencias y scripts
-└── README.md             # Documentación del proyecto
+├── apps/
+│   ├── frontend/           # Next.js App Router (todo el frontend)
+│   │   ├── app/            # Código fuente Next.js (api, components, pages, etc.)
+│   │   ├── public/         # Archivos públicos y markdown
+│   │   ├── tailwind.config.js
+│   │   ├── postcss.config.js
+│   │   ├── tsconfig.json
+│   │   └── ...
+│   └── backend/            # Node.js + Express + Prisma (API REST, seed, migraciones)
+│       ├── app.js          # Servidor principal
+│       ├── prisma/         # Esquema y migraciones de base de datos
+│       └── src/            # Rutas y lógica de backend
+├── packages/               # (Opcional) Librerías compartidas (utils, types, config, etc.)
+├── .env                    # Configuración global (o por app)
+├── package.json            # Scripts y dependencias raíz (workspaces)
+└── README.md               # Documentación del monorepo
 ```
 
 ---
@@ -158,23 +151,55 @@ model TipoRecurso {
 
 ---
 
-## 📝 Prompt para crear otra versión de la app
+
+## 📝 Prompt para crear otra versión monorepo de la app (detallado)
 
 ```
-Eres un asistente experto en desarrollo de dashboards de soporte técnico y productividad. Quiero que generes una nueva versión de la aplicación "Dashboard IA Soporte" con las siguientes características:
+Eres un asistente experto en desarrollo de dashboards de soporte técnico y productividad. Quiero que generes una nueva versión de la aplicación "Dashboard IA Soporte" como un monorepo (frontend y backend en la misma raíz) con los siguientes requerimientos detallados:
 
-- Frontend en Next.js (App Router), React, TypeScript y Tailwind CSS
-- Backend en Node.js, Express, Prisma y PostgreSQL
-- Módulos: Dashboard, Base de Conocimiento, Recursos, Eventos, Notas, Asistente IA
-- Autenticación JWT y seed de usuarios
-- Soporte para archivos adjuntos y subida a S3 o local
-- IA integrada para sugerencias, clasificación y búsqueda
-- Personalización de colores, iconos y configuración
-- Búsqueda avanzada y filtros
-- Relación entre recursos y eventos, recursos y notas
-- Documentación técnica y funcional clara
+**Estructura y stack:**
+- Estructura monorepo con `/apps/frontend` (Next.js 15, React 18, TypeScript, Tailwind CSS) y `/apps/backend` (Node.js, Express, Prisma, PostgreSQL)
+- Workspaces y dependencias compartidas en `/packages` (utils, types, config, hooks, middlewares, etc.)
+- Configuración global en `.env` y scripts raíz en `package.json` (usar workspaces)
 
-Incluye la estructura de carpetas, el esquema de la base de datos, y especificaciones técnicas y funcionales. Optimiza para accesibilidad, rendimiento y escalabilidad.
+**Módulos y funcionalidades:**
+- Dashboard con métricas, gráficas y paneles personalizables
+- Base de Conocimiento (manuales, procedimientos, artículos, markdown)
+- Gestión de Recursos (archivos, enlaces, videos, notas, subida a S3/local)
+- Calendario de eventos y notas diarias (soporte para eventos recurrentes)
+- Asistente IA (chatbot) integrado, con soporte para archivos adjuntos y sugerencias contextuales
+- Autenticación JWT, seed de usuarios y roles (admin, user, soporte)
+- Búsqueda avanzada, filtros inteligentes y relaciones cruzadas (recursos-eventos, recursos-notas, etc.)
+- Personalización de colores, iconos, configuración y branding
+- Documentación técnica y funcional clara (README, comentarios, ejemplos de uso)
+
+**Testing y calidad:**
+- Testing unitario y de integración (Jest, Testing Library, Supertest)
+- Linting, formateo y pre-commit hooks (ESLint, Prettier, Husky)
+- Accesibilidad (WCAG 2.1 AA), dark mode, responsive, keyboard navigation
+- Performance: lazy loading, code splitting, optimización de imágenes y assets
+
+**DevOps y CI/CD:**
+- Scripts para desarrollo local y producción
+- Deploy automático: Vercel (frontend), Render/Fly.io (backend)
+- Workflows de CI/CD (GitHub Actions) para test, build y deploy
+
+**Ejemplo de endpoints y estructura:**
+- `/api/auth/login`, `/api/notes`, `/api/resources`, `/api/events`, `/api/assistant`, `/api/upload`
+- `/apps/frontend/app/api/` para rutas Next.js API
+- `/apps/backend/src/routes/` para rutas Express
+- `/packages/types/` para tipos TypeScript compartidos
+
+**Base de datos:**
+- Incluye el esquema Prisma/PostgreSQL completo (User, Resource, Event, Note, TipoEvento, TipoNota, TipoRecurso)
+- Migraciones y seed de datos de ejemplo
+
+**Extras:**
+- Ejemplo de configuración de S3 y subida de archivos
+- Ejemplo de integración con Gemini/OpenAI para el asistente
+- Ejemplo de markdown y recursos en `/public/notas-md/`
+
+Optimiza para accesibilidad, rendimiento, escalabilidad y mantenibilidad. Incluye la estructura de carpetas monorepo, el esquema de la base de datos, especificaciones técnicas y funcionales, y recomendaciones de buenas prácticas.
 ```
 
 ---
