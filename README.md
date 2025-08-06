@@ -1,12 +1,12 @@
 # Dashboard IA Soporte
 
-**Dashboard IA Soporte** es una solución integral para la gestión de soporte técnico, productividad y conocimiento, combinando un frontend robusto en Next.js/React con un backend Node.js/Prisma y PostgreSQL. Incluye autenticación, paneles de visualización, gestión de tickets, recursos, eventos, notas, base de conocimiento y un asistente IA (chatbot) con soporte para archivos adjuntos.
+**Dashboard IA Soporte** es una solución integral para la gestión de soporte técnico, productividad y conocimiento, combinando un frontend robusto en Next.js/React con un backend Node.js/Prisma y PostgreSQL. Incluye autenticación, paneles de visualización, gestión de recursos, eventos, notas, base de conocimiento y un asistente IA (chatbot) con soporte para archivos adjuntos.
 
 ---
 
 ## 🧠 Propósito de la Aplicación
 
-Centralizar la gestión de soporte técnico, recursos, eventos, tickets y conocimiento en una sola plataforma, potenciando la productividad personal y de equipos con ayuda de IA.
+Centralizar la gestión de soporte técnico, recursos, eventos y conocimiento en una sola plataforma, potenciando la productividad personal y de equipos con ayuda de IA.
 
 ---
 
@@ -14,7 +14,7 @@ Centralizar la gestión de soporte técnico, recursos, eventos, tickets y conoci
 
 ```
 ├── app/                  # Frontend principal (Next.js App Router)
-│   ├── api/              # Endpoints API (auth, calendar, content, events, resources, tickets, IA, etc.)
+│   ├── api/              # Endpoints API (auth, calendar, content, events, resources, IA, etc.)
 │   ├── components/       # Componentes reutilizables (dashboard, charts, IA, modales, etc.)
 │   ├── configuracion/    # Configuración y ajustes
 │   ├── dashboard/        # Página principal del dashboard
@@ -148,14 +148,13 @@ model TipoRecurso {
 ## 🚀 Especificaciones Funcionales
 
 - Dashboard interactivo con métricas y gráficas
-- Gestión de tickets (incidentes y requerimientos)
 - Base de conocimiento (manuales, procedimientos, artículos)
 - Gestión de recursos (archivos, enlaces, videos, notas)
 - Calendario de eventos y notas diarias
 - Asistente IA (chatbot) con soporte para archivos adjuntos
 - Personalización de colores, iconos y configuración
 - Búsqueda inteligente y filtros avanzados
-- Relación entre tickets, eventos, recursos y notas
+- Relación entre recursos y eventos, recursos y notas
 
 ---
 
@@ -166,13 +165,13 @@ Eres un asistente experto en desarrollo de dashboards de soporte técnico y prod
 
 - Frontend en Next.js (App Router), React, TypeScript y Tailwind CSS
 - Backend en Node.js, Express, Prisma y PostgreSQL
-- Módulos: Dashboard, Tickets, Base de Conocimiento, Recursos, Eventos, Notas, Asistente IA
+- Módulos: Dashboard, Base de Conocimiento, Recursos, Eventos, Notas, Asistente IA
 - Autenticación JWT y seed de usuarios
 - Soporte para archivos adjuntos y subida a S3 o local
 - IA integrada para sugerencias, clasificación y búsqueda
 - Personalización de colores, iconos y configuración
 - Búsqueda avanzada y filtros
-- Relación entre tickets, eventos, recursos y notas
+- Relación entre recursos y eventos, recursos y notas
 - Documentación técnica y funcional clara
 
 Incluye la estructura de carpetas, el esquema de la base de datos, y especificaciones técnicas y funcionales. Optimiza para accesibilidad, rendimiento y escalabilidad.
@@ -203,7 +202,7 @@ Autor: Miguel F. Gargurevich
 
 ## Descripción General
 
-Dashboard IA Soporte es una solución moderna para la gestión de soporte técnico, combinando un frontend robusto en Next.js/React con un backend Node.js/Prisma y PostgreSQL. Incluye autenticación, paneles de visualización, gestión de tickets, recursos, eventos, notas, base de conocimiento y un asistente IA (chatbot) con soporte para archivos adjuntos.
+Dashboard IA Soporte es una solución moderna para la gestión de soporte técnico, combinando un frontend robusto en Next.js/React con un backend Node.js/Prisma y PostgreSQL. Incluye autenticación, paneles de visualización, gestión de recursos, eventos, notas, base de conocimiento y un asistente IA (chatbot) con soporte para archivos adjuntos.
 
 ---
 
@@ -211,7 +210,7 @@ Dashboard IA Soporte es una solución moderna para la gestión de soporte técni
 
 ```
 ├── app/                  # Frontend principal (Next.js App Router)
-│   ├── api/              # Endpoints API (auth, calendar, content, events, resources, tickets, IA, etc.)
+│   ├── api/              # Endpoints API (auth, calendar, content, events, resources, IA, etc.)
 │   ├── components/       # Componentes reutilizables (dashboard, charts, IA, modales, etc.)
 │   ├── configuracion/    # Configuración y ajustes
 │   ├── dashboard/        # Página principal del dashboard
@@ -294,8 +293,7 @@ El login utiliza los usuarios del seed del backend:
 
 ## Funcionalidades Destacadas
 
-- **Dashboard interactivo:** Panel principal con gráficas de tickets, eventos, recursos recientes y estadísticas semanales.
-- **Gestión de tickets:** Visualización, filtrado, estadísticas y tendencias de tickets por prioridad, departamento y tiempo.
+- **Dashboard interactivo:** Panel principal con gráficas estadisticas de, eventos, recursos recientes y estadísticas semanales.
 - **Eventos y calendario:** Gestión de eventos, calendario interactivo, notas diarias y eventos próximos.
 - **Base de conocimiento:** Acceso a manuales, procedimientos y recursos en markdown.
 - **Recursos:** Subida, consulta y gestión de archivos recientes.
