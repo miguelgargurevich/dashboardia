@@ -1,8 +1,6 @@
-
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from './auth.js';
-// import S3Service from './services/S3Service.js';
 import { createSupabaseClient } from './utils/supabase.js';
 import multer from 'multer';
 
@@ -16,11 +14,6 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024 // 100MB límite
   }
 });
-
-// Eliminar instancia de S3Service, ahora usamos Supabase
-
-// Proteger solo rutas privadas, NO /api/assistant
-// router.use(requireAuth); // Comentado para proteger solo rutas privadas
 
 // System prompt para el asistente IA
 const systemPrompt = `
@@ -375,7 +368,7 @@ router.delete('/api/resources/:id', requireAuth, async (req, res) => {
 router.post('/api/resources/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
     const file = req.file;
-    const { titulo, descripcion, categoria, subcategoria, tags } = req.body;
+    const { titulo, descripcion, categoria, tags } = req.body;
 
     // Validaciones
     if (!file) {
@@ -397,7 +390,7 @@ router.post('/api/resources/upload', requireAuth, upload.single('file'), async (
     // Subir archivo a Supabase Storage
     const supabase = createSupabaseClient();
     const filePath = `resources/${Date.now()}_${file.originalname}`;
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(process.env.SUPABASE_S3_BUCKET)
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
@@ -915,9 +908,6 @@ router.delete('/api/events/:id', async (req, res) => {
 
 router.post('/api/assistant', async (req, res) => {
   try {
-    // LOG de depuración
-    // console.log('--- [IA CHAT] Body recibido:', req.body);
-    // console.log('--- [IA CHAT] Headers:', req.headers);
     const GEMINI_MODEL = 'gemini-2.5-pro';
     const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`;
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -1923,6 +1913,22 @@ router.get('/api/notes/search', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/content/knowledge/:id - Obtener una nota de conocimiento por ID
+router.get('/api/content/knowledge/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const note = await prisma.note.findUnique({
+      where: { id }
+    });
+    if (!note) {
+      return res.status(404).json({ error: 'Nota de conocimiento no encontrada' });
+    }
+    res.json(note);
+  } catch (error) {
+    console.error('Error obteniendo nota de conocimiento:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
 
 // COLORES DISPONIBLES PARA CONFIGURACIÓN
 // Propósito: Paleta estándar para que los administradores elijan al configurar tipos

@@ -146,15 +146,26 @@ export default function Home() {
       }
       const eventData = await response.json();
       if (Array.isArray(eventData)) {
-        // Mantener todos los datos del evento, solo normalizar los campos necesarios
-        const normalizedEvents = eventData.map((evento: Event) => ({
-          ...evento,
-          // Asegurar que los campos básicos estén disponibles para CalendarWithDetail
-          title: evento.titulo || evento.title || '',
-          startDate: evento.fechaInicio || evento.startDate || '',
-          recurrencePattern: evento.recurrencePattern || 'ninguno'
-        }));
-        
+        // Normalizar todos los campos posibles para máxima compatibilidad
+        const normalizedEvents = eventData.map((evento: Event) => {
+          const title = evento.titulo || evento.title || '';
+          const startDate = evento.startDate || evento.fechaInicio || '';
+          const endDate = evento.endDate || evento.fechaFin || '';
+          const description = evento.descripcion || evento.description || '';
+          const location = evento.ubicacion || evento.location || '';
+          const eventType = evento.tipoEvento || evento.eventType || '';
+          const recurrencePattern = evento.recurrencePattern || 'ninguno';
+          return {
+            ...evento,
+            title,
+            startDate,
+            endDate,
+            description,
+            location,
+            eventType,
+            recurrencePattern
+          };
+        });
         setEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') === 'ninguno'));
         setRecurringEvents(normalizedEvents.filter((event: Event) => (event.recurrencePattern || 'ninguno') !== 'ninguno'));
       } else {
