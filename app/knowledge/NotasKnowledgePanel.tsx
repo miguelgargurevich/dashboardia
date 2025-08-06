@@ -183,16 +183,6 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
     }
   };
 
-  // Función para descargar nota
-  const descargarNota = (nota: Nota) => {
-    const element = document.createElement('a');
-    const file = new Blob([nota.content], { type: 'text/markdown' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${nota.title}.md`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
 
   // Filtrar notas según búsqueda
   const notasFiltradas = notas.filter(nota => 
@@ -295,7 +285,6 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         <div className="lg:col-span-2">
           <DetalleNotaPanel
             notaSeleccionada={notaSeleccionada}
-            descargarNota={descargarNota}
             eliminarNota={handleDelete}
             renderizarContenidoMarkdown={renderizarContenidoMarkdown}
             onEdit={handleEdit}
