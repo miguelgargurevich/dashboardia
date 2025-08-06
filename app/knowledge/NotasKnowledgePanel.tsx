@@ -8,14 +8,14 @@ import NotaForm from '../components/knowledge/NotaForm';
 
 interface Nota {
   id: string;
-  nombre: string;
+  title: string;
+  content: string;
   tipo: string;
-  contenido: string;
-  etiquetas?: string[];
-  status?: string;
+  tags?: string[];
+  relatedResources?: string[];
+  // Si priority y date existen en el backend, déjalos opcionales
   priority?: string;
   date?: string;
-  relatedResources?: string[];
 }
 
 interface TipoNota {
@@ -27,10 +27,10 @@ interface TipoNota {
 }
 
 interface NotaFormValues {
-  nombre: string;
-  contenido: string;
+  title: string;
+  content: string;
   tipo: string;
-  etiquetas?: string[];
+  tags?: string[];
   priority?: string;
   date?: string;
   relatedResources?: string[];
@@ -51,11 +51,11 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   const { getNotaConfig, loading: configLoading, items: tiposNotas } = useNotasConfig();
 
   // Función para renderizar contenido markdown
-  const renderizarContenidoMarkdown = (contenido: string): React.ReactNode => {
+  const renderizarContenidoMarkdown = (content: string): React.ReactNode => {
     // Renderizado básico de markdown
     return (
       <div className="prose prose-invert max-w-none">
-        {contenido.split('\n').map((linea, index) => {
+        {content.split('\n').map((linea, index) => {
           if (linea.startsWith('# ')) {
             return <h1 key={index} className="text-2xl font-bold mb-4 text-accent">{linea.slice(2)}</h1>;
           }
@@ -96,14 +96,13 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         for (const notaInfo of notasArray) {
           notasCargadas.push({
             id: notaInfo.id,
-            nombre: notaInfo.title || notaInfo.nombreSinExtension || 'Sin título',
+            title: notaInfo.title || notaInfo.nombreSinExtension || 'Sin título',
+            content: notaInfo.content || '',
             tipo: notaInfo.tipo || 'nota',
-            contenido: notaInfo.content || notaInfo.contenido || '',
-            etiquetas: notaInfo.tags || [],
-            status: notaInfo.status,
+            tags: notaInfo.tags || [],
+            relatedResources: notaInfo.relatedResources,
             priority: notaInfo.priority,
-            date: notaInfo.date,
-            relatedResources: notaInfo.relatedResources
+            date: notaInfo.date
           });
         }
         
@@ -143,16 +142,21 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         setMostrarFormularioNota(false);
         setNotaEditando(null);
       } else {
-        console.error('Error guardando nota');
+        let errorMsg = 'Error guardando nota';
+        try {
+          const errorData = await response.json();
+          errorMsg += ': ' + (errorData?.error || JSON.stringify(errorData));
+        } catch {}
+        console.error(errorMsg);
       }
     } catch (error) {
       console.error('Error guardando nota:', error);
     }
   };
 
-  // Función para editar nota
+  // Función para editar nota (acepta readOnly opcional)
   const handleEdit = (nota: Nota) => {
-    setNotaEditando(nota);
+    setNotaEditando({ ...nota });
     setMostrarFormularioNota(true);
   };
 
@@ -182,9 +186,9 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
   // Función para descargar nota
   const descargarNota = (nota: Nota) => {
     const element = document.createElement('a');
-    const file = new Blob([nota.contenido], { type: 'text/markdown' });
+    const file = new Blob([nota.content], { type: 'text/markdown' });
     element.href = URL.createObjectURL(file);
-    element.download = `${nota.nombre}.md`;
+    element.download = `${nota.title}.md`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -192,13 +196,13 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
 
   // Filtrar notas según búsqueda
   const notasFiltradas = notas.filter(nota => 
-    nota.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    nota.contenido.toLowerCase().includes(busqueda.toLowerCase())
+    nota.title.toLowerCase().includes(busqueda.toLowerCase()) ||
+    nota.content.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   // Extraer etiquetas disponibles
   const etiquetasDisponibles = Array.from(new Set(
-    notas.flatMap(nota => nota.etiquetas || [])
+    notas.flatMap(nota => nota.tags || [])
   )).sort();
 
   if (configLoading) {
@@ -269,7 +273,7 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium text-white truncate">
-                          {nota.nombre}
+                          {nota.title}
                         </h4>
                         <p className="text-xs text-gray-400 mt-1">
                           {config.nombre}
@@ -310,10 +314,10 @@ const NotasKnowledgePanel: React.FC<NotasKnowledgePanelProps> = ({ token }) => {
         >
           <NotaForm
             initialValues={notaEditando ? {
-              nombre: notaEditando.nombre,
-              contenido: notaEditando.contenido || '',
+              title: notaEditando.title,
+              content: notaEditando.content || '',
               tipo: notaEditando.tipo || 'nota',
-              etiquetas: notaEditando.etiquetas,
+              tags: notaEditando.tags,
               priority: notaEditando.priority,
               date: notaEditando.date,
               relatedResources: notaEditando.relatedResources

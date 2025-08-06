@@ -4,7 +4,11 @@ import { hasValidAuth, createUnauthorizedResponse } from '../../../../lib/auth';
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 // PUT /api/content/knowledge/[id] - Actualizar nota de conocimiento
-export async function PUT(request: NextRequest, { params }: any) {
+interface Params {
+  id: string;
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
     if (!hasValidAuth(request)) {
       return createUnauthorizedResponse();

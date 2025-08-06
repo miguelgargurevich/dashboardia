@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import RecursosSelectorModal from "./RecursosSelectorModal";
-import {FaPaperclip, FaCalendarAlt, FaRegCalendarAlt, FaRegClock, FaMapMarkerAlt, FaBullseye, FaCheckCircle, FaHashtag, FaTag, FaListOl, FaSyncAlt, FaSearch, FaClipboardList } from "react-icons/fa";
+import RecursosSelectorPanel from "../resources/RecursosSelectorPanel";
+import {FaPaperclip, FaCalendarAlt, FaRegCalendarAlt, FaRegClock, FaMapMarkerAlt, FaBullseye, FaCheckCircle, FaTag, FaListOl, FaSyncAlt, FaClipboardList } from "react-icons/fa";
 import { useConfig } from "../../lib/useConfig";
 
 export interface EventoFormValues {
@@ -61,7 +61,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
     eventType: initialValues?.eventType || "otro"
   });
 
-  // Modal de selección de recursos
+  // Panel de selección de recursos
   const [recursosModalAbierto, setRecursosModalAbierto] = useState(false);
   const [recursosSeleccionados, setRecursosSeleccionados] = useState<{ id: string; titulo: string; tipo?: string; descripcion?: string }[]>([]);
 
@@ -122,7 +122,7 @@ const EventoForm: React.FC<EventoFormProps> = ({
 
 
 
-  // Cuando el usuario confirma selección en el modal
+  // Cuando el usuario confirma selección en el panel
   const handleRecursosSeleccionados = (recursos: { id: string; titulo: string; tipo?: string; descripcion?: string }[]) => {
     setRecursosSeleccionados(recursos);
     setForm(f => ({ ...f, relatedResources: recursos.map(r => r.id) }));
@@ -306,10 +306,10 @@ const EventoForm: React.FC<EventoFormProps> = ({
             ))
           )}
         </div>
-        <button type="button" className="px-3 py-1 rounded bg-accent text-primary font-bold hover:bg-accent/80 transition" onClick={() => setRecursosModalAbierto(true)}>
+        <button type="button" className="px-3 py-1 rounded bg-accent text-primary font-bold hover:bg-accent/80 transition mb-2" onClick={() => setRecursosModalAbierto(v => !v)}>
           Seleccionar recursos
         </button>
-        <RecursosSelectorModal
+        <RecursosSelectorPanel
           open={recursosModalAbierto}
           onClose={() => setRecursosModalAbierto(false)}
           onSelect={handleRecursosSeleccionados}

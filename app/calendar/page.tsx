@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 const NotaForm = dynamic(() => import('../components/knowledge/NotaForm'), { ssr: false });
 import DetalleEventoPanel from '../components/eventos/DetalleEventoPanel';
 import EventoForm from '../components/eventos/EventoForm';
+import RecursosViewerModal from '../components/resources/RecursosViewerModal';
 import { useSearchParams } from 'next/navigation';
 import AssistantBubble from '../components/AsisstantIA/AssistantBubble';
 import Modal from '../components/Modal';
@@ -19,7 +20,6 @@ import {
   FaFileAlt, 
   FaRegStickyNote, 
   FaPlus,
-  FaCheckCircle,
   FaPaperclip
 } from "react-icons/fa";
 
@@ -126,6 +126,18 @@ interface Note {
   const [creatingNote, setCreatingNote] = useState(false);
   const [noteFiles, setNoteFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [detailNote, setDetailNote] = useState<Note | null>(null);
+  const [showNoteDetail, setShowNoteDetail] = useState(false);
+
+  const handleShowNoteDetail = (note: Note) => {
+    setDetailNote(note);
+    setShowNoteDetail(true);
+  };
+
+  const handleCloseNoteDetail = () => {
+    setShowNoteDetail(false);
+    setDetailNote(null);
+  };
 
   // Drag and drop handlers para archivos
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -262,25 +274,6 @@ interface Note {
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [showNoteForm, setShowNoteForm] = useState(false);
 
-  const handleEditNote = (note: Note) => {
-    setEditingNote(note);
-    setShowNoteForm(true);
-  };
-
-  const handleDeleteNote = async (note: Note) => {
-    if (!window.confirm('¿Seguro que deseas eliminar esta nota?')) return;
-    try {
-      const token = getToken();
-      const res = await fetch(`/api/calendar/notes/${note.id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Error al eliminar nota');
-      fetchNotes();
-    } catch {
-      alert('No se pudo eliminar la nota.');
-    }
-  };
 
 
   const handleCloseNoteForm = () => {
@@ -417,6 +410,9 @@ interface Note {
 
 
 
+  // Estado para el modal de recursos relacionados de la nota seleccionada
+  const [modalRecursosOpen, setModalRecursosOpen] = useState(false);
+  const [recursosToView, setRecursosToView] = useState<string[]>([]);
 
   return (
     <div className="min-h-screen bg-primary text-white p-6">
@@ -754,7 +750,6 @@ interface Note {
                   ) : selectedDayNotes.length > 0 ? (
                     <ul className="space-y-3">
                       {selectedDayNotes.map(note => {
-                        const recursosCount = Array.isArray(note.relatedResources) ? note.relatedResources.length : 0;
                         return (
                           <li key={note.id} className="bg-primary/40 rounded-lg p-3 border border-green-400/30 shadow flex flex-col gap-2">
                             <div className="flex items-start justify-between mb-2">
@@ -765,22 +760,12 @@ interface Note {
                                 <span className="font-semibold text-white text-sm">{note.title || 'Sin título'}</span>
                               </div>
                               <div className="flex items-center gap-2 ml-auto">
-                                {note.createdAt && (
-                                  <span className="text-[11px] text-gray-400">{new Date(note.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
-                                )}
                                 <button
-                                  className="text-blue-400 hover:text-blue-600 p-1 rounded transition"
-                                  title="Editar nota"
-                                  onClick={() => handleEditNote(note)}
+                                  className="text-blue-400 hover:text-blue-600 p-1 rounded transition text-xs font-bold border border-blue-400/30 bg-blue-900/20"
+                                  title="Ver detalle de la nota"
+                                  onClick={() => handleShowNoteDetail(note)}
                                 >
-                                  <FaCheckCircle />
-                                </button>
-                                <button
-                                  className="text-red-400 hover:text-red-600 p-1 rounded transition"
-                                  title="Eliminar nota"
-                                  onClick={() => handleDeleteNote(note)}
-                                >
-                                  ×
+                                  Ver detalle
                                 </button>
                               </div>
                             </div>
@@ -788,15 +773,46 @@ interface Note {
                               <p className="text-gray-300 text-xs mb-2 line-clamp-2">{note.content.length > 120 ? `${note.content.slice(0, 120)}...` : note.content}</p>
                             )}
                             <p className='text-xs text-gray-400 mb-2'>{new Date(note.date).toLocaleDateString('es-ES')}</p>
-                            <div className="flex flex-wrap gap-2 mt-1">
+                            <div className="flex flex-wrap gap-2 mt-1 items-center">
                               <span className="bg-green-700/40 text-green-200 text-xs px-3 py-1 rounded-full">
                                 {note.tags && note.tags.length > 0 ? note.tags.join(', ') : 'Sin tags'}
                               </span>
-                              <span className="text-xs text-gray-400 ml-auto">{recursosCount} Archivos</span>
+                              {/* Recursos relacionados: igual que en DetalleNotaPanel */}
+                              {Array.isArray(note.relatedResources) && note.relatedResources.length > 0 ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    className="text-xs px-2 py-1 rounded bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/40 hover:text-indigo-200 font-bold transition border border-indigo-400/30 cursor-pointer ml-auto"
+                                    onClick={() => {
+                                      setRecursosToView(note.relatedResources as string[]);
+                                      setModalRecursosOpen(true);
+                                    }}
+                                    title="Ver recursos relacionados"
+                                  >
+                                    <span className="font-bold mr-1">📎 Recursos:</span> {note.relatedResources.length}
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-xs px-2 py-1 rounded bg-gray-600/20 text-gray-400 ml-auto">
+                                  📎 Recursos: 0
+                                </span>
+                              )}
                             </div>
                           </li>
                         );
                       })}
+      {/* Modal visor de recursos relacionados (solo lectura) */}
+      {modalRecursosOpen && (
+        <RecursosViewerModal
+          open={modalRecursosOpen}
+          onClose={() => {
+            setModalRecursosOpen(false);
+            setRecursosToView([]);
+          }}
+          recursoIds={recursosToView}
+          token={typeof window !== 'undefined' ? localStorage.getItem('token') : undefined}
+        />
+      )}
                     </ul>
                   ) : (
                     <div className="text-xs text-gray-400">No hay notas para este día.</div>
@@ -864,10 +880,10 @@ interface Note {
         <Modal open={showNoteForm} onClose={handleCloseNoteForm} title="Editar nota" maxWidth="max-w-2xl">
           <NotaForm
             initialValues={{
-              nombre: editingNote.title || '',
-              contenido: editingNote.content || '',
-              tipo: tiposNotas[0]?.id || '',
-              etiquetas: editingNote.tags || [],
+              title: editingNote.title || '',
+              content: editingNote.content || '',
+              tipo: editingNote.tipo || tiposNotas[0]?.id || '',
+              tags: editingNote.tags || [],
               date: editingNote.date,
               relatedResources: editingNote.relatedResources || []
             }}
@@ -888,9 +904,9 @@ interface Note {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    title: values.nombre,
-                    content: values.contenido,
-                    tags: values.etiquetas,
+                    title: values.title,
+                    content: values.content,
+                    tags: values.tags,
                     date: values.date || editingNote.date
                   })
                 }
@@ -901,6 +917,33 @@ interface Note {
             onCancel={handleCloseNoteForm}
             loading={false}
             submitLabel="Guardar nota"
+            readOnly={false}
+          />
+        </Modal>
+      )}
+      {/* Modal para ver detalle de nota (NotaForm solo lectura) */}
+      {showNoteDetail && detailNote && (
+        <Modal open={showNoteDetail} onClose={handleCloseNoteDetail} title="Detalle de la nota" maxWidth="max-w-xl">
+          <NotaForm
+            initialValues={{
+              title: detailNote.title || '',
+              content: detailNote.content || '',
+              tipo: detailNote.tipo || tiposNotas[0]?.id || '',
+              tags: detailNote.tags || [],
+              date: detailNote.date, // Pasa el valor crudo, igual que en editar
+              relatedResources: detailNote.relatedResources || []
+            }}
+            tiposNotas={tiposNotas.map(tipo => ({
+              ...tipo,
+              descripcion: tipo.descripcion || '',
+              color: tipo.color || 'bg-gray-700/40 text-gray-200'
+            }))}
+            etiquetasDisponibles={Array.from(new Set(notes.flatMap(n => n.tags || [])))}
+            onSubmit={() => {}}
+            onCancel={handleCloseNoteDetail}
+            loading={false}
+            submitLabel={undefined}
+            readOnly={true}
           />
         </Modal>
       )}

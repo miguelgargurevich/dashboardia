@@ -13,7 +13,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'dtlvqpmyukwcbpllgpue.supabase.co',
         port: '',
-        pathname: '/storage/v1/s3/dashborad/**',
+        pathname: '/storage/v1/object/public/dashboardia-bucket/resources/**',
       },
     ],
   },

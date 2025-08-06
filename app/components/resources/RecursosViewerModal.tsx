@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import { FaFileAlt, FaEye, FaDownload } from "react-icons/fa";
+import { createPortal } from "react-dom";
+import { FaFileAlt, FaEye } from "react-icons/fa";
 import { useConfig, getIconComponent } from "../../lib/useConfig";
 
 interface Recurso {
@@ -44,7 +44,7 @@ const RecursosViewerModal: React.FC<RecursosViewerModalProps> = ({ open, onClose
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recursoPreview, setRecursoPreview] = useState<Recurso | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
+  // ...existing code...
 
   useEffect(() => {
     if (recursoIds && recursoIds.length > 0) {
@@ -95,14 +95,15 @@ const RecursosViewerModal: React.FC<RecursosViewerModalProps> = ({ open, onClose
   }, [recursosState, open, recursoPreview]);
 
   useEffect(() => {
-    setPreviewError(null);
+    // ...existing code...
+    // (No code needed here, effect can be removed or left empty if not used)
   }, [recursoPreview]);
 
+  if (!open || typeof window === 'undefined' || !document.body) return null;
 
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+  // Usar portal para evitar solapamiento con otros elementos
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in recursos-viewer-modal">
       <div className="bg-gradient-to-br from-[#23243a] via-[#1a1b2e] to-[#181926] rounded-3xl shadow-2xl w-full max-w-5xl max-h-[96vh] flex flex-col border border-accent/40 overflow-hidden">
         {/* Header sticky */}
         <div className="bg-gradient-to-r from-secondary/90 to-primary/80 border-b border-accent/20 p-7 rounded-t-3xl flex items-center justify-between sticky top-0 z-10 shadow-md">
@@ -161,7 +162,7 @@ const RecursosViewerModal: React.FC<RecursosViewerModalProps> = ({ open, onClose
               )}
             </div>
           </div>
-          {/* Panel derecho: previsualización */}
+          {/* Panel derecho: solo icono, título, tipo y botón de descarga (visor desactivado) */}
           <div className="w-full lg:w-3/5 flex flex-col bg-secondary/80 rounded-2xl p-6 min-h-[400px] max-h-[70vh] overflow-y-auto">
             {recursoPreview ? (
               <>
@@ -171,119 +172,42 @@ const RecursosViewerModal: React.FC<RecursosViewerModalProps> = ({ open, onClose
                   {recursoPreview.tipo && <span className={`text-xs font-semibold uppercase tracking-wide px-3 py-0.5 rounded-full ${getRecursoConfig(recursoPreview.tipo).color} shadow-sm`}>{recursoPreview.tipo}</span>}
                 </div>
                 {recursoPreview.descripcion && <div className="text-sm text-gray-300 mb-2 italic">{recursoPreview.descripcion}</div>}
-                {/* Previsualización */}
-                {(() => {
-                  // PDF
-                  if (recursoPreview.filePath && recursoPreview.filePath.endsWith('.pdf')) {
-                    return (
-                      <>
-                        <iframe
-                          src={recursoPreview.filePath}
-                          className="w-full h-80 rounded-lg border border-accent/20 bg-white"
-                          title="Vista previa PDF"
-                          onError={() => setPreviewError('No se pudo cargar el archivo PDF.')}
-                        />
-                        {previewError && (
-                          <div className="flex flex-col items-center justify-center h-60 text-gray-400">
-                            <FaEye className="text-4xl mb-4" />
-                            <p>{previewError}</p>
-                          </div>
-                        )}
-                      </>
-                    );
-                  }
-                  // Web
-                  if (recursoPreview.url && recursoPreview.url.startsWith('http')) {
-                    return (
-                      <>
-                        <iframe
-                          src={recursoPreview.url}
-                          className="w-full h-80 rounded-lg border border-accent/20 bg-white"
-                          title="Vista previa web"
-                          onError={() => setPreviewError('No se pudo cargar la página web.')}
-                        />
-                        {previewError && (
-                          <div className="flex flex-col items-center justify-center h-60 text-gray-400">
-                            <FaEye className="text-4xl mb-4" />
-                            <p>{previewError}</p>
-                          </div>
-                        )}
-                      </>
-                    );
-                  }
-                  // Imagen
-                  if (recursoPreview.filePath && /\.(jpg|jpeg|png|gif)$/i.test(recursoPreview.filePath)) {
-                    return (
-                      <div className="w-full max-h-80 relative rounded-lg border border-accent/20 bg-white flex items-center justify-center" style={{ minHeight: 200 }}>
-                        <Image
-                          src={recursoPreview.filePath}
-                          alt="Vista previa"
-                          fill
-                          style={{ objectFit: 'contain', borderRadius: '0.75rem' }}
-                          sizes="(max-width: 768px) 100vw, 60vw"
-                          className="rounded-lg"
-                          onError={() => setPreviewError('No se pudo cargar la imagen.')}
-                        />
-                        {previewError && (
-                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 rounded-lg">
-                            <FaEye className="text-4xl mb-2 text-gray-400" />
-                            <p className="text-gray-500 text-sm">{previewError}</p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  // No previsualizable
-                  return (
-                    <div className="flex flex-col items-center justify-center h-60 text-gray-400">
-                      <FaEye className="text-4xl mb-4" />
-                      <p>No se puede previsualizar este recurso.</p>
-                    </div>
-                  );
-                })()}
-                {/* Botón de descarga alineado a la derecha */}
-                <div className="mt-6 flex justify-end">
-                  {(recursoPreview.filePath || recursoPreview.url) && (
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-primary font-bold hover:bg-accent/90 transition shadow"
-                      onClick={async () => {
-                        if (recursoPreview.filePath) {
-                          try {
-                            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
-                            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-                            const key = recursoPreview.filePath.replace(/^https?:\/\/[^/]+\//, '');
-                            const res = await fetch(`${backendUrl}/api/resources/download/${encodeURIComponent(key)}`, {
-                              headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-                            });
-                            const data = await res.json();
-                            if (data.downloadUrl) {
-                              window.open(data.downloadUrl, '_blank');
-                            } else {
-                              alert('No se pudo obtener el enlace de descarga.');
-                            }
-                          } catch (err) {
-                            alert('Error al descargar el archivo.');
-                          }
-                        } else if (recursoPreview.url) {
-                          window.open(recursoPreview.url, '_blank');
-                        }
-                      }}
-                    >
-                      <FaDownload /> Descargar
-                    </button>
+                {/* Debug: URL real del recurso eliminada por solicitud */}
+                {/* Icono grande del tipo de recurso como enlace al recurso */}
+                <div className="flex flex-col items-center justify-center h-60 text-gray-400">
+                  {(recursoPreview.filePath || recursoPreview.url) ? (
+                    <>
+                      <a
+                        href={recursoPreview.filePath || recursoPreview.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-accent focus:outline-none"
+                        title="Abrir recurso en nueva pestaña"
+                      >
+                        {React.createElement(getRecursoConfig(recursoPreview.tipo || "default").IconComponent as React.ComponentType<{ className?: string }>, { className: "text-7xl mb-4 transition-colors" })}
+                      </a>
+                      <p className="text-accent font-bold text-lg mt-2">{recursoPreview.tipo || 'Recurso'}</p>
+                    </>
+                  ) : (
+                    <>
+                      <FaEye className="text-7xl mb-4 text-gray-500 line-through" />
+                      <p className="text-gray-400 font-bold text-lg mt-2">Sin archivo disponible</p>
+                    </>
                   )}
                 </div>
+                {/* Botón de descarga eliminado por solicitud */}
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-gray-400">
                 <FaEye className="text-4xl mb-4" />
-                <p>Selecciona un recurso para previsualizarlo</p>
+                <p>Selecciona un recurso para ver detalles</p>
               </div>
             )}
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

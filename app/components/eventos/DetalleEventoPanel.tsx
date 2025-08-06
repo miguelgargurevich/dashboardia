@@ -6,7 +6,7 @@ import { Event } from '../../lib/types';
 
 import dynamic from 'next/dynamic';
 // Importar el modal de recursos de forma dinámica para evitar SSR issues
-const RecursosViewerModal = dynamic(() => import('./RecursosViewerModal'), { ssr: false });
+const RecursosViewerModal = dynamic(() => import('../resources/RecursosViewerModal'), { ssr: false });
 
 export interface DetalleEventoPanelProps {
   eventoSeleccionado: Event | null;

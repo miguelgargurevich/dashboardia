@@ -80,7 +80,10 @@ const RecentResources: React.FC<Props> = ({ token, limit = 6 }) => {
                     Descargar
                   </button>
                 )}
-                {resource.url && <a href={resource.url} className="text-xs text-blue-400 underline">Ver recurso</a>}
+                {/* Solo mostrar enlace si es URL externa, no archivo subido */}
+                {resource.url && !resource.filePath && resource.url.startsWith('http') && (
+                  <a href={resource.url} className="text-xs text-blue-400 underline" target="_blank" rel="noopener noreferrer">Ver recurso</a>
+                )}
               </div>
             );
           })}

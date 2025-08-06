@@ -1,7 +1,16 @@
+"use client";
 import React from 'react';
 import { FaSearch } from 'react-icons/fa';
 import DetalleNotaPanel from './DetalleNotaPanel';
 import { getIconComponent } from '../../lib/useConfig';
+
+interface Nota {
+  id: string;
+  title: string;
+  content: string;
+  tags?: string[];
+  tipo: string;
+}
 
 interface TipoNota {
   id: string;
@@ -18,13 +27,11 @@ interface NotasPanelProps {
   filtroEtiquetaNota: string;
   setFiltroEtiquetaNota: (v: string) => void;
   cargando: boolean;
-  notasFiltradas: any[];
-  temas: any[];
+  notasFiltradas: Nota[];
   tiposNotas: TipoNota[];
-  notaSeleccionada: any;
-  setNotaSeleccionada: (n: any) => void;
-  descargarNota: (n: any) => void;
-  eliminarNota: (n: any) => void;
+  notaSeleccionada: Nota | null;
+  setNotaSeleccionada: (n: Nota) => void;
+  eliminarNota: (n: Nota) => void;
   renderizarContenidoMarkdown: (c: string) => React.ReactNode;
 }
 
@@ -36,10 +43,8 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
   setFiltroEtiquetaNota,
   cargando,
   notasFiltradas,
-  temas,
   notaSeleccionada,
   setNotaSeleccionada,
-  descargarNota,
   eliminarNota,
   renderizarContenidoMarkdown,
   tiposNotas
@@ -92,10 +97,10 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {notasFiltradas.map((nota, index) => {
-              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t: any) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo, icono: 'fa-sticky-note' };
+              const tipoNota = (tiposNotas && Array.isArray(tiposNotas)) ? tiposNotas.find((t) => t.id === nota.tipo) || tiposNotas[0] : { color: 'bg-accent/20 text-accent', nombre: nota.tipo, icono: 'fa-sticky-note' };
               const [bgColor, textColor] = tipoNota.color.split(' ');
-              const IconComponent = getIconComponent(tipoNota.icono || 'fa-sticky-note') as React.ComponentType<{ className?: string }>;
-              const isSelected = notaSeleccionada?.nombre === nota.nombre;
+              const IconComponent = getIconComponent(tipoNota.icono || 'fa-sticky-note') as React.ComponentType<{ className?: string }>; 
+              const isSelected = notaSeleccionada?.id === nota.id;
               return (
                 <button
                   key={index}
@@ -111,26 +116,26 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
                       <IconComponent className={textColor || 'text-accent'} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-white text-base truncate flex-1">{nota.nombre}</h3>
+                      <h3 className="font-semibold text-white text-base truncate flex-1">{nota.title}</h3>
                       <div className="text-xs text-yellow-300 mb-1">
                         {tipoNota.nombre}
                       </div>
-                      {nota.etiquetas && nota.etiquetas.length > 0 && (
+                      {nota.tags && nota.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-1">
-                          {nota.etiquetas.slice(0, 3).map((etiqueta: string, etIndex: number) => (
+                          {nota.tags.slice(0, 3).map((tag: string, etIndex: number) => (
                             <span
                               key={etIndex}
                               className="px-1.5 py-0.5 rounded text-xs bg-yellow-900/20 text-yellow-300"
                             >
-                              {etiqueta}
+                              {tag}
                             </span>
                           ))}
-                          {nota.etiquetas.length > 3 && (
-                            <span className="text-xs text-gray-400">+{nota.etiquetas.length - 3}</span>
+                          {nota.tags.length > 3 && (
+                            <span className="text-xs text-gray-400">+{nota.tags.length - 3}</span>
                           )}
                         </div>
                       )}
-                      {nota.contenido && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{nota.contenido.slice(0, 100)}...</p>}
+                      {nota.content && <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed mb-1">{nota.content.slice(0, 100)}...</p>}
                     </div>
                   </div>
                 </button>
@@ -144,7 +149,6 @@ const NotasPanel: React.FC<NotasPanelProps> = ({
     <div className="lg:col-span-2">
       <DetalleNotaPanel
         notaSeleccionada={notaSeleccionada}
-        descargarNota={descargarNota}
         eliminarNota={eliminarNota}
         renderizarContenidoMarkdown={renderizarContenidoMarkdown}
       />

@@ -55,30 +55,18 @@ const DetalleRecursoPanel: React.FC<DetalleRecursoPanelProps> = ({
                         alert('Error al descargar el archivo.');
                       }
                     } else if (recurso?.url) {
-                      window.open(recurso.url, '_blank');
+                      // Solo abrir si es un enlace externo (no archivo subido)
+                      if (recurso.url && !recurso.filePath && recurso.url.startsWith('http')) {
+                        window.open(recurso.url, '_blank');
+                      } else {
+                        alert('No se puede descargar el recurso.');
+                      }
                     }
                   }}
                   className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
                   title="Descargar recurso"
                 >
                   <FaDownload /> Descargar
-                </button>
-                {onEdit && (
-                  <button
-                    onClick={() => onEdit(recurso)}
-                    className="flex items-center gap-1 text-blue-400 hover:text-blue-200 px-2 py-1 rounded border border-blue-400/30 bg-blue-400/10 text-xs font-semibold"
-                    title="Editar recurso"
-                  >
-                    <FaEdit /> Editar
-                  </button>
-                )}
-                {/* Botón eliminar oculto temporalmente */}
-                <button
-                  style={{ display: 'none' }}
-                  className="flex items-center gap-1 text-red-400 hover:text-red-200 px-2 py-1 rounded border border-red-400/30 bg-red-400/10 text-xs font-semibold"
-                  title="Eliminar recurso"
-                >
-                  <FaTrash /> Eliminar
                 </button>
               </div>
             </div>
